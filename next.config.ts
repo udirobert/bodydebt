@@ -34,6 +34,14 @@ const nextConfig: NextConfig = {
     "172.30.*.*",
     "172.31.*.*",
   ],
+  // Enable WebAssembly support for Edge AI (ONNX Runtime) and ZK (EZKL)
+  webpack: (config) => {
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+    };
+    return config;
+  },
 };
 
 export default nextConfig;

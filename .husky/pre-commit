@@ -1,0 +1,53 @@
+#!/bin/sh
+
+# Pre-commit hook for Body Debt
+# 1. Scan for accidental secret commits
+# 2. Run lint-staged for code quality
+
+echo "🔒 Running secret scan..."
+
+# Define patterns to check for common secrets in staged files
+# This catches AWS keys, private keys, GitHub tokens, etc.
+SECRET_PATTERNS=(
+  "-----BEGIN (RSA |OPENSSH |PRIVATE )?KEY-----"
+  "AIza[0-9A-Za-z\\-_]{35}"
+  "sk-[a-zA-Z0-9]{20,}"
+  "ghp_[a-zA-Z0-9]{36}"
+  "EAZO_PRIVATE_KEY=[a-fA-F0-9]{64}"
+  "DATABASE_URL=.*:.*@"
+)
+
+# Get list of staged files (excluding deleted files, .husky dir, and common binary/lock files)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -vE '^\.husky/|\.env\.|\.png$|\.jpg$|\.jpeg$|\.gif$|\.svg$|\.webp$|\.ico$|\.lock$' || true)
+
+if [ -n "$STAGED_FILES" ]; then
+  FOUND_SECRETS=0
+  for file in $STAGED_FILES; do
+    if [ -f "$file" ]; then
+      for pattern in "${SECRET_PATTERNS[@]}"; do
+        if grep -qE "$pattern" "$file" 2>/dev/null; then
+          echo "❌ Potential secret detected in $file matching pattern: $pattern"
+          FOUND_SECRETS=1
+        fi
+      done
+    fi
+  done
+
+  if [ $FOUND_SECRETS -eq 1 ]; then
+    echo "🛑 Commit aborted: Please remove secrets before committing. If this is a false positive, you can bypass with --no-verify (not recommended)."
+    exit 1
+  fi
+  echo "✅ No secrets detected."
+fi
+
+echo "🧹 Running lint-staged..."
+# Execute lint-staged (which runs 'bun run lint' and 'tsc --noEmit' on staged files)
+npx lint-staged
+
+# If lint-staged fails, abort the commit
+if [ $? -ne 0 ]; then
+  echo "🛑 Commit aborted: Linting or type checking failed."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"

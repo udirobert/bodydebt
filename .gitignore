@@ -189,3 +189,28 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/nextjs,node,linux
 /generated/prisma
+
+# Foundry / Solidity
+contracts/artifacts/
+contracts/cache/
+contracts/out/
+broadcast/
+*.json
+!package.json
+!tsconfig.json
+
+# ZK / EZKL generated files (can be large or regenerated)
+*.zk
+*.params
+proving_key.json
+verification_key.json
+witness.json
+
+# Local WASM / Model binaries (if downloaded instead of using CDN)
+*.wasm
+*.bin
+*.weights
+
+# OS specific
+.DS_Store
+Thumbs.db
