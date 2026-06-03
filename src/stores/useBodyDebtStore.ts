@@ -8,6 +8,7 @@ import type {
   HRVData,
   DebtAnalysis,
   ConfidenceTier,
+  ZKProofResult,
 } from "@/lib/types";
 import type { OrbPersonality } from "@/lib/orbPersonality";
 
@@ -75,6 +76,10 @@ interface BodyDebtState {
   // Orb personality
   orbPersonality: OrbPersonality;
   setOrbPersonality: (p: OrbPersonality) => void;
+
+  // ZK proof result (ephemeral — not persisted)
+  zkProof: ZKProofResult | null;
+  setZkProof: (proof: ZKProofResult | null) => void;
 
   // Session timestamp
   sessionStartedAt: string | null;
@@ -154,6 +159,9 @@ export const useBodyDebtStore = create<BodyDebtState>()(
       orbPersonality: "honest" as OrbPersonality,
       setOrbPersonality: (p) => set({ orbPersonality: p }),
 
+      zkProof: null,
+      setZkProof: (proof) => set({ zkProof: proof }),
+
       recomputeConfidence: () => {
         const { selectedStressors, faceAnalysis, hrvData } = get();
         const hasSpecifics = selectedStressors.some((s) =>
@@ -198,6 +206,7 @@ export const useBodyDebtStore = create<BodyDebtState>()(
         isAnalyzing: false,
         confidenceTier: "estimated",
         sessionStartedAt: null,
+        zkProof: null,
       }),
     }),
     {

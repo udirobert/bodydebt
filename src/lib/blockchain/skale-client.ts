@@ -1,26 +1,14 @@
 import { createPublicClient, createWalletClient, custom, http } from 'viem';
 import { skaleEuropaTestnet } from 'viem/chains';
 
-// SKALE Europa Testnet configuration
-export const skaleEuropa = {
-  ...skaleEuropaTestnet,
-  name: 'SKALE Europa Testnet',
-  rpcUrls: {
-    default: { http: ['https://testnet.skalenodes.com/v1/elated-tan-skat'] },
-    public: { http: ['https://testnet.skalenodes.com/v1/elated-tan-skat'] },
-  },
-};
-
-// Public client for reading from the blockchain
 export const publicClient = createPublicClient({
-  chain: skaleEuropa,
+  chain: skaleEuropaTestnet,
   transport: http(),
 });
 
-// Wallet client for signing transactions (to be connected via Wagmi in the UI)
 export function createWalletClientWithSigner(signer: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> }) {
   return createWalletClient({
-    chain: skaleEuropa,
+    chain: skaleEuropaTestnet,
     transport: custom(signer),
   });
 }
@@ -61,5 +49,7 @@ export const healthCredentialVerifierABI = [
   },
 ] as const;
 
-// Placeholder for the deployed contract address (update after deployment)
-export const VERIFIER_CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000';
+export const VERIFIER_CONTRACT_ADDRESS = (
+  process.env.NEXT_PUBLIC_VERIFIER_ADDRESS ??
+  '0x0000000000000000000000000000000000000000'
+) as `0x${string}`;

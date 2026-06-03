@@ -128,3 +128,15 @@ export interface AnalyzeBodyRequest {
   wakeTime?: string;
   bedTime?: string;
 }
+
+// ─── ZK Proof ─────────────────────────────────────────────────────────────────
+
+export interface ZKProofResult {
+  proof: string;
+  publicInputs: string;
+  stressScore: number;
+  isHealthy: boolean;
+  durationMs: number;
+  txHash?: string;
+  verified: boolean;
+}

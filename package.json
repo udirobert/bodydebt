@@ -27,10 +27,13 @@
   "dependencies": {
     "@base-ui/react": "^1.4.0",
     "@eazo/sdk": "0.19.0",
+    "@ezkljs/engine": "^22.0.1",
     "@mediapipe/camera_utils": "^0.3.1632432234",
     "@mediapipe/face_mesh": "^0.4.1633559619",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@tanstack/react-query": "^5.59.0",
+    "@wagmi/connectors": "^8.0.15",
+    "@wagmi/core": "^3.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",

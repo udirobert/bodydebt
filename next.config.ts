@@ -35,6 +35,19 @@ const nextConfig: NextConfig = {
     "172.31.*.*",
   ],
   // Enable WebAssembly support for Edge AI (ONNX Runtime) and ZK (EZKL)
+  async headers() {
+    return [
+      {
+        source: "/face-scan",
+        headers: [
+          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+        ],
+      },
+    ];
+  },
+  turbopack: {},
+  serverExternalPackages: ["@qvac/sdk", "@ezkljs/engine"],
   webpack: (config) => {
     config.experiments = {
       ...config.experiments,

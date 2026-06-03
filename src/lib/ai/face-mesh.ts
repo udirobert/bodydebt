@@ -1,7 +1,6 @@
-import { FaceMesh } from "@mediapipe/face_mesh";
-import { Camera } from "@mediapipe/camera_utils";
+// MediaPipe uses a non-ESM format that Turbopack can't statically resolve.
+// We load it dynamically at runtime in the browser only.
 
-// Key landmark indices for MediaPipe Face Mesh (468 total)
 const LANDMARKS = {
   LEFT_EYE_OUTER: 33,
   LEFT_EYE_INNER: 133,
@@ -29,72 +28,47 @@ export interface StressFeatures {
   timestamp: number;
 }
 
-// Calculate Euclidean distance between two 3D points
-function distance(p1: { x: number; y: number; z: number }, p2: { x: number; y: number; z: number }): number {
-  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2) + Math.pow(p2.z - p1.z, 2));
-}
-
-// Calculate Eye Aspect Ratio (EAR) - lower values indicate closed/tired eyes
-function calculateEAR(
-  outer: { x: number; y: number; z: number },
-  inner: { x: number; y: number; z: number },
-  top: { x: number; y: number; z: number },
-  bottom: { x: number; y: number; z: number }
-): number {
-  const verticalDist1 = distance(top, bottom);
-  const horizontalDist = distance(outer, inner);
-  return horizontalDist > 0 ? verticalDist1 / horizontalDist : 0;
-}
-
 interface MediaPipeLandmark {
   x: number;
   y: number;
   z: number;
 }
 
-// Extract lightweight geometric features from MediaPipe landmarks
-export function extractStressFeatures(landmarks: MediaPipeLandmark[]): StressFeatures | null {
-  if (!landmarks || landmarks.length < 468) return null;
-
-  const getPoint = (index: number) => landmarks[index];
-
-  const leftEAR = calculateEAR(
-    getPoint(LANDMARKS.LEFT_EYE_OUTER),
-    getPoint(LANDMARKS.LEFT_EYE_INNER),
-    getPoint(LANDMARKS.LEFT_EYE_TOP),
-    getPoint(LANDMARKS.LEFT_EYE_BOTTOM)
-  );
-
-  const rightEAR = calculateEAR(
-    getPoint(LANDMARKS.RIGHT_EYE_OUTER),
-    getPoint(LANDMARKS.RIGHT_EYE_INNER),
-    getPoint(LANDMARKS.RIGHT_EYE_TOP),
-    getPoint(LANDMARKS.RIGHT_EYE_BOTTOM)
-  );
-
-  // Brow tension: average vertical distance between eyebrows and eyes
-  const leftBrowDist = distance(getPoint(LANDMARKS.LEFT_EYEBROW_INNER), getPoint(LANDMARKS.LEFT_EYE_TOP));
-  const rightBrowDist = distance(getPoint(LANDMARKS.RIGHT_EYEBROW_INNER), getPoint(LANDMARKS.RIGHT_EYE_TOP));
-  const browTension = (leftBrowDist + rightBrowDist) / 2;
-
-  // Mouth tension: ratio of width to height
-  const mouthWidth = distance(getPoint(LANDMARKS.MOUTH_LEFT), getPoint(LANDMARKS.MOUTH_RIGHT));
-  const mouthHeight = distance(getPoint(LANDMARKS.MOUTH_TOP), getPoint(LANDMARKS.MOUTH_BOTTOM));
-  const mouthTension = mouthHeight > 0 ? mouthWidth / mouthHeight : 1;
-
-  return {
-    leftEyeAspect: leftEAR,
-    rightEyeAspect: rightEAR,
-    browTension,
-    mouthTension,
-    timestamp: Date.now(),
-  };
+function distance(p1: MediaPipeLandmark, p2: MediaPipeLandmark): number {
+  return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2 + (p2.z - p1.z) ** 2);
 }
 
-// Initialize MediaPipe FaceMesh instance
-export function initializeFaceMesh(onResults: (results: { multiFaceLandmarks: MediaPipeLandmark[][] }) => void): FaceMesh {
+function calculateEAR(
+  outer: MediaPipeLandmark, inner: MediaPipeLandmark,
+  top: MediaPipeLandmark, bottom: MediaPipeLandmark
+): number {
+  const v = distance(top, bottom);
+  const h = distance(outer, inner);
+  return h > 0 ? v / h : 0;
+}
+
+export function extractStressFeatures(landmarks: MediaPipeLandmark[]): StressFeatures | null {
+  if (!landmarks || landmarks.length < 468) return null;
+  const p = (i: number) => landmarks[i];
+
+  const leftEAR = calculateEAR(p(LANDMARKS.LEFT_EYE_OUTER), p(LANDMARKS.LEFT_EYE_INNER), p(LANDMARKS.LEFT_EYE_TOP), p(LANDMARKS.LEFT_EYE_BOTTOM));
+  const rightEAR = calculateEAR(p(LANDMARKS.RIGHT_EYE_OUTER), p(LANDMARKS.RIGHT_EYE_INNER), p(LANDMARKS.RIGHT_EYE_TOP), p(LANDMARKS.RIGHT_EYE_BOTTOM));
+  const browTension = (distance(p(LANDMARKS.LEFT_EYEBROW_INNER), p(LANDMARKS.LEFT_EYE_TOP)) + distance(p(LANDMARKS.RIGHT_EYEBROW_INNER), p(LANDMARKS.RIGHT_EYE_TOP))) / 2;
+  const mouthWidth = distance(p(LANDMARKS.MOUTH_LEFT), p(LANDMARKS.MOUTH_RIGHT));
+  const mouthHeight = distance(p(LANDMARKS.MOUTH_TOP), p(LANDMARKS.MOUTH_BOTTOM));
+  const mouthTension = mouthHeight > 0 ? mouthWidth / mouthHeight : 1;
+
+  return { leftEyeAspect: leftEAR, rightEyeAspect: rightEAR, browTension, mouthTension, timestamp: Date.now() };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function initializeFaceMesh(onResults: (results: { multiFaceLandmarks: MediaPipeLandmark[][] }) => void): any {
+  // Dynamic require — MediaPipe attaches to globalThis at runtime
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { FaceMesh } = require("@mediapipe/face_mesh");
+
   const faceMesh = new FaceMesh({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+    locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
   });
 
   faceMesh.setOptions({
@@ -108,16 +82,16 @@ export function initializeFaceMesh(onResults: (results: { multiFaceLandmarks: Me
   return faceMesh;
 }
 
-// Helper to start camera stream
-export function startCamera(videoElement: HTMLVideoElement, faceMesh: FaceMesh): Camera {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function startCamera(videoElement: HTMLVideoElement, faceMesh: any): any {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { Camera } = require("@mediapipe/camera_utils");
+
   const camera = new Camera(videoElement, {
-    onFrame: async () => {
-      await faceMesh.send({ image: videoElement });
-    },
+    onFrame: async () => { await faceMesh.send({ image: videoElement }); },
     width: 640,
     height: 480,
   });
-  
   camera.start();
   return camera;
 }

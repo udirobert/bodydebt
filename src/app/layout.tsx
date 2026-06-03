@@ -6,6 +6,7 @@ import { cn } from "@/utils/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { UserSyncEffect } from "@/components/user-profile/user-sync-effect";
 import { PageTransition } from "@/components/PageTransition";
+import { WagmiProviderWrapper } from "@/components/providers/WagmiProviderWrapper";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -79,11 +80,13 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col" style={{ fontFamily: "var(--font-sans)" }}>
         <EazoProvider>
-          <UserSyncEffect />
-          <PageTransition>
-            {children}
-          </PageTransition>
-          <Toaster />
+          <WagmiProviderWrapper>
+            <UserSyncEffect />
+            <PageTransition>
+              {children}
+            </PageTransition>
+            <Toaster />
+          </WagmiProviderWrapper>
         </EazoProvider>
       </body>
     </html>
