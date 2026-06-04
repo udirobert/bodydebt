@@ -47,7 +47,14 @@ const nextConfig: NextConfig = {
     ];
   },
   turbopack: {},
-  serverExternalPackages: ["@qvac/sdk", "@ezkljs/engine"],
+  serverExternalPackages: [
+    "@qvac/sdk",
+    "@ezkljs/engine",
+    "@esbuild/darwin-arm64",
+    "@esbuild/darwin-x64",
+    "esbuild",
+    "tsx",
+  ],
   webpack: (config) => {
     config.experiments = {
       ...config.experiments,

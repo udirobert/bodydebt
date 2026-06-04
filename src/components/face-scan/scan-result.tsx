@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Loader2, CloudDownload } from "lucide-react";
 import { getQvacAdvice } from "@/lib/api";
+import type { QvacProgress } from "@/lib/api";
 
 export function ScanResult({ txHash }: { txHash?: string }) {
   const router = useRouter();
   const { zkProof, selectedStressors } = useBodyDebtStore();
   const [advice, setAdvice] = useState<string | null>(null);
   const [adviceSource, setAdviceSource] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<QvacProgress | null>(null);
 
   useEffect(() => {
     if (advice) return;
@@ -28,12 +30,16 @@ export function ScanResult({ txHash }: { txHash?: string }) {
         mouthTension: false,
       },
       stressors: selectedStressors.map((s) => s.type),
+    }, (progress) => {
+      setDownloadProgress(progress);
     }).then((result) => {
       setAdvice(result.advice);
       setAdviceSource(result.source);
+      setDownloadProgress(null);
     }).catch(() => {
       setAdvice("Focus on hydration and rest. Your body needs recovery time.");
       setAdviceSource("fallback");
+      setDownloadProgress(null);
     });
   }, [zkProof, selectedStressors, advice]);
 
@@ -65,6 +71,52 @@ export function ScanResult({ txHash }: { txHash?: string }) {
             Transaction Hash
           </span>
           <span className="text-xs font-mono" style={{ color: "#A8A29E" }}>{txHash}</span>
+        </div>
+      )}
+
+      {/* Model download progress */}
+      {downloadProgress && downloadProgress.status === "downloading" && (
+        <div className="rounded-2xl p-4"
+          style={{ backgroundColor: "#141416", border: "1px solid rgba(234,88,12,0.2)" }}>
+          <div className="flex items-center gap-2 mb-2">
+            <CloudDownload className="w-4 h-4 animate-pulse" style={{ color: "#EA580C" }} />
+            <span className="text-[9px] font-mono uppercase tracking-widest font-semibold" style={{ color: "#EA580C" }}>
+              Downloading Local AI Model
+            </span>
+          </div>
+          <div className="relative h-1.5 rounded-full overflow-hidden mb-1.5"
+            style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
+            <motion.div
+              className="absolute inset-y-0 left-0 rounded-full"
+              style={{ backgroundColor: "#EA580C" }}
+              initial={{ width: "0%" }}
+              animate={{ width: `${downloadProgress.percent ?? 50}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+          <p className="text-[10px] font-mono" style={{ color: "#A8A29E" }}>
+            {downloadProgress.loaded != null && downloadProgress.total != null
+              ? `${Math.round(downloadProgress.loaded / 1024 / 1024)}MB / ${Math.round(downloadProgress.total / 1024 / 1024)}MB`
+              : downloadProgress.percent != null
+                ? `${downloadProgress.percent}%`
+                : "Starting download..."}
+          </p>
+        </div>
+      )}
+
+      {/* Generating indicator */}
+      {downloadProgress && downloadProgress.status === "generating" && (
+        <div className="rounded-2xl p-4 flex items-center gap-3"
+          style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}>
+          <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#EA580C" }} />
+          <div>
+            <p className="text-[9px] font-mono uppercase tracking-widest font-semibold" style={{ color: "#EA580C" }}>
+              Generating Recovery Advice
+            </p>
+            <p className="text-[10px] mt-0.5" style={{ color: "#524F4C" }}>
+              Running local LLM inference
+            </p>
+          </div>
         </div>
       )}
 
