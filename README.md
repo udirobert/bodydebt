@@ -25,11 +25,21 @@ Body Debt is a health and recovery tracking application that quantifies the phys
 
 ## Getting Started
 
+### macOS Prerequisite: arm64 OpenSSL
+
+The QVAC local LLM worker requires arm64 OpenSSL at `/opt/homebrew/opt/openssl@3/lib/`. If you don't have ARM Homebrew installed:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+arch -arm64 /opt/homebrew/bin/brew install openssl@3
+```
+
+### Setup
+
 1. Install dependencies with Bun:
    ```bash
    bun install
    ```
-   *(If `sharp` installation stalls, run: `SHARP_IGNORE_GLOBAL_LIBVIPS=1 bun install`)*
+   > **Note**: A `postinstall` script auto-trims unnecessary platform prebuilds from `node_modules`, keeping it at ~2.6 GB instead of ~8.4 GB. This runs every time you install.
 
 2. Copy the environment variables:
    ```bash
@@ -96,7 +106,7 @@ The pipeline is fully compiled and operational. Real ZK proof artifacts are serv
    ```
    > **Note**: v23.0.5 dropped macOS binary support. v23.0.3 is the latest macOS-compatible release.
 
-3. **Compile the EZKL circuit**:
+3. **Compile the EZKL circuit** (uses `ezkl` CLI v23.0.3 — requires separate install):
    ```bash
    python scripts/compile-circuit.py
    ```
@@ -127,6 +137,72 @@ The pipeline is fully compiled and operational. Real ZK proof artifacts are serv
 - The **prover worker** (`src/workers/ezkl-prover.worker.ts`) fetches `compiled.ezkl`, `pk.key`, and `srs.key` from the server on init. If any artifact is missing, it falls back to a mock proof with a clear label.
 - The **face scan pipeline** (`src/components/face-scan/use-face-scan-pipeline.ts`) sends a `ProofRequest` to the worker and handles both real and mock proof paths.
 - WASM and COOP/COEP headers are already configured in `next.config.ts`.
+
+## QVAC Edge AI — Local LLM Health Coach
+
+After the ZK proof is generated, the app runs a local LLM health coach to produce personalized recovery advice:
+
+### Architecture
+
+```
+Face Scan → ZK Proof → QVAC API (/api/qvac/infer) → SSE stream → ScanResult UI
+                             │
+                    ┌────────┴────────┐
+                    ▼                 ▼
+             Local LLM (fork)    Cloud AI (fallback)
+             llama-3.2-1b        deepseek.v3.1
+```
+
+1. **Worker process** (`scripts/qvac-worker.mjs`): A standalone Node.js script that imports `@qvac/sdk` directly. It runs in its own process via `child_process.fork()` to avoid bundling the SDK's native deps (bare, llamacpp) with the Next.js server.
+2. **SDK wrapper** (`src/lib/qvac/index.ts`): Forks the worker, sends the health data as a JSON argument, listens to stdout for newline-delimited JSON events (`progress` and `result`), and resolves with the advice string.
+3. **API route** (`src/app/api/qvac/infer/route.ts`): SSE endpoint that calls `runHealthCoach()` with a 2-minute timeout. If the local LLM fails (worker crash, model not found, timeout), it falls back to Eazo cloud AI (`deepseek.v3.1`) via `@eazo/sdk`'s `ai.chat()`.
+4. **Client API** (`src/lib/api/qvac.ts`): SSE stream consumer that reads the `ReadableStream` body, parses newline-delimited JSON, fires `onProgress` callbacks for download progress, and resolves with the final advice. Accepts an `AbortSignal` for cleanup on unmount.
+5. **UI** (`src/components/face-scan/scan-result.tsx`): Shows a download progress bar (`CloudDownload` + animated progress) during model download, a spinner (`Loader2` + "Generating Recovery Advice") during inference, and the advice text with a `QVAC LOCAL` badge when complete.
+
+### Client-side Consumption Pattern
+
+```tsx
+import { getQvacAdvice } from "@/lib/api";
+
+useEffect(() => {
+  const abortCtrl = new AbortController();
+
+  getQvacAdvice(
+    { stressScore: 62, isHealthy: true, features: {...}, stressors: [...] },
+    (progress) => setDownloadProgress(progress),
+    abortCtrl.signal
+  ).then((result) => {
+    setAdvice(result.advice);
+    setAdviceSource(result.source);
+  });
+
+  return () => abortCtrl.abort(); // cleanup on unmount
+}, []);
+```
+
+### Model Caching
+
+The first inference downloads a 752MB GGUF model (`Llama-3.2-1B-Instruct-Q4_0`) to `~/.qvac/models/`. Subsequent inferences use the cached copy (~10s load, ~4s inference).
+
+### Fallback Chain
+
+| Source | Latency | Requirements |
+|---|---|---|
+| `qvac-local` | ~15s (first run may download 752MB) | arm64 OpenSSL at `/opt/homebrew/opt/openssl@3/lib/` |
+| `eazo-cloud` | ~3s | `EAZO_PRIVATE_KEY` env var set |
+| `fallback` | instant | None (static text) |
+
+## node_modules Management
+
+`@qvac/sdk` bundles native prebuilds for 6+ platforms (darwin-arm64, darwin-x64, linux-x64, linux-arm64, win32-x64, ios-arm64, android-arm64) across 10 ML runtime packages. A fresh `npm install` would pull ~8.4 GB.
+
+**Solution**: `scripts/trim-node-modules.mjs` runs as a `postinstall` hook and removes:
+- Non-arm64 prebuilds from every `@qvac/*` package (~1.5 GB)
+- Unused transitive deps: `react-native-bare-kit`, `bare-runtime-darwin-x64`, `hermes-compiler` (~400 MB)
+
+Result: `node_modules` stays at ~2.6 GB. The script is idempotent — safe to re-run.
+
+The packages themselves are preserved — the SDK's bare runtime eagerly imports all plugin packages at startup even if only the LLM completion plugin is used.
 
 ## Privacy & Data
 

@@ -31,9 +31,10 @@ The base template setup is complete. Focus on these domain-specific areas when a
 - **AI Analysis** — `src/app/api/analyze/stream/route.ts` (3-layer SSE streaming pipeline), `src/app/api/analyze/score/route.ts` (deterministic layer), `src/app/api/analyze/verdict/route.ts`, `src/app/api/analyze/prescription/route.ts`, and non-streaming `src/app/api/analyze/route.ts`
 - **Face Scan** — `src/app/api/face-scan/route.ts` (processes canvas image data via vision AI)
 - **HRV & Wearable Integration** — `src/app/api/terra/*` (Terra OAuth + webhook + data polling), `src/app/api/garmin/parse/route.ts` (CSV upload), `src/app/api/google-fit/*` (Google Fit OAuth + data), `src/app/api/hrv/resolve/route.ts` (unified fallback chain)
-- **QVAC Edge AI** — `src/lib/qvac/index.ts` (local LLM inference) + `src/app/api/qvac/infer/route.ts`
+- **QVAC Edge AI** — `scripts/qvac-worker.mjs` (standalone fork worker), `src/lib/qvac/index.ts` (worker forking + IPC), `src/app/api/qvac/infer/route.ts` (SSE endpoint), `src/lib/api/qvac.ts` (SSE client consumer with AbortSignal), `src/components/face-scan/scan-result.tsx` (progress UI + QVAC badge)
 - **ZK Proof Pipeline** — `src/workers/ezkl-prover.worker.ts` (Web Worker), `src/lib/ai/face-mesh.ts` (feature extraction), `src/lib/blockchain/skale-client.ts` (SKALE integration), `contracts/HealthCredentialVerifier.sol`
 - **Orb Personality** — `src/lib/orbPersonality.ts` (4 voice modes: honest, gentle, scientific, sarcastic)
+- **Disk Management** — `scripts/trim-node-modules.mjs` (postinstall: removes non-arm64 prebuilds from @qvac packages, saves ~5.7 GB)
 - **Auth & DB** — `src/app/api/user/profile/route.ts`, `src/lib/db/schema/` (users, debt-sessions, terra-connections), `src/lib/db/queries/`
 
 ## 3. Hackathon Architecture: Edge AI + Programmable Privacy
@@ -73,16 +74,18 @@ cp ezkl ~/.local/bin/
 - **ALWAYS** use quantized (8-bit or 4-bit) ONNX models for ZKML to ensure proof generation completes in seconds, not minutes.
 - Large ZK artifacts (`.key` files) are gitignored and must be regenerated via `python scripts/compile-circuit.py`.
 
-## 3. Commands
+## 4. Commands
 
 ```bash
-bun install
-bun dev
-bun run lint
-bun run build
-bun start
-bun run cleanup:demo   # one-click remove demo artifacts and auto-fix stale todos exports in index files
+bun install              # install deps + auto-trims non-arm64 prebuilds (postinstall)
+bun dev                  # start development server
+bun run lint             # run ESLint
+bun run build            # build for production
+bun start                # start production server
+bun run cleanup:demo     # one-click remove demo artifacts
 ```
+
+**Postinstall note**: `bun install` runs `scripts/trim-node-modules.mjs` automatically. This removes non-arm64 prebuilds from `@qvac/*` packages, keeping `node_modules` at ~2.6 GB instead of ~8.4 GB. The packages themselves are preserved — the SDK eagerly imports all plugins at startup.
 
 If you are developing `@eazo/sdk` locally, build it first and sync into `node_modules`:
 
@@ -91,7 +94,7 @@ If you are developing `@eazo/sdk` locally, build it first and sync into `node_mo
 bun run sdk:sync
 ```
 
-### 3.1 Database (Drizzle)
+### 4.1 Database (Drizzle)
 
 ```bash
 bun run db:generate
@@ -100,7 +103,7 @@ bun run db:push
 bun run db:studio
 ```
 
-## 4. Project Structure
+## 5. Project Structure
 
 ```
 src/
@@ -164,20 +167,23 @@ src/
       api/
         request.ts              — fetch wrapper; injects x-eazo-session
         user-profile.ts         — fetchUserProfile
+        qvac.ts                 — getQvacAdvice (SSE consumer with AbortSignal)
   contracts/
     HealthCredentialVerifier.sol — SKALE verifier contract
   scripts/
+    qvac-worker.mjs              — QVAC Edge AI standalone worker (forked by Next.js server)
+    trim-node-modules.mjs        — Postinstall: trim non-arm64 prebuilds from @qvac/* packages
     generate-stress-model.py     — ONNX stress classifier model generator
-    compile-ezkl-circuit.sh      — EZKL circuit compilation pipeline
+    compile-circuit.py           — EZKL circuit compilation pipeline (6 steps, ezkl CLI v23.0.3)
     deploy-contract.ts           — Hardhat deploy to SKALE Europa testnet
 ```
 
-## 5. Capabilities
+## 6. Capabilities
 
 The platform exposes capabilities through `@eazo/sdk`. Most capabilities (`auth`, `device`) work the same in browsers and inside Eazo Mobile. The `ai` capability is **server-side only** — see its section for details.
 
 
-### 5.1 React Provider
+### 6.1 React Provider
 
 Mount `EazoProvider` once at the root layout. Also mount `WagmiProviderWrapper` (for SKALE blockchain interactions) and `UserSyncEffect` inside the provider — it upserts the authenticated user to the local DB after every login (Web and Mobile both converge through `GET /api/user/profile`):
 
@@ -225,7 +231,7 @@ const user = useEazo((s) => s.auth.user);
 
 **Rule**: inside render, read reactive state via `useEazo(selector)`. Outside render (event handlers, effects, non-React code), use `auth.xxx` / `device.xxx` directly.
 
-### 5.2 `auth`
+### 6.2 `auth`
 
 ```ts
 import { auth } from "@eazo/sdk";
@@ -243,7 +249,7 @@ await auth.sendEmailCode(email)
 await auth.logout()
 ```
 
-#### 5.2.1 Login UI
+#### 6.2.1 Login UI
 
 `@eazo/sdk` owns the login experience. Web runs the SDK-bundled login UI; Eazo Mobile routes to the native host login flow. App code never builds its own login UI.
 
@@ -299,7 +305,7 @@ if (!user) return <CustomLoginForm />;
 
 Low-level login primitives (`auth.loginWithSocial` / `loginWithEmailPassword` / `loginWithEmailCode`) are still exposed — use them only when you need to bypass the bundled UI.
 
-#### 5.2.2 Server-side auth guard
+#### 6.2.2 Server-side auth guard
 
 ```ts
 import { requireAuth } from "@/lib/auth"; // re-exports @eazo/sdk/server
@@ -311,7 +317,7 @@ export function GET(request: NextRequest) {
 }
 ```
 
-#### 5.2.3 Login paths and user persistence
+#### 6.2.3 Login paths and user persistence
 
 The SDK handles two login paths transparently:
 
@@ -322,14 +328,14 @@ The SDK handles two login paths transparently:
 
 Both paths converge at `GET /api/user/profile`, which calls `upsertUser()` in the background (non-blocking). This keeps the `users` table up to date without any extra round-trips.
 
-#### 5.2.4 Authenticated API calls (client)
+#### 6.2.4 Authenticated API calls (client)
 
 ```ts
 import { request } from "@/lib/api/request";
 const res = await request("/api/my-endpoint");  // x-eazo-session auto-injected
 ```
 
-### 5.3 `device`
+### 6.3 `device`
 
 ```ts
 import { device } from "@eazo/sdk";
@@ -340,7 +346,21 @@ device.locale        // 'zh-CN' | ...
 
 For safe-area handling, use the standard CSS — `env(safe-area-inset-top)` / `env(safe-area-inset-bottom)` and `100dvh` for full-height layouts. The Eazo Mobile WebView advertises the correct insets to the browser, so the same CSS works edge-to-edge in both contexts.
 
-### 5.4 `ai` — Server-side AI (AWS Bedrock via bedrock-mantle)
+### 6.3.1 macOS Prerequisite: arm64 OpenSSL for QVAC
+
+The QVAC local LLM worker requires arm64 OpenSSL libraries at `/opt/homebrew/opt/openssl@3/lib/`. This is handled by `DYLD_FALLBACK_LIBRARY_PATH` in `src/lib/qvac/index.ts`, but the libraries must be installed:
+
+```bash
+# Install ARM Homebrew (if not already installed)
+arch -arm64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install arm64 OpenSSL
+arch -arm64 /opt/homebrew/bin/brew install openssl@3
+```
+
+Without this, the native addon crashes with `incompatible architecture` when trying to load the local LLM.
+
+### 6.4 `ai` — Server-side AI (AWS Bedrock via bedrock-mantle)
 
 > **`ai` is strictly server-side. Never import or call it in any client component (`"use client"` files), browser code, or `src/lib/api/` helpers. All AI logic must live exclusively in `src/app/api/` route handlers.**
 
@@ -531,7 +551,7 @@ Always do this instead:
 Client component  →  fetch("/api/my-feature/...")  →  API route handler  →  ai.chat()
 ```
 
-## 6. Memory — User Memory Persistence
+## 7. Memory — User Memory Persistence
 
 `memory.reportAction()` writes a user action event to the Gum memory service — a persistent, semantically searchable log of what users did in your app. Gum stores events server-side and makes them available for AI context retrieval in later sessions.
 
@@ -642,7 +662,7 @@ async function handleRunAnalysis() {
 - For read-only operations like list fetches (low-signal noise)
 - Inside server-side route handlers (`src/app/api/`) — it is a browser-only API
 
-## 7. Notifications — System Push
+## 8. Notifications — System Push
 
 Apps can publish system push notifications to users who have subscribed inside Eazo Mobile. Two surfaces:
 
@@ -684,7 +704,7 @@ The helper signs an ES256K JWT with `EAZO_PRIVATE_KEY` and POSTs to `/api/open/n
 
 **Tap deep-link**: when a user taps a notification published with `appId: <X>`, Eazo Mobile auto-routes to `/app/viewer?id=<X>` so they land back inside your app.
 
-## 8. MCP Server
+## 9. MCP Server
 
 Body Debt ships a built-in **MCP (Model Context Protocol) server** at `/api/mcp` with 5 Body Debt tools registered.
 
@@ -835,7 +855,7 @@ src/app/api/mcp/
   route.ts                     — HTTP glue only (auth + transport + handler)
 ```
 
-## 9. Environment Variables
+## 10. Environment Variables
 
 | Variable | Required | Description |
 |---|---|---|
@@ -857,7 +877,7 @@ src/app/api/mcp/
 
 Copy `.env.example` to `.env` to configure locally.
 
-## 10. UI Components
+## 11. UI Components
 
 shadcn/ui is initialized. Available from `@/components/ui/`:
 
@@ -876,7 +896,7 @@ shadcn/ui is initialized. Available from `@/components/ui/`:
 
 Add more: `bunx shadcn@latest add <component>`. Icons: `lucide-react`. Animation: `framer-motion`.
 
-## 11. Adding New Pages
+## 12. Adding New Pages
 
 Each URL maps to a `page.tsx` under `src/app/`. Extract non-trivial UI into `src/components/<feature>/` and keep `page.tsx` as a thin entry point.
 
@@ -899,9 +919,9 @@ Each URL maps to a `page.tsx` under `src/app/`. Extract non-trivial UI into `src
    ```
 3. **If the page needs a new API route** — add `src/app/api/<resource>/route.ts` and guard it with `requireAuth`.
 
-## 12. Coding Requirements
+## 13. Coding Requirements
 
-### 12.1 Component Encapsulation (mandatory)
+### 13.1 Component Encapsulation (mandatory)
 
 - **Never write all code in one file.** A `page.tsx` must remain a thin entry point — it imports one top-level feature component and renders it. Business logic, UI sections, and sub-components all live in separate files.
 - **One component per file — strictly enforced.** Each file must export exactly one component. No exceptions: even small helper components must have their own file. If you find yourself writing a second component in the same file, stop and split immediately.
@@ -958,7 +978,7 @@ src/components/dashboard/
   activity-item.tsx
 ```
 
-### 12.2 File Size Limits
+### 13.2 File Size Limits
 
 | File type | Soft limit | Hard limit |
 |---|---|---|
@@ -969,20 +989,20 @@ src/components/dashboard/
 
 When a file approaches its hard limit, split it before continuing.
 
-### 12.3 Naming Conventions
+### 13.3 Naming Conventions
 
 - Component files: `kebab-case.tsx` (e.g. `user-profile-card.tsx`)
 - Component exports: `PascalCase` named export (e.g. `export function UserProfileCard`)
 - Each feature folder exposes a barrel `index.tsx` that re-exports the top-level component.
 - API helpers: `camelCase` functions in `src/lib/api/<resource>.ts`.
 
-### 12.4 State and Data
+### 13.4 State and Data
 
 - Do not fetch data directly inside a `page.tsx`. Delegate to a client component or a server component that lives in `src/components/`.
 - Read auth state with `useEazo((s) => s.auth.user)` from `@eazo/sdk/react` — do not re-fetch profile inside individual components.
 - Keep Zustand stores in `src/stores/`. Do not create ad-hoc `useState` sprawl across multiple files for shared state.
 
-### 12.5 API Requests (mandatory)
+### 13.5 API Requests (mandatory)
 
 - **All API call logic must live in `src/lib/api/`.** Never call `fetch` or `request()` directly inside a page or component file.
 - Group by resource: `src/lib/api/features.ts`, `src/lib/api/analysis.ts`, etc. Each file exports typed async functions for that resource's operations.
@@ -1000,12 +1020,12 @@ const res = await request("/api/user/profile");
 - API functions must be fully typed: explicit parameter types and return types (no implicit `any`).
 - Error handling belongs in the API layer, not scattered across components.
 
-### 12.6 Imports
+### 13.6 Imports
 
 - Use `@/` path aliases everywhere — no relative `../../` chains.
 - Import UI primitives from `@/components/ui/`, not directly from shadcn source paths.
 
-## 13. Project Rules
+## 14. Project Rules
 
 - Prefer Bun for all install and script commands.
 - Keep the codebase lean and framework-native.
@@ -1016,6 +1036,6 @@ const res = await request("/api/user/profile");
 - **Always maintain a local `users` table.** Every app must persist authenticated user info in its own database. The `users` schema and `upsertUser` query are the reference implementation — do not remove them. `GET /api/user/profile` upserts on every call (Web path); `UserSyncEffect` triggers the same upsert after a Mobile bridge login. Join against the local `users` table rather than relying solely on the SDK session.
 - Before shipping, run `bun run lint` and `bun run build`.
 
-## 14. Goal
+## 15. Goal
 
 Start fast, stay flexible, and only add complexity when there is a concrete product requirement.
