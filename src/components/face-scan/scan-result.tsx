@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { ShieldCheck, Loader2, CloudDownload, ExternalLink, WifiOff, Zap } from "lucide-react";
+import { ShieldCheck, Loader2, CloudDownload, ExternalLink, WifiOff, Zap, Container, Cpu } from "lucide-react";
 import { getQvacAdvice } from "@/lib/api";
 import { useServiceWorker } from "@/lib/hooks/useServiceWorker";
 import type { QvacProgress } from "@/lib/api";
@@ -315,16 +315,28 @@ export function ScanResult({ txHash }: { txHash?: string }) {
 
       {/* ── Generating indicator ──────────────────────────────────── */}
       {downloadProgress && downloadProgress.status === "generating" && (
-        <div className="rounded-2xl p-4 flex items-center gap-3"
+        <div className="rounded-2xl p-4"
           style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}>
-          <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#EA580C" }} />
-          <div>
-            <p className="text-[9px] font-mono uppercase tracking-widest font-semibold" style={{ color: "#EA580C" }}>
-              Generating Recovery Advice
-            </p>
-            <p className="text-[10px] mt-0.5" style={{ color: "#524F4C" }}>
-              Running local LLM inference
-            </p>
+          <div className="flex items-center gap-3">
+            <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#EA580C" }} />
+            <div>
+              <p className="text-[9px] font-mono uppercase tracking-widest font-semibold" style={{ color: "#EA580C" }}>
+                Generating Recovery Advice
+              </p>
+              <p className="text-[10px] mt-0.5" style={{ color: "#524F4C" }}>
+                Running local LLM inference
+              </p>
+            </div>
+          </div>
+          {/* Fork isolation badge */}
+          <div className="mt-2.5 flex items-center gap-2 rounded-xl px-3 py-2"
+            style={{ backgroundColor: "rgba(234,88,12,0.08)", border: "1px solid rgba(234,88,12,0.15)" }}>
+            <Container className="w-3 h-3" style={{ color: "#EA580C" }} />
+            <span className="text-[8px] font-mono leading-relaxed" style={{ color: "#A8A29E" }}>
+              Running in isolated process sandbox{' '}
+              <span className="text-[7px]" style={{ color: "#524F4C" }}>—</span>
+              <span className="text-[7px]" style={{ color: "#EA580C" }}> child_process.fork()</span>
+            </span>
           </div>
         </div>
       )}
@@ -347,6 +359,23 @@ export function ScanResult({ txHash }: { txHash?: string }) {
             </div>
             <p className="text-xs leading-relaxed" style={{ color: "#A8A29E" }}>{advice}</p>
           </div>
+
+          {/* Architecture detail strip — shown with advice */}
+          {adviceSource === "qvac-local" && (
+            <div className="rounded-xl px-3 py-2 flex items-center gap-2.5"
+              style={{ backgroundColor: "rgba(234,88,12,0.06)", border: "1px solid rgba(234,88,12,0.12)" }}>
+              <Cpu className="w-3 h-3 flex-shrink-0" style={{ color: "#EA580C" }} />
+              <div>
+                <p className="text-[8px] font-mono" style={{ color: "#A8A29E" }}>
+                  QVAC Edge AI · Llama 3.2 1B Q4 ·{' '}
+                  <span className="text-[7px]" style={{ color: "#EA580C" }}>isolated fork sandbox</span>
+                </p>
+                <p className="text-[7px] font-mono mt-0.5" style={{ color: "#524F4C" }}>
+                  child_process.fork() · native lib resolution via DYLD_FALLBACK_LIBRARY_PATH
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Edge AI vs Cloud latency comparison */}
           {qvacDurationMs && (
