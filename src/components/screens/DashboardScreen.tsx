@@ -7,6 +7,9 @@ import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { auth, memory } from "@eazo/sdk";
 import { useEazo } from "@eazo/sdk/react";
 import { DebtOrb } from "./DebtOrb";
+import { DebtGauge } from "./DebtGauge";
+import { RecoveryTimeline } from "./RecoveryTimeline";
+import { DonutChart, BarChartView } from "./StressorBreakdownChart";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
 import { SystemPanels } from "@/components/SystemPanels";
 import { SystemClearanceNotifier } from "@/components/SystemClearanceNotifier";
@@ -45,13 +48,6 @@ function getVerdictMeta(score: number): { color: string } {
   if (score >= 41) return { color: "#EA580C" };
   if (score >= 21) return { color: "#F59E0B" };
   return { color: "#4ADE80" };
-}
-
-function formatArcTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-  } catch { return "—"; }
 }
 
 const CONFIDENCE_CONFIG: Record<string, { dot: string; label: string; color: string }> = {
@@ -107,45 +103,7 @@ function SystemIconRow({ systems, onTap }: {
   );
 }
 
-// ─── Stressor breakdown (collapsible) ─────────────────────────────────────────
-
-function StressorBreakdown({ items }: { items: DebtAnalysis["stressorBreakdown"] }) {
-  const [open, setOpen] = useState(false);
-  if (!items.length) return null;
-  return (
-    <div className="relative z-10 mb-6">
-      <button onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 w-full text-left mb-2">
-        <span className="text-[9px] uppercase tracking-widest font-semibold" style={{ color: "#524F4C" }}>
-          What&apos;s driving this
-        </span>
-        <span className="text-[9px] ml-auto" style={{ color: "#524F4C" }}>{open ? "▲" : "▼"}</span>
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }}
-            className="overflow-hidden space-y-2">
-            {items.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}>
-                <span className="text-base">{item.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <span className="text-xs font-semibold block" style={{ color: "#F5F5F4" }}>{item.stressor}</span>
-                  <span className="text-[10px] block mt-0.5 leading-relaxed" style={{ color: "#A8A29E" }}>{item.insight}</span>
-                </div>
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded flex-shrink-0"
-                  style={{ color: "#EA580C", backgroundColor: "rgba(234,88,12,0.1)" }}>
-                  +{item.points}
-                </span>
-              </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+// ─── Stressor breakdown (collapsible) — replaced by DonutChart/BarChartView
 
 // ─── Pattern layer (streak) ───────────────────────────────────────────────────
 
@@ -345,8 +303,13 @@ export function DashboardScreen() {
 
           <ConfidenceSignal tier={(data as DebtAnalysis & { confidenceTier?: ConfidenceTier }).confidenceTier ?? confidenceTier} />
 
+          {/* Debt gauge */}
+          <div className="mt-2">
+            <DebtGauge score={data.debtScore} />
+          </div>
+
           {/* Personality tagline */}
-          <p className="mt-3 text-[10px] italic px-6" style={{ color: "#524F4C" }}>
+          <p className="mt-1 text-[10px] italic px-6" style={{ color: "#524F4C" }}>
             {personalityTagline}
           </p>
 
@@ -360,24 +323,9 @@ export function DashboardScreen() {
         <SystemIconRow systems={data.systemScores} onTap={scrollToSystems} />
       </div>
 
-      {/* Recovery arc bar */}
-      <div className="relative z-10 mb-6 rounded-xl p-4"
-        style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}>
-        <div className="flex justify-between text-[9px] uppercase tracking-widest font-semibold mb-3">
-          <span style={{ color: "#DC2626" }}>🔴 Acute</span>
-          <span style={{ color: "#F59E0B" }}>🟡 Partial</span>
-          <span style={{ color: "#4ADE80" }}>🟢 Clear</span>
-        </div>
-        <div className="relative h-2 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
-          <div className="absolute inset-y-0 left-0 w-1/3" style={{ background: "linear-gradient(90deg, #DC2626, #EA580C)" }} />
-          <div className="absolute inset-y-0" style={{ left: "33%", width: "34%", background: "linear-gradient(90deg, #EA580C, #F59E0B)" }} />
-          <div className="absolute inset-y-0" style={{ left: "67%", right: 0, background: "linear-gradient(90deg, #F59E0B, #4ADE80)" }} />
-        </div>
-        <div className="flex justify-between text-[9px] font-mono mt-2" style={{ color: "#524F4C" }}>
-          <span>{formatArcTime(data.recoveryArc.dangerEnds)}</span>
-          <span>{formatArcTime(data.recoveryArc.partialEnds)}</span>
-          <span>{formatArcTime(data.recoveryArc.clearedAt)}</span>
-        </div>
+      {/* Recovery arc timeline */}
+      <div className="relative z-10 mb-6">
+        <RecoveryTimeline arc={data.recoveryArc} />
       </div>
 
       {/* ── Layer 2: System panels ───────────────────────────────────── */}
@@ -388,8 +336,11 @@ export function DashboardScreen() {
         </div>
       )}
 
-      {/* ── Layer 3: Stressor breakdown (collapsed) ──────────────────── */}
-      <StressorBreakdown items={data.stressorBreakdown} />
+      {/* ── Layer 3: Stressor breakdown chart ──────────────────────── */}
+      <div className="relative z-10 mb-6 space-y-4">
+        <DonutChart items={data.stressorBreakdown} />
+        <BarChartView items={data.stressorBreakdown} />
+      </div>
 
       {/* ── Layer 4: Patterns ────────────────────────────────────────── */}
       <PatternLayer streakDays={streakDays} />

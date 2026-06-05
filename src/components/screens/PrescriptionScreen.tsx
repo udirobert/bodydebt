@@ -9,6 +9,9 @@ import { useEazo } from "@eazo/sdk/react";
 import { ChevronLeft } from "lucide-react";
 import { getOrbCopy } from "@/lib/orbPersonality";
 import { MiniOrb } from "@/components/MiniOrb";
+import { DebtGauge } from "./DebtGauge";
+import { RecoveryTimeline } from "./RecoveryTimeline";
+import { DonutChart, BarChartView } from "./StressorBreakdownChart";
 
 // ─── Config ────────────────────────────────────────────────────────────────────
 
@@ -63,6 +66,7 @@ export function PrescriptionScreen() {
   const personalityCopy = getOrbCopy(orbPersonality);
   const rx = analysis?.prescription ?? FALLBACK_PRESCRIPTION;
   const score = analysis?.debtScore ?? 0;
+  const breakdown = analysis?.stressorBreakdown ?? [];
 
   const [remindersSet, setRemindersSet] = useState(false);
   const [reminderPending, setReminderPending] = useState(false);
@@ -116,7 +120,7 @@ export function PrescriptionScreen() {
       <motion.div
         initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="relative z-10 mt-4 mb-6"
+        className="relative z-10 mt-4 mb-2"
       >
         <h1 className="font-black uppercase tracking-widest"
           style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.1rem,5vw,1.4rem)", color: "#F5F5F4", letterSpacing: "0.08em" }}>
@@ -126,6 +130,24 @@ export function PrescriptionScreen() {
           Based on your current body state. Specific. Actionable.
         </p>
       </motion.div>
+
+      {/* Score gauge + Recovery timeline */}
+      <div className="relative z-10 mb-4">
+        <DebtGauge score={score} />
+      </div>
+      {analysis?.recoveryArc && (
+        <div className="relative z-10 mb-4">
+          <RecoveryTimeline arc={analysis.recoveryArc} />
+        </div>
+      )}
+
+      {/* Stressor breakdown charts */}
+      {breakdown.length > 0 && (
+        <div className="relative z-10 mb-4 space-y-4">
+          <DonutChart items={breakdown} />
+          <BarChartView items={breakdown} />
+        </div>
+      )}
 
       {/* Directive blocks — always fully expanded */}
       <div className="relative z-10 flex flex-col gap-3">

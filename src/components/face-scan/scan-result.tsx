@@ -7,55 +7,13 @@ import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { ShieldCheck, Loader2, CloudDownload, ExternalLink, WifiOff, Zap, Container, Cpu } from "lucide-react";
 import { getQvacAdvice } from "@/lib/api";
 import { useServiceWorker } from "@/lib/hooks/useServiceWorker";
+import { ProofCircuitVisual } from "./ProofCircuitVisual";
 import type { QvacProgress } from "@/lib/api";
 
-// ─── Proof lifecycle step visual ─────────────────────────────────────────────
-
-interface LifecycleStep {
+interface CircuitStep {
   label: string;
   detail: string;
   done: boolean;
-  icon: string;
-  color: string;
-}
-
-function LifecycleTimeline({ steps }: { steps: LifecycleStep[] }) {
-  const doneCount = steps.filter((s) => s.done).length;
-  return (
-    <div className="rounded-2xl p-4"
-      style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}>
-      <span className="text-[9px] font-mono uppercase tracking-widest font-semibold block mb-3" style={{ color: "#524F4C" }}>
-        Proof Lifecycle
-      </span>
-      <div className="space-y-3">
-        {steps.map((step, i) => (
-          <div key={step.label} className="flex items-center gap-3">
-            {/* Step indicator */}
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
-                style={{
-                  backgroundColor: step.done ? `${step.color}22` : "rgba(168,162,158,0.08)",
-                  border: step.done ? `1.5px solid ${step.color}` : "1.5px solid rgba(168,162,158,0.15)",
-                  color: step.done ? step.color : "#524F4C",
-                }}>
-                {step.done ? (i < doneCount - 1 ? "✓" : "●") : i + 1}
-              </div>
-              {i < steps.length - 1 && (
-                <div className="w-px h-3" style={{ backgroundColor: step.done ? step.color : "rgba(168,162,158,0.1)" }} />
-              )}
-            </div>
-            {/* Step content */}
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold" style={{ color: step.done ? "#F5F5F4" : "#524F4C" }}>
-                {step.icon} {step.label}
-              </p>
-              <p className="text-[9px] font-mono" style={{ color: step.done ? "#A8A29E" : "#3a3835" }}>{step.detail}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -150,42 +108,34 @@ export function ScanResult({ txHash, zkOnChainVerified }: { txHash?: string; zkO
   const isSkaleVerified = !!zkProof?.txHash && zkProof?.verified;
   const isHalo2Verified = zkOnChainVerified === true;
 
-  const lifecycleSteps: LifecycleStep[] = [
+  const lifecycleSteps: CircuitStep[] = [
     {
-      label: "Extract facial features",
+      label: "Extract features",
       detail: "7 stress markers from 468 landmarks",
       done: true,
-      icon: "📐",
-      color: "#10B981",
     },
     {
       label: "Generate ZK proof",
       detail: proofDuration !== "—" ? `${proofDuration} on-device` : "Running...",
       done: hasProof,
-      icon: "🔐",
-      color: "#F59E0B",
     },
     {
-      label: "Cryptographic verification",
+      label: "Crypto verify",
       detail: isCryptoVerified
-        ? `Verified in ${verifyDuration} — proof is valid ✓`
+        ? `Verified in ${verifyDuration}`
         : isCryptoFailed
-          ? "Verification failed — proof invalid ✗"
+          ? "Proof invalid ✗"
           : hasProof ? "Verifying..." : "Waiting for proof...",
       done: isCryptoVerified,
-      icon: isCryptoVerified ? "✅" : "🔍",
-      color: isCryptoVerified ? "#4ADE80" : isCryptoFailed ? "#DC2626" : "#F59E0B",
     },
     {
-      label: "Verify on SKALE (Halo2)",
+      label: "SKALE verify",
       detail: isHalo2Verified
-        ? `Cryptographic proof verified on-chain ✓`
+        ? `Verified on-chain ✓`
         : isSkaleVerified
-          ? `Credential logged on Europa testnet`
-          : txHash ? "Pending confirmation..." : "No wallet connected",
+          ? "Credential logged"
+          : txHash ? "Pending..." : "No wallet",
       done: isHalo2Verified || isSkaleVerified,
-      icon: "⛓️",
-      color: isHalo2Verified ? "#4ADE80" : isSkaleVerified ? "#10B981" : "#EA580C",
     },
   ];
 
@@ -200,8 +150,8 @@ export function ScanResult({ txHash, zkOnChainVerified }: { txHash?: string; zkO
       exit={{ opacity: 0 }}
       className="relative z-10 flex-1 flex flex-col gap-4 pb-10"
     >
-      {/* ── Proof Lifecycle Timeline ──────────────────────────────── */}
-      <LifecycleTimeline steps={lifecycleSteps} />
+      {/* ── Proof Circuit Visual ──────────────────────────────────── */}
+      <ProofCircuitVisual steps={lifecycleSteps} />
 
       {/* ── Cryptographic verification status card ──────────────── */}
       <div className="flex items-center gap-3 rounded-2xl p-4"
