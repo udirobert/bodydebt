@@ -22,6 +22,7 @@ export function FaceScanScreen() {
   const {
     phase, setPhase, scanMessageIdx, cameraError, analysisError,
     txHash, isConfirmed,
+    zkOnChainVerified,
     canvasRef, streamRef,
     startCamera, captureAndProve, handleSkip, retry,
   } = useFaceScanPipeline();
@@ -148,7 +149,9 @@ export function FaceScanScreen() {
           </motion.div>
         )}
 
-        {(phase === "result" || isConfirmed) && <ScanResult txHash={txHash} />}
+        {(phase === "result" || isConfirmed) && (
+          <ScanResult txHash={txHash} zkOnChainVerified={zkOnChainVerified} />
+        )}
 
         {phase === "error" && (
           <motion.div key="error" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}

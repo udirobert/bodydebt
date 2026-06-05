@@ -15,6 +15,8 @@ export interface QvacInferResponse {
   advice: string;
   source: string;
   model?: string;
+  edgeDurationMs?: number;
+  cloudDurationMs?: number;
 }
 
 export interface QvacProgress {
@@ -95,6 +97,8 @@ export async function getQvacAdvice(
                   advice: data.advice,
                   source: data.source,
                   model: data.model,
+                  edgeDurationMs: data.edgeDurationMs,
+                  cloudDurationMs: data.cloudDurationMs,
                 });
                 reader.cancel();
                 return;

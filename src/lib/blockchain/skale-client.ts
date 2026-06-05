@@ -13,7 +13,48 @@ export function createWalletClientWithSigner(signer: { request: (args: { method:
   });
 }
 
-// ABI for the HealthCredentialVerifier contract
+// ── Halo2VerifierReusable (on-chain ZK proof verification) ─────────────
+// Deployed to SKALE Europa testnet at the address below.
+// VK registered via registerVka() in tx 0x8bc60e0e20e776a0baff530a4ff84f6bc861eeb0362adba126a0dfceda889d8e
+
+export const HALO2_VERIFIER_ADDRESS = '0x01c8C37961eA7548600323A3c4F636c75b7B31d0' as const;
+
+export const halo2VerifierAbi = [
+  {
+    inputs: [{ internalType: 'bytes32[]', name: 'vka', type: 'bytes32[]' }],
+    name: 'registerVka',
+    outputs: [{ internalType: 'bytes32', name: 'vka_digest', type: 'bytes32' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'bytes', name: 'proof', type: 'bytes' },
+      { internalType: 'uint256[]', name: 'instances', type: 'uint256[]' },
+      { internalType: 'bytes32[]', name: 'vka', type: 'bytes32[]' },
+    ],
+    name: 'verifyProof',
+    outputs: [
+      { internalType: 'bool', name: 'success', type: 'bool' },
+      { internalType: 'bytes32', name: 'vka_digest', type: 'bytes32' },
+      { internalType: 'int256[]', name: 'rescaled_instances', type: 'int256[]' },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+] as const;
+
+/**
+ * Fetch VK chunks from the public directory for on-chain verification.
+ * The chunks are served as a static JSON file from /ezkl/vk-chunks.json.
+ */
+export async function fetchVkChunks(): Promise<string[]> {
+  const res = await fetch('/ezkl/vk-chunks.json');
+  return res.json() as Promise<string[]>;
+}
+
+// ── HealthCredentialVerifier (event emission) ─────────────────────────
+
 export const healthCredentialVerifierABI = [
   {
     anonymous: false,

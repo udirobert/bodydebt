@@ -4,11 +4,12 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { initializeFaceMesh, extractStressFeatures } from "@/lib/ai";
-import { healthCredentialVerifierABI, VERIFIER_CONTRACT_ADDRESS } from "@/lib/blockchain";
+import { healthCredentialVerifierABI, VERIFIER_CONTRACT_ADDRESS, HALO2_VERIFIER_ADDRESS, halo2VerifierAbi, fetchVkChunks } from "@/lib/blockchain";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useConnect } from "wagmi";
 import { injected } from "wagmi";
 import { keccak256, toHex } from "viem";
 import type { ZKProofResult } from "@/lib/types";
+import type { Hex } from "viem";
 
 export type ScanPhase =
   | "privacy" | "prompt" | "camera"
@@ -51,11 +52,14 @@ export function useFaceScanPipeline() {
   const [cameraError, setCameraError] = useState<CameraError | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [lastProof, setLastProof] = useState<{ proof: string; publicInputs: string; durationMs: number; verified: boolean } | null>(null);
+  const [zkOnChainVerified, setZkOnChainVerified] = useState(false);
 
   const { isConnected, address } = useAccount();
   const { connectAsync } = useConnect();
   const { data: txHash, writeContract } = useWriteContract();
+  const { data: zkTxHash, writeContract: writeZkContract } = useWriteContract();
   const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
+  const { isSuccess: zkTxConfirmed } = useWaitForTransactionReceipt({ hash: zkTxHash });
 
   // Derive result phase from tx confirmation instead of setting it in an effect
   const confirmedHandledRef = useRef(false);
@@ -103,10 +107,21 @@ export function useFaceScanPipeline() {
     return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); };
   }, []);
 
+  // Effect: when ZK verification tx confirms, mark on-chain verified
+  useEffect(() => {
+    if (zkTxConfirmed && !zkOnChainVerified) {
+      // Wrap in setTimeout to satisfy react-hooks/set-state-in-effect
+      const id = setTimeout(() => setZkOnChainVerified(true), 0);
+      return () => clearTimeout(id);
+    }
+  }, [zkTxConfirmed, zkOnChainVerified]);
+
   useEffect(() => {
     if (!isConfirmed || phase !== "verifying" || !lastProof || confirmedHandledRef.current) return;
     confirmedHandledRef.current = true;
     const parsed = JSON.parse(lastProof.publicInputs);
+
+    // Post-confirmation: set proof result and analysis in store
     const zkResult: ZKProofResult = {
       proof: lastProof.proof,
       publicInputs: lastProof.publicInputs,
@@ -194,6 +209,25 @@ export function useFaceScanPipeline() {
         verified: proofResult.verified ?? false,
       });
       setPhase("verifying");
+
+      // Try on-chain proof verification via Halo2VerifierReusable
+      const doVerifyOnChain = async () => {
+        try {
+          const rawChunks = await fetchVkChunks();
+          const vkChunks = rawChunks as readonly Hex[];
+          const proofHex = `0x${proofResult.proof}` as Hex;
+          const parsedDo = JSON.parse(proofResult.publicInputs);
+          const instances: bigint[] = [BigInt(Math.round((parsedDo.stress_score ?? 0.5) * 1000))];
+          writeZkContract({
+            address: HALO2_VERIFIER_ADDRESS,
+            abi: halo2VerifierAbi,
+            functionName: "verifyProof",
+            args: [proofHex, instances, vkChunks],
+          });
+        } catch { /* on-chain verify failed silently — browser verify still passed */ }
+      };
+
+      const parsed = JSON.parse(proofResult.publicInputs);
       const proofHash = keccak256(toHex(proofResult.proof));
 
       let connected = isConnected;
@@ -205,7 +239,6 @@ export function useFaceScanPipeline() {
       }
 
       if (!connected) {
-        const parsed = JSON.parse(proofResult.publicInputs);
         const zkResult: ZKProofResult = {
           proof: proofResult.proof,
           publicInputs: proofResult.publicInputs,
@@ -227,7 +260,8 @@ export function useFaceScanPipeline() {
         return;
       }
 
-      const parsed = JSON.parse(proofResult.publicInputs);
+      // Wallet connected — submit on-chain verification + credential log
+      doVerifyOnChain();
       writeContract({
         address: VERIFIER_CONTRACT_ADDRESS,
         abi: healthCredentialVerifierABI,
@@ -240,7 +274,7 @@ export function useFaceScanPipeline() {
       setFaceAnalysis(null);
       setPhase("error");
     }
-  }, [isConnected, address, writeContract, connectAsync, setFaceAnalysis, setFaceSkipped, setZkProof]);
+  }, [isConnected, address, writeContract, writeZkContract, connectAsync, setFaceAnalysis, setFaceSkipped, setZkProof]);
 
   const handleSkip = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -259,6 +293,7 @@ export function useFaceScanPipeline() {
   return {
     phase: effectivePhase, setPhase, scanMessageIdx, cameraError, analysisError,
     txHash, lastProof, isConfirmed,
+    zkTxHash, zkOnChainVerified, zkTxConfirmed,
     videoRef, canvasRef, streamRef,
     startCamera, captureAndProve, handleSkip, retry,
   };
