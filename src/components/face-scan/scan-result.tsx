@@ -17,6 +17,7 @@ export function ScanResult({ txHash }: { txHash?: string }) {
 
   useEffect(() => {
     if (advice) return;
+    const abortController = new AbortController();
     const stressScore = zkProof?.stressScore != null
       ? Math.round(zkProof.stressScore * 100)
       : 50;
@@ -31,16 +32,25 @@ export function ScanResult({ txHash }: { txHash?: string }) {
       },
       stressors: selectedStressors.map((s) => s.type),
     }, (progress) => {
-      setDownloadProgress(progress);
-    }).then((result) => {
+      // Guard against setting state after unmount
+      if (!abortController.signal.aborted) {
+        setDownloadProgress(progress);
+      }
+    }, abortController.signal).then((result) => {
+      if (abortController.signal.aborted) return;
       setAdvice(result.advice);
       setAdviceSource(result.source);
       setDownloadProgress(null);
     }).catch(() => {
+      if (abortController.signal.aborted) return;
       setAdvice("Focus on hydration and rest. Your body needs recovery time.");
       setAdviceSource("fallback");
       setDownloadProgress(null);
     });
+
+    return () => {
+      abortController.abort();
+    };
   }, [zkProof, selectedStressors, advice]);
 
   return (

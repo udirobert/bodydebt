@@ -98,7 +98,7 @@ export async function runHealthCoach(
       if (text) console.warn("[QVAC worker stderr]", text);
     });
 
-    child.on("close", (_code) => {
+    child.on("close", () => {
       resolve(result);
     });
 

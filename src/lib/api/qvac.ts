@@ -32,12 +32,14 @@ export interface QvacProgress {
  */
 export async function getQvacAdvice(
   input: QvacInferRequest,
-  onProgress?: (progress: QvacProgress) => void
+  onProgress?: (progress: QvacProgress) => void,
+  signal?: AbortSignal
 ): Promise<QvacInferResponse> {
   const res = await fetch("/api/qvac/infer", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
+    signal,
   });
 
   if (!res.ok) {
@@ -51,11 +53,27 @@ export async function getQvacAdvice(
 
   const decoder = new TextDecoder();
   let buffer = "";
+  let resolved = false;
 
   return new Promise((resolve) => {
+    // Abort signal cleanup — cancel the reader if signalled
+    const onAbort = () => {
+      if (!resolved) {
+        resolved = true;
+        reader.cancel();
+        resolve({ advice: "Focus on rest and hydration.", source: "fallback" });
+      }
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+    // Handle race: if signal was already aborted before our listener was added
+    if (signal?.aborted) onAbort();
+
     const read = () => {
+      if (resolved) return;
       reader.read().then(({ done, value }) => {
+        if (resolved) return;
         if (done) {
+          resolved = true;
           resolve({ advice: "Focus on rest and hydration.", source: "fallback" });
           return;
         }
@@ -65,14 +83,14 @@ export async function getQvacAdvice(
         buffer = lines.pop() ?? "";
 
         for (const line of lines) {
-          if (line.startsWith("event: progress")) {
-            // next line has data
-          } else if (line.startsWith("data: ")) {
+          if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
               if (data.status) {
                 onProgress?.(data as QvacProgress);
-              } else if (data.advice) {
+              } else if (data.advice && !resolved) {
+                resolved = true;
+                signal?.removeEventListener("abort", onAbort);
                 resolve({
                   advice: data.advice,
                   source: data.source,
@@ -88,7 +106,15 @@ export async function getQvacAdvice(
         }
 
         read();
-      }).catch(() => {
+      }).catch((err) => {
+        if (resolved) return;
+        // AbortError is expected on intentional cancellation, not a failure
+        if (err?.name === "AbortError") {
+          resolved = true;
+          resolve({ advice: "Focus on rest and hydration.", source: "fallback" });
+          return;
+        }
+        resolved = true;
         resolve({ advice: "Focus on rest and hydration.", source: "fallback" });
       });
     };
