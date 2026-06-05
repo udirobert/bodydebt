@@ -151,6 +151,7 @@ Face Scan → ZK Proof → QVAC API (/api/qvac/infer) → SSE stream → ScanRes
                     ▼                 ▼
              Local LLM (fork)    Cloud AI (fallback)
              llama-3.2-1b        deepseek.v3.1
+             + TurboQuant 🧠
 ```
 
 1. **Worker process** (`scripts/qvac-worker.mjs`): A standalone Node.js script that imports `@qvac/sdk` directly. It runs in its own process via `child_process.fork()` to avoid bundling the SDK's native deps (bare, llamacpp) with the Next.js server.
@@ -158,6 +159,34 @@ Face Scan → ZK Proof → QVAC API (/api/qvac/infer) → SSE stream → ScanRes
 3. **API route** (`src/app/api/qvac/infer/route.ts`): SSE endpoint that calls `runHealthCoach()` with a 2-minute timeout. If the local LLM fails (worker crash, model not found, timeout), it falls back to Eazo cloud AI (`deepseek.v3.1`) via `@eazo/sdk`'s `ai.chat()`.
 4. **Client API** (`src/lib/api/qvac.ts`): SSE stream consumer that reads the `ReadableStream` body, parses newline-delimited JSON, fires `onProgress` callbacks for download progress, and resolves with the final advice. Accepts an `AbortSignal` for cleanup on unmount.
 5. **UI** (`src/components/face-scan/scan-result.tsx`): Shows a download progress bar (`CloudDownload` + animated progress) during model download, a spinner (`Loader2` + "Generating Recovery Advice") during inference, and the advice text with a `QVAC LOCAL` badge when complete.
+
+### TurboQuant KV-Cache Quantization 🧠
+
+Starting with QVAC SDK v0.12.0, the local LLM worker enables **TurboQuant** — a KV-cache quantization algorithm (Zandieh et al., ICLR 2026, Google Research) that compresses the model's running context memory by up to **5×** with near-zero accuracy loss:
+
+```ts
+// scripts/qvac-worker.mjs
+const modelId = await loadModel({
+  modelSrc: LLAMA_3_2_1B_INST_Q4_0,
+  modelType: "llamacpp-completion",
+  modelConfig: {
+    "cache-type-k": "tbq4_0",  // TurboQuant for Key cache
+    "cache-type-v": "pq4_0",  // PolarQuant for Value cache
+  },
+});
+```
+
+**How it works**: TurboQuant uses a two-stage pipeline — **PolarQuant** converts KV vectors to polar coordinates for clean 3–4 bit clustering, then **QJL** (Quantized Johnson-Lindenstrauss) corrects residual errors with 1 additional bit per component. No calibration data or model retraining needed.
+
+**Current platform coverage**: Vulkan backend (NVIDIA, AMD GPUs on Linux/Windows). On macOS/Apple Silicon, the config is a safe no-op until Metal support ships in a future release.
+
+**Benchmarks** (Qwen3.5-4B Q8, tbq4_0/pq4_0 config):
+| Cache config | BPW | RULER | LongBench Avg |
+|---|---|---|---|
+| f16/f16 (baseline) | 16.00 | 96.2% | 37.52 |
+| tbq4_0/pq4_0 | 3.75 | 93.7% | 34.97 |
+
+Full benchmarks: [TurboQuant benchmark sheet](https://github.com/tetherto/qvac-fabric-llm.cpp/blob/master/docs/turboquant-benchmarks.md)
 
 ### Client-side Consumption Pattern
 
@@ -188,7 +217,7 @@ The first inference downloads a 752MB GGUF model (`Llama-3.2-1B-Instruct-Q4_0`) 
 
 | Source | Latency | Requirements |
 |---|---|---|
-| `qvac-local` | ~15s (first run may download 752MB) | arm64 OpenSSL at `/opt/homebrew/opt/openssl@3/lib/` |
+| `qvac-local` | ~15s (first run may download 752MB) | arm64 OpenSSL at `/opt/homebrew/opt/openssl@3/lib/`; QVAC SDK ≥0.12.0 |
 | `eazo-cloud` | ~3s | `EAZO_PRIVATE_KEY` env var set |
 | `fallback` | instant | None (static text) |
 

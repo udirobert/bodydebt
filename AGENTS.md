@@ -73,6 +73,7 @@ cp ezkl ~/.local/bin/
 - **NEVER** send raw pixels or the full 468-point MediaPipe landmark array to the ZK circuit. Always pre-process to a reduced feature vector (<20 floats) to prevent browser WASM Out-Of-Memory crashes.
 - **ALWAYS** use quantized (8-bit or 4-bit) ONNX models for ZKML to ensure proof generation completes in seconds, not minutes.
 - Large ZK artifacts (`.key` files) are gitignored and must be regenerated via `python scripts/compile-circuit.py`.
+- **TurboQuant** is enabled on the QVAC local LLM (`scripts/qvac-worker.mjs`) via `modelConfig: { "cache-type-k": "tbq4_0", "cache-type-v": "pq4_0" }`. This compresses the running KV cache by up to 5× with near-zero accuracy loss. Requires `@qvac/sdk@^0.12.2`. On macOS/Apple Silicon, this is a safe no-op until Metal support ships.
 
 ## 4. Commands
 

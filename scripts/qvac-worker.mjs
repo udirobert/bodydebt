@@ -32,6 +32,13 @@ async function main() {
   const modelId = await loadModel({
     modelSrc: LLAMA_3_2_1B_INST_Q4_0,
     modelType: "llamacpp-completion",
+    modelConfig: {
+      // TurboQuant: KV-cache quantization — up to 5x less memory
+      // for the running context with near-zero accuracy loss.
+      // https://qvac.tether.io/blog/turboquant-in-qvac-sdk-0-12-0-kv-cache-quantization-for-production-local-ai/
+      "cache-type-k": "tbq4_0",
+      "cache-type-v": "pq4_0",
+    },
     onProgress: (p) => {
       send("progress", {
         status: p.status ?? "downloading",
