@@ -50,7 +50,7 @@ export function useFaceScanPipeline() {
   const [scanMessageIdx, setScanMessageIdx] = useState(0);
   const [cameraError, setCameraError] = useState<CameraError | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [lastProof, setLastProof] = useState<{ proof: string; publicInputs: string; durationMs: number } | null>(null);
+  const [lastProof, setLastProof] = useState<{ proof: string; publicInputs: string; durationMs: number; verified: boolean } | null>(null);
 
   const { isConnected, address } = useAccount();
   const { connectAsync } = useConnect();
@@ -114,7 +114,7 @@ export function useFaceScanPipeline() {
       isHealthy: parsed.is_healthy ?? true,
       durationMs: lastProof.durationMs,
       txHash: txHash as string,
-      verified: true,
+      verified: lastProof.verified,
     };
     setZkProof(zkResult);
     setFaceAnalysis({
@@ -175,7 +175,10 @@ export function useFaceScanPipeline() {
       if (!features) throw new Error("Failed to extract facial features");
 
       setPhase("proving");
-      const proofResult = await new Promise<{ success: boolean; proof: string; publicInputs: string }>((resolve, reject) => {
+      const proofResult = await new Promise<{
+        success: boolean; proof: string; publicInputs: string;
+        verified?: boolean; verifyDurationMs?: number;
+      }>((resolve, reject) => {
         if (!workerRef.current) return reject(new Error("Worker not initialized"));
         workerRef.current.onmessage = (event: MessageEvent) => {
           if (event.data.success) resolve(event.data);
@@ -184,7 +187,12 @@ export function useFaceScanPipeline() {
         workerRef.current.postMessage({ features, threshold: 0.5, modelId: "bodydebt-stress-v1" });
       });
 
-      setLastProof({ proof: proofResult.proof, publicInputs: proofResult.publicInputs, durationMs: 0 });
+      setLastProof({
+        proof: proofResult.proof,
+        publicInputs: proofResult.publicInputs,
+        durationMs: proofResult.verifyDurationMs ?? 0,
+        verified: proofResult.verified ?? false,
+      });
       setPhase("verifying");
       const proofHash = keccak256(toHex(proofResult.proof));
 
@@ -203,8 +211,8 @@ export function useFaceScanPipeline() {
           publicInputs: proofResult.publicInputs,
           stressScore: parsed.stress_score ?? 0.5,
           isHealthy: parsed.is_healthy ?? true,
-          durationMs: 0,
-          verified: false,
+          durationMs: proofResult.verifyDurationMs ?? 0,
+          verified: proofResult.verified ?? false,
         };
         setZkProof(zkResult);
         setFaceAnalysis({

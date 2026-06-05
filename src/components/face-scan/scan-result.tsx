@@ -129,10 +129,19 @@ export function ScanResult({ txHash }: { txHash?: string }) {
     };
   }, [zkProof, selectedStressors, advice]);
 
-  // Build proof lifecycle steps
+  // Build proof lifecycle steps — 4 steps now with cryptographic verification
   const proofDuration = zkProof?.durationMs
     ? `${(zkProof.durationMs / 1000).toFixed(1)}s`
     : "—";
+  const verifyDuration = zkProof?.durationMs
+    ? `${(zkProof.durationMs / 1000).toFixed(1)}s`
+    : "—";
+
+  // Determine step statuses based on actual data from the worker
+  const hasProof = !!zkProof?.proof;
+  const isCryptoVerified = zkProof?.verified === true;
+  const isCryptoFailed = hasProof && zkProof?.verified === false;
+  const isSkaleVerified = !!zkProof?.txHash && zkProof?.verified;
 
   const lifecycleSteps: LifecycleStep[] = [
     {
@@ -145,18 +154,29 @@ export function ScanResult({ txHash }: { txHash?: string }) {
     {
       label: "Generate ZK proof",
       detail: proofDuration !== "—" ? `${proofDuration} on-device` : "Running...",
-      done: !!zkProof?.proof,
+      done: hasProof,
       icon: "🔐",
       color: "#F59E0B",
     },
     {
-      label: "Verify on SKALE",
-      detail: zkProof?.verified
+      label: "Cryptographic verification",
+      detail: isCryptoVerified
+        ? `Verified in ${verifyDuration} — proof is valid ✓`
+        : isCryptoFailed
+          ? "Verification failed — proof invalid ✗"
+          : hasProof ? "Verifying..." : "Waiting for proof...",
+      done: isCryptoVerified,
+      icon: isCryptoVerified ? "✅" : "🔍",
+      color: isCryptoVerified ? "#4ADE80" : isCryptoFailed ? "#DC2626" : "#F59E0B",
+    },
+    {
+      label: "Commit to SKALE",
+      detail: isSkaleVerified
         ? `Confirmed on Europa testnet`
         : txHash ? "Pending confirmation..." : "No wallet connected",
-      done: !!zkProof?.verified,
+      done: isSkaleVerified,
       icon: "⛓️",
-      color: "#EA580C",
+      color: isSkaleVerified ? "#4ADE80" : "#EA580C",
     },
   ];
 
@@ -174,17 +194,39 @@ export function ScanResult({ txHash }: { txHash?: string }) {
       {/* ── Proof Lifecycle Timeline ──────────────────────────────── */}
       <LifecycleTimeline steps={lifecycleSteps} />
 
-      {/* ── SKALE verification status card ────────────────────────── */}
+      {/* ── Cryptographic verification status card ──────────────── */}
       <div className="flex items-center gap-3 rounded-2xl p-4"
-        style={{ backgroundColor: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
-        <ShieldCheck className="w-8 h-8 text-emerald-500 flex-shrink-0" />
+        style={{
+          backgroundColor: isCryptoVerified
+            ? "rgba(16, 185, 129, 0.1)"
+            : isCryptoFailed
+              ? "rgba(220, 38, 38, 0.1)"
+              : "rgba(245, 158, 11, 0.1)",
+          border: isCryptoVerified
+            ? "1px solid rgba(16, 185, 129, 0.3)"
+            : isCryptoFailed
+              ? "1px solid rgba(220, 38, 38, 0.3)"
+              : "1px solid rgba(245, 158, 11, 0.3)",
+        }}>
+        <ShieldCheck className={`w-8 h-8 flex-shrink-0 ${isCryptoVerified ? 'text-emerald-500' : isCryptoFailed ? 'text-red-500' : 'text-amber-500'}`} />
         <div>
-          <p className="text-[9px] font-mono uppercase tracking-widest" style={{ color: "#10B981" }}>
-            {zkProof?.verified ? "Cryptographically Verified on SKALE" : "ZK Proof Generated Locally"}
+          <p className="text-[9px] font-mono uppercase tracking-widest" style={{
+            color: isCryptoVerified ? "#4ADE80" : isCryptoFailed ? "#DC2626" : "#F59E0B",
+          }}>
+            {isCryptoVerified
+              ? "✓ Proof cryptographically verified"
+              : isCryptoFailed
+                ? "✗ Proof verification failed"
+                : "◐ Proof generated — verifying locally..."}
           </p>
           <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
             Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
           </p>
+          {isCryptoVerified && (
+            <p className="text-[9px] font-mono mt-0.5" style={{ color: "#A8A29E" }}>
+              EZKL verify({verifyDuration}) · VK hash committed to SKALE
+            </p>
+          )}
         </div>
       </div>
 

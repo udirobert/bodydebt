@@ -12,6 +12,8 @@ export interface ProofResponse {
   publicInputs?: string;
   error?: string;
   durationMs: number;
+  verified?: boolean;
+  verifyDurationMs?: number;
 }
 
 let ezklInitialized = false;
@@ -19,6 +21,8 @@ let initPromise: Promise<boolean> | null = null;
 let compiledCircuit: Uint8Array | null = null;
 let provingKey: Uint8Array | null = null;
 let srsKey: Uint8Array | null = null;
+let vkKey: Uint8Array | null = null;
+let settingsJson: Uint8Array | null = null;
 
 async function initEzkl(): Promise<boolean> {
   if (ezklInitialized) return true;
@@ -33,17 +37,21 @@ async function initEzkl(): Promise<boolean> {
         new WebAssembly.Memory({ initial: 20, maximum: 4096, shared: true })
       );
 
-      const [circuitRes, pkRes, srsRes] = await Promise.all([
+      const [circuitRes, pkRes, srsRes, vkRes, settingsRes] = await Promise.all([
         fetch("/ezkl/compiled.ezkl"),
         fetch("/ezkl/pk.key"),
         fetch("/ezkl/srs.key"),
+        fetch("/ezkl/vk.key"),
+        fetch("/ezkl/settings.json"),
       ]);
 
-      if (!circuitRes.ok || !pkRes.ok || !srsRes.ok) return false;
+      if (!circuitRes.ok || !pkRes.ok || !srsRes.ok || !vkRes.ok || !settingsRes.ok) return false;
 
       compiledCircuit = new Uint8Array(await circuitRes.arrayBuffer());
       provingKey = new Uint8Array(await pkRes.arrayBuffer());
       srsKey = new Uint8Array(await srsRes.arrayBuffer());
+      vkKey = new Uint8Array(await vkRes.arrayBuffer());
+      settingsJson = new Uint8Array(await settingsRes.arrayBuffer());
       ezklInitialized = true;
       return true;
     } catch {
@@ -67,7 +75,7 @@ async function proveWithEzkl(
     return generateMockProof(features, threshold, modelId, startTime);
   }
 
-  const { genWitness, deserialize, prove } = await import(
+  const { genWitness, deserialize, prove, verify } = await import(
     "@ezkljs/engine/web"
   );
 
@@ -96,6 +104,17 @@ async function proveWithEzkl(
   const proofRaw = prove(witnessClamped, pkBytes, circuitBytes, srsBytes);
   const proofData = deserialize(proofRaw);
 
+  // After generating the proof, cryptographically verify it using EZKL's
+  // verify function. This uses the VK, settings, and SRS that were cached
+  // during init. If verification FAILS, the proof is invalid — this would
+  // indicate a bug in the circuit or the EZKL engine.
+  const verifyStart = performance.now();
+  const vkBytes = new Uint8ClampedArray(vkKey!);
+  const settingsBytes = new Uint8ClampedArray(settingsJson!);
+  const proofClamped = new Uint8ClampedArray(proofRaw);
+  const verified = verify(proofClamped, vkBytes, settingsBytes, srsBytes);
+  const verifyDurationMs = Math.round(performance.now() - verifyStart);
+
   // Linear output (no Sigmoid) — clamp to [0, 1] for compatibility
   const outputs = witness.outputs ?? [];
   const rawScore = outputs.length > 0 ? Number(outputs[0]) : 0.5;
@@ -115,6 +134,8 @@ async function proveWithEzkl(
     proof: JSON.stringify(proofData),
     publicInputs: JSON.stringify(publicInputs),
     durationMs: performance.now() - startTime,
+    verified,
+    verifyDurationMs,
   };
 }
 
