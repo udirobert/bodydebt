@@ -52,38 +52,73 @@ export function DebtOrb({ score }: DebtOrbProps) {
   const turbulenceFrames = getTurbulenceFrames(score);
   const turbulenceDuration = score >= 75 ? 5 : score >= 50 ? 7 : 10;
 
+  // Pulse speed & depth tied to score — higher debt = faster, deeper pulses
+  const pulseDuration = score >= 75 ? 2.5 : score >= 50 ? 3.5 : 5;
+  const pulseDepth = score >= 75 ? 1.08 : score >= 50 ? 1.05 : 1.03;
+  const glowIntensity = Math.min(0.18 + (score / 100) * 0.35, 0.53);
+
   return (
     <div
       className="relative flex items-center justify-center"
       style={{ width: orbSize, height: orbSize }}
     >
-      {/* Ambient glow (outer) */}
-      <div
+      {/* Ambient glow (outer) — intensity tracks score */}
+      <motion.div
         className="absolute inset-0 rounded-full"
         style={{
-          boxShadow: `0 0 60px 20px ${colors.glow}, 0 0 120px 50px ${colors.glow.replace(/[\d.]+\)$/, "0.07)")}`,
+          boxShadow: `0 0 ${50 + score}px ${15 + score * 0.3}px ${colors.glow}`,
           borderRadius: "50%",
         }}
+        animate={{ opacity: [glowIntensity * 0.5, glowIntensity, glowIntensity * 0.5] }}
+        transition={{ duration: pulseDuration, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Outer ring — breathes */}
+      {/* Outer ring — breathes at score-dependent rate */}
       <motion.div
         className="absolute inset-0 rounded-full"
         style={{ border: `1px solid ${colors.primary}22` }}
-        animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.6, 0.3] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ scale: [1, 1 + (pulseDepth - 1) * 1.6, 1], opacity: [0.25, 0.6, 0.25] }}
+        transition={{ duration: pulseDuration, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Mid ring — offset phase */}
+      {/* Mid ring — offset phase, chaotic at high debt */}
       <motion.div
         className="absolute rounded-full"
         style={{
           inset: "8%",
           border: `1px solid ${colors.primary}15`,
         }}
-        animate={{ scale: [1, 1.04, 1], opacity: [0.15, 0.4, 0.15] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        animate={{
+          scale: [1, 1 + (pulseDepth - 1) * 1.3, 1],
+          opacity: [0.12, 0.45, 0.12],
+          rotate: score >= 75 ? [0, 5, -5, 0] : [0, 2, -2, 0],
+        }}
+        transition={{
+          scale: { duration: pulseDuration, repeat: Infinity, ease: "easeInOut", delay: pulseDuration * 0.25 },
+          opacity: { duration: pulseDuration, repeat: Infinity, ease: "easeInOut", delay: pulseDuration * 0.25 },
+          rotate: { duration: pulseDuration * 2, repeat: Infinity, ease: "easeInOut" },
+        }}
       />
+
+      {/* High-debt heartbeat spike layer */}
+      {score >= 61 && (
+        <motion.div
+          className="absolute inset-0 rounded-full"
+          style={{
+            border: `2px solid ${colors.primary}40`,
+          }}
+          animate={{
+            scale: [1, 1.25, 1.45, 1],
+            opacity: [0, 0.4, 0, 0],
+          }}
+          transition={{
+            duration: pulseDuration * 1.2,
+            repeat: Infinity,
+            ease: "easeOut",
+            times: [0, 0.15, 0.3, 1],
+          }}
+        />
+      )}
 
       {/* Main orb body — morphs based on turbulence level */}
       <motion.div
@@ -92,11 +127,11 @@ export function DebtOrb({ score }: DebtOrbProps) {
           width: "72%",
           height: "72%",
           background: `radial-gradient(circle at 35% 35%, ${colors.secondary}, ${colors.primary} 55%, #050505 100%)`,
-          boxShadow: `0 0 40px 12px ${colors.glow}`,
+          boxShadow: `0 0 ${30 + score * 0.5}px ${8 + score * 0.1}px ${colors.glow}`,
         }}
         animate={{
           borderRadius: turbulenceFrames,
-          scale: [1, 1.03, 1],
+          scale: [1, pulseDepth, 1],
         }}
         transition={{
           borderRadius: {
@@ -105,7 +140,7 @@ export function DebtOrb({ score }: DebtOrbProps) {
             ease: "easeInOut",
           },
           scale: {
-            duration: 4,
+            duration: pulseDuration,
             repeat: Infinity,
             ease: "easeInOut",
           },
@@ -122,10 +157,10 @@ export function DebtOrb({ score }: DebtOrbProps) {
             "radial-gradient(circle at 28% 28%, rgba(255,255,255,0.1), transparent 70%)",
           mixBlendMode: "screen",
         }}
-        animate={{ opacity: [0.4, 0.75, 0.4], rotate: [0, 360] }}
+        animate={{ opacity: [0.3, 0.8, 0.3], rotate: [0, 360] }}
         transition={{
-          opacity: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-          rotate: { duration: 14, repeat: Infinity, ease: "linear" },
+          opacity: { duration: pulseDuration * 0.8, repeat: Infinity, ease: "easeInOut" },
+          rotate: { duration: score >= 75 ? 8 : 14, repeat: Infinity, ease: "linear" },
         }}
       />
 
@@ -136,12 +171,14 @@ export function DebtOrb({ score }: DebtOrbProps) {
       >
         AUTONOMIC PATHWAYS
       </div>
-      <div
+      <motion.div
         className="absolute bottom-2 font-mono tracking-widest text-center w-full"
         style={{ fontSize: "6px", color: "rgba(168,162,158,0.25)" }}
+        animate={{ opacity: score >= 61 ? [0.3, 0.7, 0.3] : 0.25 }}
+        transition={{ duration: pulseDuration * 0.7, repeat: Infinity, ease: "easeInOut" }}
       >
         {score >= 61 ? "STRESS LOAD CRITICAL" : score >= 41 ? "STRESS LOAD ELEVATED" : "STRESS LOAD NOMINAL"}
-      </div>
+      </motion.div>
     </div>
   );
 }

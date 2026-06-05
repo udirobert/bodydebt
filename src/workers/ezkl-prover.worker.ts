@@ -96,8 +96,10 @@ async function proveWithEzkl(
   const proofRaw = prove(witnessClamped, pkBytes, circuitBytes, srsBytes);
   const proofData = deserialize(proofRaw);
 
+  // Linear output (no Sigmoid) — clamp to [0, 1] for compatibility
   const outputs = witness.outputs ?? [];
-  const stressScore = outputs.length > 0 ? Number(outputs[0]) : 0.5;
+  const rawScore = outputs.length > 0 ? Number(outputs[0]) : 0.5;
+  const stressScore = Math.max(0, Math.min(1, rawScore));
   const isHealthy = stressScore < threshold;
 
   const publicInputs = {

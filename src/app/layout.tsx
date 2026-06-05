@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { UserSyncEffect } from "@/components/user-profile/user-sync-effect";
 import { PageTransition } from "@/components/PageTransition";
 import { WagmiProviderWrapper } from "@/components/providers/WagmiProviderWrapper";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -82,6 +83,7 @@ export default function RootLayout({
         <EazoProvider>
           <WagmiProviderWrapper>
             <UserSyncEffect />
+            <ServiceWorkerRegister />
             <PageTransition>
               {children}
             </PageTransition>

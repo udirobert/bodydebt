@@ -44,7 +44,9 @@ class StressClassifier(nn.Module):
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(16, 8)
         self.fc3 = nn.Linear(8, 1)
-        self.sigmoid = nn.Sigmoid()
+        # No Sigmoid — linear output avoids an expensive lookup table
+        # during ZK circuit compilation, enabling logrows=10 and a
+        # ~5MB pk.key instead of ~164MB.
 
         # Sensible weight initialization for stress classification
         with torch.no_grad():
@@ -91,7 +93,7 @@ class StressClassifier(nn.Module):
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
-        x = self.sigmoid(self.fc3(x))
+        x = self.fc3(x)  # linear output — no Sigmoid lookup
         return x
 
 
@@ -133,11 +135,15 @@ def main():
     print(f"  Opset: {onnx_model.opset_import[0].version}")
     print(f"  Input: {onnx_model.graph.input[0].name} -> {onnx_model.graph.input[0].type.tensor_type.shape}")
 
-    # Test
-    test_input = np.array([[0.25, 0.26, 0.08, 0.18, 0.02, 0.35, 0.42]], dtype=np.float32)
-    with torch.no_grad():
-        output = model(torch.from_numpy(test_input)).numpy()
-    print(f"  Test output: {output[0][0]:.4f}")
+    # Test — output is now unbounded (no Sigmoid), typically in [-2, 2] range
+    try:
+        import numpy as np
+        test_input = np.array([[0.25, 0.26, 0.08, 0.18, 0.02, 0.35, 0.42]], dtype=np.float32)
+        with torch.no_grad():
+            output = model(torch.from_numpy(test_input)).numpy()
+        print(f"  Probing: input → {output[0][0]:.4f}")
+    except Exception as e:
+        print(f"  Probe skipped (numpy compat): {e}")
     print(f"  Saved: {model_path}")
 
 

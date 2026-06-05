@@ -110,7 +110,7 @@ def main():
         ("5/6", "Generating SRS", [
             ezkl, "gen-srs",
             "--srs-path", SRS_PATH,
-            "--logrows", "17",
+            "--logrows", "15",
         ]),
         ("6/6", "Setting up proving/verifying keys", [
             ezkl, "setup",
