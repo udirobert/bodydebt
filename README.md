@@ -51,7 +51,7 @@ arch -arm64 /opt/homebrew/bin/brew install openssl@3
    - `EAZO_PRIVATE_KEY`: Your Eazo developer private key (hex, 64 chars).
    - `DATABASE_URL`: PostgreSQL connection string.
    - `NEXT_PUBLIC_VERIFIER_ADDRESS`: Deployed HealthCredentialVerifier contract address on SKALE testnet (optional — uses zero address if unset).
-   - `DEPLOYER_PRIVATE_KEY`: Wallet private key for contract deployment (only needed for `scripts/deploy-contract.ts`).
+   - `DEPLOYER_PRIVATE_KEY`: Wallet private key for contract deployment (only needed for `scripts/deploy-standalone.mjs`).
 
 4. Run database migrations (if applicable):
    ```bash
@@ -80,10 +80,11 @@ bun run db:studio # Open Drizzle Studio
 The face scan flow implements a full zero-knowledge machine learning pipeline for the [QVAC Edge AI](https://dorahacks.io/hackathon/qvac-unleach-edge-ai-i) and [SKALE Programmable Privacy](https://dorahacks.io/hackathon/programmable-privacy) hackathons:
 
 ```
-MediaPipe FaceMesh → extractStressFeatures (5 floats)
-  → EZKL Web Worker → ZK proof (WASM)
-    → SKALE contract write (wagmi) → HealthCredentialVerified event
-      → QVAC local AI health coach (/api/qvac/infer)
+MediaPipe FaceMesh → extractStressFeatures (7 features)
+  → EZKL Web Worker (pre-fetches 164MB pk.key during privacy phase)
+    → ZK proof (WASM) via 7→16→8→1 MLP circuit
+      → SKALE contract write (wagmi) → HealthCredentialVerified event
+        → QVAC local AI health coach (/api/qvac/infer)
 ```
 
 The pipeline is fully compiled and operational. Real ZK proof artifacts are served from `/ezkl/` and the prover worker generates cryptographic proofs in-browser.
@@ -95,7 +96,7 @@ The pipeline is fully compiled and operational. Real ZK proof artifacts are serv
    source .venv/bin/activate   # or set up a venv first: python3 -m venv .venv && pip install torch onnx numpy
    python scripts/generate-stress-model.py
    ```
-   Produces `public/ezkl/model.onnx` — a 5→1 Gemm+Sigmoid stress classifier at opset 10.
+   Produces `public/ezkl/model.onnx` — a 7→16→8→1 MLP stress classifier with ReLU hidden layers at opset 10.
 
 2. **Install the EZKL CLI** (macOS ARM64, v23.0.3):
    ```bash
@@ -116,9 +117,15 @@ The pipeline is fully compiled and operational. Real ZK proof artifacts are serv
 
 4. **Deploy the verifier contract** (requires sFUEL from the [SKALE faucet](https://docs.skale.network/develop/faucet)):
    ```bash
-   bunx hardhat run scripts/deploy-contract.ts --network skaleEuropaTestnet
+   node scripts/deploy-standalone.mjs
    ```
    Then set `NEXT_PUBLIC_VERIFIER_ADDRESS` to the deployed address.
+
+   The current deployment is at:
+   **`0x2752Fa85a123723A5790f5510C54719ce5BAFe99`** on SKALE Europa Testnet.
+   [View on explorer](https://juicy-low-small-testnet.explorer.skalenodes.com/address/0x2752Fa85a123723A5790f5510C54719ce5BAFe99)
+
+   Deployer wallet: `0xe9d3497aa6bbf27d2ea2c13b81e57a874f2ec70d` (fund from faucet if re-deploying)
 
 ### Artifact Summary
 
@@ -135,8 +142,10 @@ The pipeline is fully compiled and operational. Real ZK proof artifacts are serv
 ### Architecture notes
 
 - The **prover worker** (`src/workers/ezkl-prover.worker.ts`) fetches `compiled.ezkl`, `pk.key`, and `srs.key` from the server on init. If any artifact is missing, it falls back to a mock proof with a clear label.
-- The **face scan pipeline** (`src/components/face-scan/use-face-scan-pipeline.ts`) sends a `ProofRequest` to the worker and handles both real and mock proof paths.
+- **Artifact pre-fetching**: The worker starts downloading the 164MB `pk.key` + WASM module during the privacy/prompt phase via a `prefetch` message sent on mount. By the time the user captures, the artifacts are cached — the mock proof is unlikely to trigger in a live demo.
+- The **face scan pipeline** (`src/components/face-scan/use-face-scan-pipeline.ts`) sends a `{ type: "prefetch" }` message to the worker on mount, then a `ProofRequest` on capture.
 - WASM and COOP/COEP headers are already configured in `next.config.ts`.
+- **Deployer wallet**: `0xe9d3497aa6bbf27d2ea2c13b81e57a874f2ec70d` — funded with sFUEL from [SKALE faucet](https://docs.skale.network/develop/faucet)
 
 ## QVAC Edge AI — Local LLM Health Coach
 

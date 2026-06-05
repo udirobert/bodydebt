@@ -41,8 +41,8 @@ The base template setup is complete. Focus on these domain-specific areas when a
 
 For QVAC Edge AI and SKALE Programmable Privacy hackathon submissions, the app implements a hybrid Zero-Knowledge Machine Learning (ZKML) pipeline:
 
-1. **Edge AI (Client-Side)**: Uses `@mediapipe/face_mesh` to extract facial landmarks directly in the browser. These are reduced to a lightweight geometric feature vector (e.g., eye aspect ratio, brow tension) to minimize compute.
-2. **ZK Proof Generation**: Uses `ezkl-js` (running in a dedicated Web Worker to avoid main-thread blocking) to generate a cryptographic proof that a specific, audited ONNX model was executed on the private feature vector to produce a public "Stress Score" or boolean health status. *Raw biometric data never leaves the device.*
+1. **Edge AI (Client-Side)**: Uses `@mediapipe/face_mesh` to extract facial landmarks directly in the browser. These are reduced to a 7-dimensional feature vector (leftEyeAspect, rightEyeAspect, browTension, mouthTension, eyeSymmetry, mouthOpening, timeNorm) and passed through a 7→16→8→1 MLP circuit with ReLU activations.
+2. **ZK Proof Generation**: Uses `ezkl-js` (running in a dedicated Web Worker to avoid main-thread blocking) to generate a cryptographic proof that a specific, audited ONNX model was executed on the private feature vector to produce a public "Stress Score" or boolean health status. The worker pre-fetches ZK artifacts (164MB pk.key) during the privacy phase to avoid mock proof fallback in demos. *Raw biometric data never leaves the device.*
 3. **SKALE Verification**: The generated proof and public inputs are submitted to a minimal Solidity verifier contract on the SKALE Europa Testnet. Upon successful cryptographic verification, the contract emits a `HealthCredentialVerified` event or mints a Soulbound Token (SBT), creating a trustless, privacy-preserving health ledger.
 
 ### Pipeline Status — Fully Compiled ✅
@@ -50,7 +50,9 @@ For QVAC Edge AI and SKALE Programmable Privacy hackathon submissions, the app i
 The EZKL circuit compilation now succeeds end-to-end via the CLI binary (v23.0.3).
 
 **What works:**
-- ONNX model generation: `scripts/generate-stress-model.py` (PyTorch → opset 10, Gemm+Sigmoid)
+- ONNX model generation: `scripts/generate-stress-model.py` (PyTorch → opset 10, 7→16→8→1 MLP with ReLU hidden layers)
+- Contract deployment: `scripts/deploy-standalone.mjs` (solc + ethers, no hardhat needed)
+- Deployed verifier: `0x2752Fa85a123723A5790f5510C54719ce5BAFe99` on SKALE Europa Testnet
 - Circuit compilation: `scripts/compile-circuit.py` (uses `ezkl` CLI, 6 steps)
 - Prover worker: fetches real artifacts from `/ezkl/`, generates cryptographic proofs in-browser
 - Face scan pipeline: handles both real and mock proof paths
@@ -58,8 +60,10 @@ The EZKL circuit compilation now succeeds end-to-end via the CLI binary (v23.0.3
 **Key files:**
 - `scripts/generate-stress-model.py` — PyTorch model → ONNX export
 - `scripts/compile-circuit.py` — EZKL CLI wrapper (gen-settings → calibrate-settings → compile-circuit → gen-witness → gen-srs → setup)
-- `src/workers/ezkl-prover.worker.ts` — Web Worker for in-browser proof generation
-- `src/lib/ai/face-mesh.ts` — MediaPipe feature extraction (5 floats)
+- `scripts/deploy-standalone.mjs` — Standalone contract deployment (solc + ethers, no hardhat)
+- `src/workers/ezkl-prover.worker.ts` — Web Worker for in-browser proof generation (supports prefetch message for artifact caching)
+- `src/lib/ai/face-mesh.ts` — MediaPipe feature extraction (7 features: leftEyeAspect, rightEyeAspect, browTension, mouthTension, eyeSymmetry, mouthOpening, timeNorm)
+- `contracts/HealthCredentialVerifier.sol` — Deployed at `0x2752Fa85a123723A5790f5510C54719ce5BAFe99` on SKALE Europa Testnet
 
 **Installation note:** The EZKL CLI binary (v23.0.3) must be installed separately — it is not available on crates.io and v23.0.5+ dropped macOS support. Install from GitHub releases:
 ```bash
@@ -74,6 +78,7 @@ cp ezkl ~/.local/bin/
 - **ALWAYS** use quantized (8-bit or 4-bit) ONNX models for ZKML to ensure proof generation completes in seconds, not minutes.
 - Large ZK artifacts (`.key` files) are gitignored and must be regenerated via `python scripts/compile-circuit.py`.
 - **TurboQuant** is enabled on the QVAC local LLM (`scripts/qvac-worker.mjs`) via `modelConfig: { "cache-type-k": "tbq4_0", "cache-type-v": "pq4_0" }`. This compresses the running KV cache by up to 5× with near-zero accuracy loss. Requires `@qvac/sdk@^0.12.2`. On macOS/Apple Silicon, this is a safe no-op until Metal support ships.
+- **Pre-fetch ZK artifacts** by sending `{ type: "prefetch" }` to the prover worker on mount (`use-face-scan-pipeline.ts`). This downloads the 164MB `pk.key` + WASM module during the privacy/prompt phase so real proofs (not mock) are generated in demos.
 
 ## 4. Commands
 
@@ -176,7 +181,7 @@ src/
     trim-node-modules.mjs        — Postinstall: trim non-arm64 prebuilds from @qvac/* packages
     generate-stress-model.py     — ONNX stress classifier model generator
     compile-circuit.py           — EZKL circuit compilation pipeline (6 steps, ezkl CLI v23.0.3)
-    deploy-contract.ts           — Hardhat deploy to SKALE Europa testnet
+    deploy-standalone.mjs        — Standalone deploy (solc + ethers, no hardhat needed)
 ```
 
 ## 6. Capabilities
