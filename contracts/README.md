@@ -1,33 +1,48 @@
-# HealthCredentialVerifier — Deployment
+# Smart Contracts — Deployment
+
+## Contracts
+
+| Contract | File | Purpose |
+|---|---|---|
+| `HealthCredentialVerifier` | `HealthCredentialVerifier.sol` | Atomic ZK proof verification + credential logging |
+| `Halo2VerifierReusable` | `EZKLVerifierReusable.sol` | EZKL-generated Halo2 proof verifier (deployed separately) |
+
+`HealthCredentialVerifier` calls `Halo2VerifierReusable.verifyProof` internally and only emits `HealthCredentialVerified` after the proof passes.
 
 ## Prerequisites
 
-1. Install Hardhat:
-   ```bash
-   bun add -d hardhat @nomicfoundation/hardhat-toolbox
+1. Set your deployer private key in `.env`:
    ```
-
-2. Get SKALE Europa testnet tokens (sFUEL) from the faucet:
-   - Visit https://portal.skale.space/faucet
-   - Connect your wallet
-   - Request testnet tokens for Europa Testnet
-
-3. Set your deployer private key:
-   ```bash
-   # In .env
    DEPLOYER_PRIVATE_KEY=0x...
    ```
 
-## Deploy
+2. Get SKALE Europa testnet sFUEL from the faucet at https://portal.skale.space/faucet
+
+## Deploy (standalone scripts, no Hardhat required)
+
+### 1. Deploy Halo2VerifierReusable (one-time)
 
 ```bash
-npx hardhat compile
-npx hardhat run scripts/deploy-contract.ts --network skaleEuropaTestnet
+node scripts/deploy-reusable-verifier.mjs
 ```
 
-## Update the app
+### 2. Register the verification key
 
-After deployment, add the contract address to `.env`:
+```bash
+node scripts/register-vk-on-chain.mjs
+```
+
+### 3. Deploy HealthCredentialVerifier
+
+Requires the Halo2 verifier address and a registered VK digest:
+
+```bash
+node scripts/deploy-standalone.mjs
+# or with explicit VK digest:
+node scripts/deploy-standalone.mjs --vk-digest 0x...
+```
+
+After deployment, add to `.env`:
 ```
 NEXT_PUBLIC_VERIFIER_ADDRESS=0x...
 ```

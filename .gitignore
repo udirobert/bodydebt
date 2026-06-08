@@ -223,3 +223,4 @@ public/ezkl/*.key
 # OS specific
 .DS_Store
 Thumbs.db
+.blackboxcli/

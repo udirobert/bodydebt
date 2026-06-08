@@ -1,6 +1,8 @@
 import { createPublicClient, createWalletClient, custom, http } from 'viem';
 import { skaleEuropaTestnet } from 'viem/chains';
 
+export const SKALE_CHAIN_ID = skaleEuropaTestnet.id;
+
 export const publicClient = createPublicClient({
   chain: skaleEuropaTestnet,
   transport: http(),
@@ -53,7 +55,9 @@ export async function fetchVkChunks(): Promise<string[]> {
   return res.json() as Promise<string[]>;
 }
 
-// ── HealthCredentialVerifier (event emission) ─────────────────────────
+// ── HealthCredentialVerifier (atomic verify + log) ─────────────────────
+// Calls Halo2VerifierReusable.verifyProof internally. Only emits
+// HealthCredentialVerified after proof verification passes.
 
 export const healthCredentialVerifierABI = [
   {
@@ -63,18 +67,16 @@ export const healthCredentialVerifierABI = [
       { indexed: false, internalType: 'uint256', name: 'timestamp', type: 'uint256' },
       { indexed: false, internalType: 'string', name: 'modelId', type: 'string' },
       { indexed: false, internalType: 'bool', name: 'isHealthy', type: 'bool' },
-      { indexed: false, internalType: 'string', name: 'proofReference', type: 'string' },
+      { indexed: false, internalType: 'bytes32', name: 'proofHash', type: 'bytes32' },
     ],
     name: 'HealthCredentialVerified',
     type: 'event',
   },
   {
     inputs: [
-      { internalType: 'address', name: 'user', type: 'address' },
-      { internalType: 'string', name: 'modelId', type: 'string' },
-      { internalType: 'bool', name: 'isHealthy', type: 'bool' },
-      { internalType: 'bytes32', name: 'proofHash', type: 'bytes32' },
-      { internalType: 'string', name: 'proofReference', type: 'string' },
+      { internalType: 'bytes', name: 'proof', type: 'bytes' },
+      { internalType: 'uint256[]', name: 'instances', type: 'uint256[]' },
+      { internalType: 'bytes32[]', name: 'vka', type: 'bytes32[]' },
     ],
     name: 'verifyAndLogCredential',
     outputs: [],
@@ -88,9 +90,33 @@ export const healthCredentialVerifierABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [],
+    name: 'halo2Verifier',
+    outputs: [{ internalType: 'address', name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'approvedVkDigest',
+    outputs: [{ internalType: 'bytes32', name: '', type: 'bytes32' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
 
 export const VERIFIER_CONTRACT_ADDRESS = (
   process.env.NEXT_PUBLIC_VERIFIER_ADDRESS ??
   '0x0000000000000000000000000000000000000000'
 ) as `0x${string}`;
+
+// ── Chain guard ────────────────────────────────────────────────────────
+
+export function isCorrectChain(chainId?: number): boolean {
+  return chainId === SKALE_CHAIN_ID;
+}
+
+export function isZeroAddress(addr: string): boolean {
+  return addr === '0x0000000000000000000000000000000000000000';
+}

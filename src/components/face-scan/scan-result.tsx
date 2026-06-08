@@ -9,6 +9,7 @@ import { getQvacAdvice } from "@/lib/api";
 import { useServiceWorker } from "@/lib/hooks/useServiceWorker";
 import { ProofCircuitVisual } from "./ProofCircuitVisual";
 import type { QvacProgress } from "@/lib/api";
+import type { OnChainVerificationStatus } from "@/lib/types";
 
 interface CircuitStep {
   label: string;
@@ -18,7 +19,7 @@ interface CircuitStep {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function ScanResult({ txHash, zkOnChainVerified }: { txHash?: string; zkOnChainVerified?: boolean }) {
+export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChainStatus?: OnChainVerificationStatus }) {
   const router = useRouter();
   const { zkProof, selectedStressors } = useBodyDebtStore();
   const [advice, setAdvice] = useState<string | null>(null);
@@ -105,8 +106,14 @@ export function ScanResult({ txHash, zkOnChainVerified }: { txHash?: string; zkO
   const hasProof = !!zkProof?.proof;
   const isCryptoVerified = zkProof?.verified === true;
   const isCryptoFailed = hasProof && zkProof?.verified === false;
-  const isSkaleVerified = !!zkProof?.txHash && zkProof?.verified;
-  const isHalo2Verified = zkOnChainVerified === true;
+  const status = onChainStatus ?? zkProof?.onChainStatus ?? "idle";
+
+  const skaleDetail =
+    status === "verified" ? "Proof verified on SKALE ✓"
+    : status === "pending" ? "Verifying on-chain..."
+    : status === "failed" ? "On-chain verification failed"
+    : status === "no-wallet" ? "Local only (no wallet)"
+    : "No wallet connected";
 
   const lifecycleSteps: CircuitStep[] = [
     {
@@ -130,12 +137,8 @@ export function ScanResult({ txHash, zkOnChainVerified }: { txHash?: string; zkO
     },
     {
       label: "SKALE verify",
-      detail: isHalo2Verified
-        ? `Verified on-chain ✓`
-        : isSkaleVerified
-          ? "Credential logged"
-          : txHash ? "Pending..." : "No wallet",
-      done: isHalo2Verified || isSkaleVerified,
+      detail: skaleDetail,
+      done: status === "verified",
     },
   ];
 

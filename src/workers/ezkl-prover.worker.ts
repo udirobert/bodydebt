@@ -9,6 +9,8 @@ export interface ProofRequest {
 export interface ProofResponse {
   success: boolean;
   proof?: string;
+  proofHex?: string;
+  publicInstances?: string[];
   publicInputs?: string;
   error?: string;
   durationMs: number;
@@ -23,6 +25,41 @@ let provingKey: Uint8Array | null = null;
 let srsKey: Uint8Array | null = null;
 let vkKey: Uint8Array | null = null;
 let settingsJson: Uint8Array | null = null;
+
+function collectFieldElements(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => collectFieldElements(item));
+  }
+  if (typeof value === "bigint") {
+    return [value.toString()];
+  }
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
+    return [value.toString()];
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (/^0x[0-9a-fA-F]+$/.test(trimmed) || /^\d+$/.test(trimmed)) {
+      return [trimmed];
+    }
+  }
+  return [];
+}
+
+function extractPublicInstances(proofData: unknown): string[] | undefined {
+  if (!proofData || typeof proofData !== "object") return undefined;
+  const record = proofData as Record<string, unknown>;
+  const candidates = [
+    record.instances,
+    record.public_inputs,
+    record.publicInputs,
+    record.inputs,
+  ];
+  for (const candidate of candidates) {
+    const elements = collectFieldElements(candidate);
+    if (elements.length > 0) return elements;
+  }
+  return undefined;
+}
 
 async function initEzkl(): Promise<boolean> {
   if (ezklInitialized) return true;
@@ -103,6 +140,7 @@ async function proveWithEzkl(
   const witnessClamped = new Uint8ClampedArray(witnessRaw);
   const proofRaw = prove(witnessClamped, pkBytes, circuitBytes, srsBytes);
   const proofData = deserialize(proofRaw);
+  const publicInstances = extractPublicInstances(proofData);
 
   // After generating the proof, cryptographically verify it using EZKL's
   // verify function. This uses the VK, settings, and SRS that were cached
@@ -129,9 +167,13 @@ async function proveWithEzkl(
     timestamp: features.timestamp,
   };
 
+  const proofHex = '0x' + Array.from(proofRaw).map(b => b.toString(16).padStart(2, '0')).join('');
+
   return {
     success: true,
     proof: JSON.stringify(proofData),
+    proofHex,
+    publicInstances,
     publicInputs: JSON.stringify(publicInputs),
     durationMs: performance.now() - startTime,
     verified,
@@ -183,6 +225,7 @@ function generateMockProof(
   return {
     success: true,
     proof: JSON.stringify(mockProof),
+    proofHex: '0x' + mockProof.proof_data,
     publicInputs: JSON.stringify(publicInputs),
     durationMs: performance.now() - startTime,
   };

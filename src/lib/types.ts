@@ -131,12 +131,21 @@ export interface AnalyzeBodyRequest {
 
 // ─── ZK Proof ─────────────────────────────────────────────────────────────────
 
+export type OnChainVerificationStatus =
+  | "idle"
+  | "pending"
+  | "verified"
+  | "failed"
+  | "no-wallet";
+
 export interface ZKProofResult {
   proof: string;
+  proofHex?: string;
   publicInputs: string;
   stressScore: number;
   isHealthy: boolean;
   durationMs: number;
   txHash?: string;
   verified: boolean;
+  onChainStatus: OnChainVerificationStatus;
 }

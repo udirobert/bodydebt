@@ -56,6 +56,8 @@ async function main() {
     process.exit(1);
   }
   console.log("VK chunks:", vka.length);
+  const vkDigest = ethers.keccak256(ethers.concat(vka.map((h) => h)));
+  console.log("VK digest:", vkDigest);
 
   // Build the minimal ABI for registerVka
   const abi = [
@@ -82,10 +84,11 @@ async function main() {
   console.log(`\n✅ VK registered in ${duration}s`);
   console.log("Gas used:", receipt.gasUsed.toString());
   console.log("Tx hash:", tx.hash);
+  console.log("VK digest:", vkDigest);
 
   // The registerVka returns the VK digest via the event
   // It's also logged in the tx logs
-  console.log("\nVK digest available from tx logs on explorer:");
+  console.log("\nVK digest available above and from tx logs on explorer:");
   console.log(`https://juicy-low-small-testnet.explorer.skalenodes.com/tx/${tx.hash}`);
 
   console.log("\n✅ VK is now registered. verifyProof() is ready to use.");
