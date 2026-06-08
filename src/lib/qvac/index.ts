@@ -9,7 +9,6 @@ export interface HealthCoachInput {
   stressors: string[];
 }
 
-import { fork } from "node:child_process";
 import path from "node:path";
 
 export function buildPrompt(input: HealthCoachInput): string {
@@ -45,15 +44,21 @@ export async function runHealthCoach(
   input: HealthCoachInput,
   onProgress?: (progress: ProgressEvent) => void
 ): Promise<string | null> {
-  return new Promise<string | null>((resolve) => {
-    const workerPath = path.resolve(process.cwd(), "scripts/qvac-worker.mjs");
+  const workerPath = path.resolve(process.cwd(), "scripts/qvac-worker.mjs");
 
-    // QVAC native modules link against OpenSSL — the SDK may expect it at
-    // /opt/homebrew/opt/openssl@3/lib/ but on some systems it's installed
-    // at /usr/local/opt/openssl@3/lib/. Set DYLD_FALLBACK_LIBRARY_PATH so
-    // the dynamic linker finds it either way.
-    const child = fork(workerPath, [JSON.stringify(input)], {
-      stdio: ["pipe", "pipe", "pipe", "ipc"],
+  // Dynamic import prevents Turbopack from statically tracing the fork call.
+  // The worker is a standalone script that runs in its own Node process.
+  const cpModule = "node:child_process";
+  const cp = await import(/* webpackIgnore: true */ cpModule);
+
+  // QVAC native modules link against OpenSSL — the SDK may expect it at
+  // /opt/homebrew/opt/openssl@3/lib/ but on some systems it's installed
+  // at /usr/local/opt/openssl@3/lib/. Set DYLD_FALLBACK_LIBRARY_PATH so
+  // the dynamic linker finds it either way.
+  let child;
+  try {
+    child = cp.spawn(process.execPath, [workerPath, JSON.stringify(input)], {
+      stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
         DYLD_FALLBACK_LIBRARY_PATH: [
@@ -68,7 +73,13 @@ export async function runHealthCoach(
           .join(":"),
       },
     });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("QVAC worker failed to start:", message);
+    return null;
+  }
 
+  return new Promise<string | null>((resolve) => {
     let result: string | null = null;
     let buffer = "";
 
@@ -102,7 +113,7 @@ export async function runHealthCoach(
       resolve(result);
     });
 
-    child.on("error", (err) => {
+    child.on("error", (err: Error) => {
       console.warn("QVAC worker failed to start:", err.message);
       resolve(null);
     });
