@@ -200,6 +200,7 @@ broadcast/
 !tsconfig.json
 !public/ezkl/vk-chunks.json
 !public/ezkl/vk-digest.json
+!hf-space/models/stress_metrics.json
 
 # ZK / EZKL generated files (can be large or regenerated)
 *.zk

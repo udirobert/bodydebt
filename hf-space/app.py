@@ -2109,14 +2109,14 @@ with gr.Blocks(title="Body Debt") as demo:
                 value="",
                 label="Bedtime",
                 allow_custom_value=True,
-                placeholder="Select or type (e.g. 2:00 AM)",
+                info="Select or type (e.g. 2:00 AM)",
             )
             wake_time = gr.Dropdown(
                 choices=TIME_OPTIONS,
                 value="",
                 label="Wake time",
                 allow_custom_value=True,
-                placeholder="Select or type (e.g. 8:30 AM)",
+                info="Select or type (e.g. 8:30 AM)",
             )
 
             gr.HTML('<div class="section-label" style="margin-top: 20px;">Face scan <span style="font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--text-muted);">(optional)</span></div>')
