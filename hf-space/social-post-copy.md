@@ -2,6 +2,14 @@
 
 The submission rules for the Build Small Hackathon require a social post. Below are drop-in options for X and LinkedIn. Pick the one that matches your voice. All variants include the required Space link.
 
+**Published links (use these in the actual posts):**
+
+- Space: https://huggingface.co/spaces/build-small-hackathon/body-debt
+- Demo video: https://huggingface.co/spaces/build-small-hackathon/body-debt/resolve/main/demo.mp4
+- X teaser: https://x.com/papajimjams/status/2066658009124687953
+- Field notes (Medium): https://medium.com/@ungethe/building-small-9aea8bf5236e
+- GitHub: https://github.com/udirobert/bodydebt
+
 ---
 
 ## X / Twitter (long-form, 280-char segments)

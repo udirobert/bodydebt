@@ -37,7 +37,7 @@ Body Debt calculates the precise recovery cost of last night's choices — alcoh
 
 📹 **[Or watch on X](https://x.com/papajimjams/status/2066658009124687953)** — same video, posted for the social-submission requirement.
 
-📓 **[Read the field notes](https://huggingface.co/blog/build-small-hackathon/body-debt-field-notes)** — the four lessons I learned shipping a 360M health coach for myself.
+📓 **[Read the field notes on Medium](https://medium.com/@ungethe/building-small-9aea8bf5236e)** — the four lessons I learned shipping a 360M health coach for myself.
 
 📊 **[Inspect the agent traces](https://huggingface.co/datasets/Papajams/body-debt-traces)** — twelve real analyses, JSONL, showing the full reasoning chain.
 
@@ -114,7 +114,7 @@ The complete Body Debt application — Next.js, animated debt orb, ZK proofs on 
 - **Off-Brand** — custom dark Gradio theme, agent trace, system accents, breathing-orb
 - **Best Agent** — visible multi-step trace: parse → score → face → triage plan → counterfactual → coach
 - **Well-Tuned** — fine-tuned 553-param ONNX MLP at `Papajams/body-debt-stress-mlp`
-- **Field Notes** — this blog post and the field-notes writeup
+- **Field Notes** — field-notes writeup published on [Medium](https://medium.com/@ungethe/building-small-9aea8bf5236e)
 - **Sharing is Caring** — agent trace dataset at `Papajams/body-debt-traces`
 - **OpenAI Codex** — the Space was Codex-built, commit trail in the repo
 
