@@ -43,6 +43,7 @@ PUSH_PATTERNS = [
     "models/stress_model_weights.npz",
     "models/stress_training_data.npz",
     "models/stress_metrics.json",
+    "demo.mp4",
 ]
 
 

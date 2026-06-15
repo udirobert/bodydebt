@@ -33,7 +33,9 @@ Body Debt calculates the precise recovery cost of last night's choices — alcoh
 
 ## Demo
 
-🎬 **[Watch the 75-second demo](https://github.com/udirobert/bodydebt/blob/main/hf-space/demo-video-script.md)** — the Space itself, captured shot-by-shot, including the streaming LLM token reveal.
+🎬 **[Watch the 75-second demo](https://huggingface.co/spaces/build-small-hackathon/body-debt/resolve/main/demo.mp4)** — the Space itself, captured shot-by-shot, including the streaming LLM token reveal.
+
+📹 **[Or watch on X](https://x.com/papajimjams/status/2066658009124687953)** — same video, posted for the social-submission requirement.
 
 📓 **[Read the field notes](https://huggingface.co/blog/build-small-hackathon/body-debt-field-notes)** — the four lessons I learned shipping a 360M health coach for myself.
 
