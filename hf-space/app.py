@@ -117,6 +117,7 @@ footer {{ display: none !important; }}
     margin: 0;
     text-shadow: 0 0 60px currentColor;
     transition: color 0.6s ease;
+    animation: heroDrop 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }}
 
 .debt-hero-label {{
@@ -127,6 +128,7 @@ footer {{ display: none !important; }}
     text-transform: uppercase;
     color: {TEXT_SECONDARY};
     margin-bottom: 8px;
+    animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.05s backwards;
 }}
 
 .debt-verdict {{
@@ -135,6 +137,7 @@ footer {{ display: none !important; }}
     font-weight: 500;
     color: {TEXT_SECONDARY};
     margin-top: 6px;
+    animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.25s backwards;
 }}
 
 /* The breathing orb behind the score */
@@ -147,17 +150,39 @@ footer {{ display: none !important; }}
 .orb-wrap::before {{
     content: '';
     position: absolute;
-    inset: -20px;
+    inset: -30px;
     background: radial-gradient(circle, currentColor 0%, transparent 65%);
-    opacity: 0.10;
+    opacity: 0.18;
     border-radius: 50%;
     animation: orbBreath 4s ease-in-out infinite;
-    z-index: -1;
+    z-index: -2;
+}}
+
+.orb-wrap::after {{
+    content: '';
+    position: absolute;
+    inset: -50px;
+    background: radial-gradient(circle, currentColor 0%, transparent 70%);
+    opacity: 0.06;
+    border-radius: 50%;
+    animation: orbBreath 4s ease-in-out infinite 0.5s;
+    z-index: -3;
+    filter: blur(8px);
 }}
 
 @keyframes orbBreath {{
-    0%, 100% {{ transform: scale(1); opacity: 0.10; }}
-    50%      {{ transform: scale(1.08); opacity: 0.18; }}
+    0%, 100% {{ transform: scale(1); }}
+    50%      {{ transform: scale(1.10); }}
+}}
+
+@keyframes heroDrop {{
+    0%   {{ opacity: 0; transform: scale(0.6) translateY(8px); filter: blur(8px); }}
+    100% {{ opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }}
+}}
+
+@keyframes fadeUp {{
+    0%   {{ opacity: 0; transform: translateY(6px); }}
+    100% {{ opacity: 1; transform: translateY(0); }}
 }}
 
 /* Section labels */
@@ -183,7 +208,7 @@ footer {{ display: none !important; }}
 
 /* System meter */
 .sys-meter {{
-    padding: 12px 14px;
+    padding: 10px 14px;
     background: {BG_SURFACE};
     border: 1px solid {BORDER};
     border-radius: 12px;
@@ -191,8 +216,14 @@ footer {{ display: none !important; }}
     display: flex;
     align-items: center;
     gap: 12px;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background 0.2s;
+    animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }}
+.sys-meter:nth-child(1) {{ animation-delay: 0.05s; }}
+.sys-meter:nth-child(2) {{ animation-delay: 0.10s; }}
+.sys-meter:nth-child(3) {{ animation-delay: 0.15s; }}
+.sys-meter:nth-child(4) {{ animation-delay: 0.20s; }}
+.sys-meter:nth-child(5) {{ animation-delay: 0.25s; }}
 .sys-meter.is-primary {{
     background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
 }}
@@ -419,6 +450,64 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
     font-family: 'JetBrains Mono', monospace;
 }}
 .app-footer a {{ color: {BRAND_PRIMARY}; text-decoration: none; }}
+
+/* Header attribution pills */
+.attr-row {{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}}
+.attr-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid {BORDER};
+    border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: {TEXT_SECONDARY};
+    background: {BG_SURFACE};
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+}}
+.attr-pill:hover {{
+    border-color: {BRAND_PRIMARY};
+    color: {TEXT_PRIMARY};
+}}
+.attr-pill .dot {{
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: {RECOVERY_GREEN};
+    box-shadow: 0 0 8px {RECOVERY_GREEN};
+}}
+
+/* Ready pulse for empty coach/trace */
+.ready-pulse {{
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: {BRAND_PRIMARY};
+    margin-right: 8px;
+    animation: pulse 1.6s ease-in-out infinite;
+}}
+
+/* Mobile / narrow viewport */
+@media (max-width: 900px) {{
+    .gradio-container {{ padding: 0 16px 40px !important; }}
+    .app-header {{ padding: 24px 0 20px; margin-bottom: 18px; }}
+    .debt-hero {{ font-size: clamp(5.5rem, 28vw, 8rem); }}
+    .orb-wrap {{ padding: 28px 20px 22px; }}
+}}
+@media (max-width: 720px) {{
+    .gradio-container {{ padding: 0 12px 32px !important; }}
+    /* Stack the right column on small screens */
+    .gradio-row > div {{ flex-wrap: wrap !important; }}
+}}
 """
 
 # ─── HTML renderers ──────────────────────────────────────────────────────────
@@ -575,19 +664,45 @@ def render_face_scan(face_stress, is_healthy, features) -> str:
 
 def render_agent_trace(steps: list[tuple[str, str, str]]) -> str:
     """steps: list of (label, status, message) where status is pending|active|done|error."""
-    items = []
-    for label, status, message in steps:
-        items.append(f"""
-        <div class="trace-step is-{status}">
-            <span class="trace-dot"></span>
-            <span style="flex: 1;">{html.escape(label)}</span>
-            <span style="color: {TEXT_FAINT}; font-size: 10px;">{html.escape(message)}</span>
+    if steps:
+        items = []
+        for label, status, message in steps:
+            items.append(f"""
+            <div class="trace-step is-{status}">
+                <span class="trace-dot"></span>
+                <span style="flex: 1;">{html.escape(label)}</span>
+                <span style="color: {TEXT_FAINT}; font-size: 10px;">{html.escape(message)}</span>
+            </div>
+            """)
+        body = "".join(items)
+    else:
+        body = f"""
+        <div class="trace-step">
+            <span class="trace-dot" style="background: {TEXT_FAINT};"></span>
+            <span style="flex: 1; color: {TEXT_FAINT};">parse_stressors</span>
         </div>
-        """)
+        <div class="trace-step">
+            <span class="trace-dot" style="background: {TEXT_FAINT};"></span>
+            <span style="flex: 1; color: {TEXT_FAINT};">compute_live_score</span>
+        </div>
+        <div class="trace-step">
+            <span class="trace-dot" style="background: {TEXT_FAINT};"></span>
+            <span style="flex: 1; color: {TEXT_FAINT};">face_scan</span>
+        </div>
+        <div class="trace-step">
+            <span class="trace-dot" style="background: {TEXT_FAINT};"></span>
+            <span style="flex: 1; color: {TEXT_FAINT};">llm_coach</span>
+        </div>
+        <div class="trace-step" style="margin-top: 8px;">
+            <span class="ready-pulse"></span>
+            <span style="color: {TEXT_MUTED}; font-size: 10px;">Awaiting analysis</span>
+        </div>
+        """
+
     return f"""
     <div>
         <div class="section-label">Agent trace</div>
-        {''.join(items) if items else '<div class="trace-step"><span class="trace-dot"></span><span style="color: {TEXT_FAINT};">Run an analysis to see the reasoning chain.</span></div>'}
+        {body}
     </div>
     """
 
@@ -757,8 +872,13 @@ def run_analysis_stream(
 def _empty_coach() -> str:
     return f"""
     <div class="coach-block">
-        <div class="coach-header"><span>AI Recovery Coach</span><span class="coach-pill">SmolLM2-360M</span></div>
-        <div class="coach-body" style="color: {TEXT_FAINT};">Awaiting analysis...</div>
+        <div class="coach-header">
+            <span>AI Recovery Coach</span>
+            <span class="coach-pill">SmolLM2-360M · local</span>
+        </div>
+        <div class="coach-body" style="color: {TEXT_FAINT};">
+            <span class="ready-pulse"></span>Ready. Tap <strong style="color: {TEXT_SECONDARY};">Calculate Body Debt</strong> to stream advice.
+        </div>
     </div>
     """
 
@@ -780,6 +900,11 @@ with gr.Blocks(title="Body Debt") as demo:
     <div class="app-header">
         <h1 class="app-title">🫀 Body Debt</h1>
         <p class="app-subtitle">Quantify your physiological debt. Get a precise, system-level recovery plan. On-device AI. Zero cloud calls.</p>
+        <div class="attr-row">
+            <span class="attr-pill"><span class="dot"></span>SmolLM2-360M · local</span>
+            <a class="attr-pill" href="https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct">360M params · 250MB RAM</a>
+            <a class="attr-pill" href="https://github.com/udirobert/bodydebt">Built with OpenAI Codex</a>
+        </div>
     </div>
     """)
 
