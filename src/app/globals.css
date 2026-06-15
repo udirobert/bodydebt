@@ -70,6 +70,13 @@
   --color-states-success: #4ADE80;
   --color-states-warning: #F59E0B;
   --color-states-error: #DC2626;
+
+  /* Five-system color tokens — see src/lib/design-tokens.ts */
+  --color-system-cardiovascular: #F43F5E;
+  --color-system-brain: #22D3EE;
+  --color-system-liver: #EAB308;
+  --color-system-muscular: #A78BFA;
+  --color-system-gut: #2DD4BF;
 }
 
 @layer base {
@@ -112,6 +119,24 @@
     --sidebar-accent-foreground: #F5F5F4;
     --sidebar-border: rgba(168, 162, 158, 0.15);
     --sidebar-ring: rgba(234, 88, 12, 0.5);
+
+    /* Five-system palette — used by SystemMeter, StressorLedgerRow, ProtocolStep.
+       Muted variants are alpha-blended onto #0A0A0B / #141416. */
+    --system-cardiovascular: #F43F5E;
+    --system-cardiovascular-soft: rgba(244, 63, 94, 0.18);
+    --system-cardiovascular-muted: rgba(244, 63, 94, 0.4);
+    --system-brain: #22D3EE;
+    --system-brain-soft: rgba(34, 211, 238, 0.18);
+    --system-brain-muted: rgba(34, 211, 238, 0.4);
+    --system-liver: #EAB308;
+    --system-liver-soft: rgba(234, 179, 8, 0.18);
+    --system-liver-muted: rgba(234, 179, 8, 0.4);
+    --system-muscular: #A78BFA;
+    --system-muscular-soft: rgba(167, 139, 250, 0.18);
+    --system-muscular-muted: rgba(167, 139, 250, 0.4);
+    --system-gut: #2DD4BF;
+    --system-gut-soft: rgba(45, 212, 191, 0.18);
+    --system-gut-muted: rgba(45, 212, 191, 0.4);
   }
 
   html {

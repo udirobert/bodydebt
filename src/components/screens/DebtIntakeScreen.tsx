@@ -11,6 +11,15 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { StressorCard } from "./stressor-card";
 import { STRESSORS, ACK_COPY, CONFIDENCE_CONFIG, computeLiveScore } from "@/lib/stressor-scoring";
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function liveScoreColor(score: number): string {
+  if (score >= 61) return "#DC2626";
+  if (score >= 41) return "#EA580C";
+  if (score >= 21) return "#F59E0B";
+  return "#4ADE80";
+}
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export function DebtIntakeScreen() {
@@ -62,7 +71,7 @@ export function DebtIntakeScreen() {
       className="relative min-h-svh flex flex-col px-5 overflow-hidden"
       style={{ backgroundColor: "#0A0A0B" }}
     >
-      {/* Nav + mini orb */}
+      {/* Nav + live score readout */}
       <div className="relative z-10 flex items-center justify-between mt-12">
         <button
           onClick={() => router.push("/wake-time")}
@@ -71,7 +80,29 @@ export function DebtIntakeScreen() {
         >
           ← Back
         </button>
-        <MiniOrb score={liveScore} size={32} />
+        <div className="flex items-center gap-2.5">
+          <motion.div
+            key={liveScore}
+            initial={{ opacity: 0.6, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="flex flex-col items-end leading-none"
+          >
+            <span
+              className="font-mono text-[10px] uppercase tracking-widest"
+              style={{ color: "#524F4C" }}
+            >
+              Live
+            </span>
+            <span
+              className="font-mono text-base font-bold tabular-nums"
+              style={{ color: liveScoreColor(liveScore) }}
+            >
+              {liveScore}
+            </span>
+          </motion.div>
+          <MiniOrb score={liveScore} size={32} />
+        </div>
       </div>
 
       <div className="relative z-10 pt-3 pb-2">
