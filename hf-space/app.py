@@ -23,15 +23,15 @@ from scoring import (
 )
 from face_scan import run_face_scan, features_to_array
 from stress_model import predict_stress_score
-from health_coach import stream_advice, stream_plan, _fallback_advice
+from health_coach import stream_advice, stream_plan, _fallback_advice, _fallback_plan
 
 # ─── Design tokens (mirrors src/lib/design-tokens.ts) ────────────────────────
 
-BG_BASE     = "#0A0A0B"
-BG_SURFACE  = "#141416"
-BG_ELEVATED = "#1C1C1F"
-BORDER      = "rgba(168, 162, 158, 0.10)"
-BORDER_SOFT = "rgba(168, 162, 158, 0.06)"
+BG_BASE       = "#0A0A0B"
+BG_SURFACE    = "#141416"
+BG_ELEVATED   = "#1C1C1F"
+BORDER        = "rgba(168, 162, 158, 0.10)"
+BORDER_SOFT   = "rgba(168, 162, 158, 0.06)"
 
 TEXT_PRIMARY   = "#F5F5F4"
 TEXT_SECONDARY = "#A8A29E"
@@ -41,6 +41,17 @@ TEXT_FAINT     = "#3a3835"
 BRAND_PRIMARY   = "#EA580C"
 BRAND_SECONDARY = "#F59E0B"
 RECOVERY_GREEN  = "#4ADE80"
+
+# Light mode tokens
+LT_BG_BASE       = "#FAFAF9"
+LT_BG_SURFACE    = "#F5F5F4"
+LT_BG_ELEVATED   = "#E7E5E4"
+LT_BORDER        = "rgba(0, 0, 0, 0.08)"
+LT_BORDER_SOFT   = "rgba(0, 0, 0, 0.04)"
+LT_TEXT_PRIMARY   = "#1C1917"
+LT_TEXT_SECONDARY = "#57534E"
+LT_TEXT_MUTED     = "#7A7672"
+LT_TEXT_FAINT     = "#B8B4B0"
 
 SYSTEM_ACCENTS = {
     "cardiovascular": ("#F43F5E", "rgba(244, 63, 94, 0.18)", "rgba(244, 63, 94, 0.40)"),
@@ -66,6 +77,20 @@ DEBT_TIERS = [
     (80, 101,"#991B1B", "Critical debt. Full rest mode.",      "critical"),
 ]
 
+TIME_OPTIONS = []
+for h in range(12):
+    for m in ["00", "30"]:
+        if h == 0:
+            TIME_OPTIONS.append(f"12:{m} AM")
+        else:
+            TIME_OPTIONS.append(f"{h}:{m} AM")
+for h in range(12):
+    for m in ["00", "30"]:
+        if h == 0:
+            TIME_OPTIONS.append(f"12:{m} PM")
+        else:
+            TIME_OPTIONS.append(f"{h}:{m} PM")
+
 WINDOW_COLORS = {
     "RIGHT NOW":     "#DC2626",
     "THIS MORNING":  "#EA580C",
@@ -90,15 +115,35 @@ CUSTOM_CSS = f"""
     --bg-base: {BG_BASE};
     --bg-surface: {BG_SURFACE};
     --bg-elevated: {BG_ELEVATED};
+    --border: {BORDER};
+    --border-soft: {BORDER_SOFT};
     --text-primary: {TEXT_PRIMARY};
     --text-secondary: {TEXT_SECONDARY};
     --text-muted: {TEXT_MUTED};
+    --text-faint: {TEXT_FAINT};
     --brand: {BRAND_PRIMARY};
+    --brand-secondary: {BRAND_SECONDARY};
+    --recovery-green: {RECOVERY_GREEN};
+}}
+
+body.light-mode {{
+    --bg-base: {LT_BG_BASE};
+    --bg-surface: {LT_BG_SURFACE};
+    --bg-elevated: {LT_BG_ELEVATED};
+    --border: {LT_BORDER};
+    --border-soft: {LT_BORDER_SOFT};
+    --text-primary: {LT_TEXT_PRIMARY};
+    --text-secondary: {LT_TEXT_SECONDARY};
+    --text-muted: {LT_TEXT_MUTED};
+    --text-faint: {LT_TEXT_FAINT};
+    --brand: {BRAND_PRIMARY};
+    --brand-secondary: {BRAND_SECONDARY};
+    --recovery-green: {RECOVERY_GREEN};
 }}
 
 html, body, .gradio-container {{
-    background: {BG_BASE} !important;
-    color: {TEXT_PRIMARY} !important;
+    background: var(--bg-base) !important;
+    color: var(--text-primary) !important;
     font-family: 'Inter', system-ui, sans-serif !important;
 }}
 
@@ -127,7 +172,7 @@ footer {{ display: none !important; }}
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: {TEXT_SECONDARY};
+    color: var(--text-secondary);
     margin-bottom: 8px;
     animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.05s backwards;
 }}
@@ -136,7 +181,7 @@ footer {{ display: none !important; }}
     font-family: 'Inter', sans-serif;
     font-size: 14px;
     font-weight: 500;
-    color: {TEXT_SECONDARY};
+    color: var(--text-secondary);
     margin-top: 6px;
     animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.25s backwards;
 }}
@@ -193,7 +238,7 @@ footer {{ display: none !important; }}
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: {TEXT_MUTED};
+    color: var(--text-muted);
     margin: 0 0 12px;
     display: flex;
     align-items: center;
@@ -204,14 +249,14 @@ footer {{ display: none !important; }}
     content: '';
     flex: 1;
     height: 1px;
-    background: {BORDER_SOFT};
+    background: var(--border-soft);
 }}
 
 /* System meter */
 .sys-meter {{
     padding: 10px 14px;
-    background: {BG_SURFACE};
-    border: 1px solid {BORDER};
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
     margin-bottom: 8px;
     display: flex;
@@ -242,11 +287,11 @@ footer {{ display: none !important; }}
 }}
 .sys-body {{ flex: 1; min-width: 0; }}
 .sys-row {{ display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }}
-.sys-label {{ font-size: 13px; font-weight: 600; color: {TEXT_PRIMARY}; }}
-.sys-time {{ font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {TEXT_MUTED}; }}
+.sys-label {{ font-size: 13px; font-weight: 600; color: var(--text-primary); }}
+.sys-time {{ font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); }}
 .sys-bar {{ margin-top: 8px; height: 3px; background: rgba(168, 162, 158, 0.10); border-radius: 2px; overflow: hidden; }}
 .sys-bar-fill {{ height: 100%; border-radius: 2px; transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1); }}
-.sys-cause {{ font-size: 11px; color: {TEXT_MUTED}; margin-top: 6px; line-height: 1.4; }}
+.sys-cause {{ font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }}
 
 /* Protocol step */
 .proto-step {{ display: flex; gap: 12px; padding: 8px 0; }}
@@ -258,33 +303,33 @@ footer {{ display: none !important; }}
     border: 1px solid currentColor;
     background: rgba(255,255,255,0.02);
 }}
-.proto-conn {{ flex: 1; width: 1px; background: {BORDER}; min-height: 18px; margin-top: 4px; }}
+.proto-conn {{ flex: 1; width: 1px; background: var(--border); min-height: 18px; margin-top: 4px; }}
 .proto-window {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
     margin-bottom: 4px;
 }}
 .proto-action {{
-    font-size: 13px; color: {TEXT_PRIMARY}; line-height: 1.55;
+    font-size: 13px; color: var(--text-primary); line-height: 1.55;
     font-weight: 500;
 }}
 
 /* Science cards */
 .sci-card {{
     padding: 12px 14px;
-    background: {BG_ELEVATED};
+    background: var(--bg-elevated);
     border-left: 2px solid currentColor;
     border-radius: 0 8px 8px 0;
     margin-bottom: 8px;
 }}
-.sci-fact {{ font-size: 12px; color: {TEXT_SECONDARY}; line-height: 1.55; margin: 0 0 4px; }}
-.sci-cite {{ font-size: 10px; color: {TEXT_FAINT}; font-style: italic; margin: 0; font-family: 'JetBrains Mono', monospace; }}
+.sci-fact {{ font-size: 12px; color: var(--text-secondary); line-height: 1.55; margin: 0 0 4px; }}
+.sci-cite {{ font-size: 10px; color: var(--text-faint); font-style: italic; margin: 0; font-family: 'JetBrains Mono', monospace; }}
 
 /* Face scan pill */
 .face-pill {{
     padding: 14px 16px;
-    background: {BG_SURFACE};
-    border: 1px solid {BORDER};
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -292,9 +337,9 @@ footer {{ display: none !important; }}
     margin-bottom: 16px;
 }}
 .face-num {{ font-family: 'DM Serif Display', serif; font-size: 36px; line-height: 1; }}
-.face-label {{ font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: {TEXT_MUTED}; }}
+.face-label {{ font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); }}
 .face-status {{ font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }}
-.face-meta {{ font-family: 'JetBrains Mono', monospace; font-size: 9px; color: {TEXT_FAINT}; margin-top: 4px; }}
+.face-meta {{ font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-faint); margin-top: 4px; }}
 
 /* Agent trace */
 .trace-step {{
@@ -303,11 +348,11 @@ footer {{ display: none !important; }}
     border-radius: 6px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
-    color: {TEXT_SECONDARY};
+    color: var(--text-secondary);
     margin-bottom: 4px;
 }}
-.trace-step.is-active {{ color: {BRAND_PRIMARY}; background: rgba(234, 88, 12, 0.06); }}
-.trace-step.is-done   {{ color: {RECOVERY_GREEN}; }}
+.trace-step.is-active {{ color: var(--brand); background: rgba(234, 88, 12, 0.06); }}
+.trace-step.is-done   {{ color: var(--recovery-green); }}
 .trace-dot {{ width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }}
 .trace-step.is-active .trace-dot {{ animation: pulse 1.2s ease-in-out infinite; }}
 @keyframes pulse {{ 0%,100% {{ opacity: 1; }} 50% {{ opacity: 0.3; }} }}
@@ -315,8 +360,8 @@ footer {{ display: none !important; }}
 /* AI coach block */
 .coach-block {{
     padding: 20px 22px;
-    background: linear-gradient(180deg, {BG_SURFACE}, {BG_BASE});
-    border: 1px solid {BORDER};
+    background: linear-gradient(180deg, var(--bg-surface), var(--bg-base));
+    border: 1px solid var(--border);
     border-radius: 14px;
     margin-top: 8px;
 }}
@@ -324,18 +369,18 @@ footer {{ display: none !important; }}
     display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
-    color: {BRAND_PRIMARY};
+    color: var(--brand);
 }}
 .coach-pill {{
-    background: {BG_ELEVATED};
-    color: {TEXT_MUTED};
+    background: var(--bg-elevated);
+    color: var(--text-muted);
     padding: 3px 8px;
     border-radius: 4px;
     font-size: 9px;
 }}
 .coach-body {{
     font-size: 14px;
-    color: {TEXT_PRIMARY};
+    color: var(--text-primary);
     line-height: 1.7;
     white-space: pre-wrap;
     min-height: 60px;
@@ -343,7 +388,7 @@ footer {{ display: none !important; }}
 .coach-cursor {{
     display: inline-block;
     width: 7px; height: 14px;
-    background: {BRAND_PRIMARY};
+    background: var(--brand);
     margin-left: 2px;
     vertical-align: text-bottom;
     animation: blink 1s steps(2, start) infinite;
@@ -352,7 +397,7 @@ footer {{ display: none !important; }}
 
 /* Buttons */
 button.primary, .gr-button-primary {{
-    background: {BRAND_PRIMARY} !important;
+    background: var(--brand) !important;
     color: white !important;
     border: none !important;
     border-radius: 10px !important;
@@ -367,28 +412,28 @@ button.primary:hover, .gr-button-primary:hover {{
 
 /* Inputs */
 input, textarea, .gr-input, .gr-text-input, .gr-dropdown {{
-    background: {BG_SURFACE} !important;
-    border: 1px solid {BORDER} !important;
-    color: {TEXT_PRIMARY} !important;
+    background: var(--bg-surface) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-primary) !important;
     border-radius: 8px !important;
 }}
-input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline: none !important; }}
+input:focus, textarea:focus {{ border-color: var(--brand) !important; outline: none !important; }}
 
 /* Checkbox */
 .gr-checkbox {{ background: transparent !important; }}
 .gr-checkbox input[type="checkbox"] {{
     appearance: none;
     width: 18px; height: 18px;
-    border: 1.5px solid {TEXT_MUTED};
+    border: 1.5px solid var(--text-muted);
     border-radius: 4px;
-    background: {BG_SURFACE};
+    background: var(--bg-surface);
     cursor: pointer;
     position: relative;
     transition: all 0.15s;
 }}
 .gr-checkbox input[type="checkbox"]:checked {{
-    background: {BRAND_PRIMARY};
-    border-color: {BRAND_PRIMARY};
+    background: var(--brand);
+    border-color: var(--brand);
 }}
 .gr-checkbox input[type="checkbox"]:checked::after {{
     content: '✓';
@@ -397,12 +442,19 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
     top: -2px; left: 3px;
     font-size: 14px; font-weight: 800;
 }}
-.gr-checkbox label {{ color: {TEXT_PRIMARY} !important; font-weight: 500 !important; }}
+.gr-checkbox label {{ color: var(--text-primary) !important; font-weight: 500 !important; }}
+
+/* Care checkbox — green when checked (positive stressor) */
+#care-checkbox input[type="checkbox"]:checked {{
+    background: var(--recovery-green) !important;
+    border-color: var(--recovery-green) !important;
+}}
+#care-checkbox label {{ color: var(--recovery-green) !important; }}
 
 /* Image upload area */
 .gr-image, .gr-image-upload {{
-    background: {BG_SURFACE} !important;
-    border: 1px dashed {BORDER} !important;
+    background: var(--bg-surface) !important;
+    border: 1px dashed var(--border) !important;
     border-radius: 10px !important;
 }}
 
@@ -410,31 +462,31 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
 .empty-state {{
     text-align: center;
     padding: 80px 20px;
-    color: {TEXT_FAINT};
+    color: var(--text-faint);
 }}
 .empty-state .icon {{ font-size: 48px; opacity: 0.3; margin-bottom: 12px; }}
-.empty-state .label {{ font-size: 14px; font-weight: 500; color: {TEXT_MUTED}; }}
-.empty-state .sub {{ font-size: 12px; color: {TEXT_FAINT}; margin-top: 4px; }}
+.empty-state .label {{ font-size: 14px; font-weight: 500; color: var(--text-muted); }}
+.empty-state .sub {{ font-size: 12px; color: var(--text-faint); margin-top: 4px; }}
 
 /* Hide group labels for cleaner look */
 .gr-group {{ background: transparent !important; border: none !important; }}
 .gr-form {{ background: transparent !important; }}
 
 /* App header */
-.app-header {{ text-align: center; padding: 36px 0 28px; border-bottom: 1px solid {BORDER_SOFT}; margin-bottom: 28px; }}
+.app-header {{ text-align: center; padding: 36px 0 28px; border-bottom: 1px solid var(--border-soft); margin-bottom: 28px; }}
 .app-title {{
     font-family: 'Inter', sans-serif;
     font-weight: 800;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     font-size: 12px;
-    color: {TEXT_PRIMARY};
+    color: var(--text-primary);
     margin: 0 0 6px;
 }}
 .app-subtitle {{
     font-family: 'Inter', sans-serif;
     font-size: 13px;
-    color: {TEXT_MUTED};
+    color: var(--text-muted);
     margin: 0;
     max-width: 480px;
     margin: 0 auto;
@@ -445,12 +497,12 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
     text-align: center;
     padding: 28px 16px 16px;
     margin-top: 36px;
-    border-top: 1px solid {BORDER_SOFT};
+    border-top: 1px solid var(--border-soft);
     font-size: 10px;
-    color: {TEXT_FAINT};
+    color: var(--text-faint);
     font-family: 'JetBrains Mono', monospace;
 }}
-.app-footer a {{ color: {BRAND_PRIMARY}; text-decoration: none; }}
+.app-footer a {{ color: var(--brand); text-decoration: none; }}
 
 /* Header attribution pills */
 .attr-row {{
@@ -466,25 +518,25 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    border: 1px solid {BORDER};
+    border: 1px solid var(--border);
     border-radius: 999px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
     font-weight: 600;
-    color: {TEXT_SECONDARY};
-    background: {BG_SURFACE};
+    color: var(--text-secondary);
+    background: var(--bg-surface);
     text-decoration: none;
     transition: border-color 0.15s, color 0.15s;
 }}
 .attr-pill:hover {{
-    border-color: {BRAND_PRIMARY};
-    color: {TEXT_PRIMARY};
+    border-color: var(--brand);
+    color: var(--text-primary);
 }}
 .attr-pill .dot {{
     width: 6px; height: 6px;
     border-radius: 50%;
-    background: {RECOVERY_GREEN};
-    box-shadow: 0 0 8px {RECOVERY_GREEN};
+    background: var(--recovery-green);
+    box-shadow: 0 0 8px var(--recovery-green);
 }}
 
 /* Ready pulse for empty coach/trace */
@@ -492,7 +544,7 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
     display: inline-block;
     width: 6px; height: 6px;
     border-radius: 50%;
-    background: {BRAND_PRIMARY};
+    background: var(--brand);
     margin-right: 8px;
     animation: pulse 1.6s ease-in-out infinite;
 }}
@@ -505,7 +557,7 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
 .plan-source {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 9px;
-    color: {TEXT_FAINT};
+    color: var(--text-faint);
     font-weight: 600;
     margin-left: auto;
     text-transform: none;
@@ -516,7 +568,7 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
     align-items: center;
     gap: 12px;
     padding: 9px 0;
-    border-bottom: 1px solid {BORDER_SOFT};
+    border-bottom: 1px solid var(--border-soft);
     animation: fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }}
 .plan-line:last-child {{ border-bottom: none; }}
@@ -536,7 +588,7 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
     font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 500;
-    color: {TEXT_PRIMARY};
+    color: var(--text-primary);
     line-height: 1.4;
 }}
 
@@ -546,8 +598,8 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
     align-items: flex-start;
     gap: 12px;
     padding: 12px 16px;
-    background: {BG_SURFACE};
-    border: 1px solid {BORDER};
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
     border-left: 2px solid;
     border-radius: 0 10px 10px 0;
     margin: 16px 0;
@@ -564,8 +616,261 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
 }}
 .cf-body {{
     font-size: 13px;
-    color: {TEXT_SECONDARY};
+    color: var(--text-secondary);
     line-height: 1.55;
+}}
+
+/* Running debt pill */
+.debt-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    transition: all 0.15s;
+    margin-bottom: 14px;
+}}
+
+/* Preset scenario chips */
+.preset-row {{
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}}
+.preset-chip {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    padding: 5px 14px !important;
+    border-radius: 999px !important;
+    border: 1px solid var(--border) !important;
+    background: var(--bg-surface) !important;
+    color: var(--text-secondary) !important;
+    letter-spacing: 0.04em !important;
+    transition: all 0.15s !important;
+    box-shadow: none !important;
+}}
+.preset-chip:hover {{
+    border-color: var(--brand) !important;
+    color: var(--text-primary) !important;
+    background: rgba(234, 88, 12, 0.06) !important;
+}}
+
+/* Clear all button */
+button.clear-all {{
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    padding: 4px 12px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    transition: all 0.15s !important;
+    margin-bottom: 8px !important;
+}}
+button.clear-all:hover {{
+    border-color: var(--text-faint) !important;
+    color: var(--text-secondary) !important;
+}}
+
+/* Sample badge */
+.sample-badge {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}}
+.sample-badge .dot {{
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--brand);
+    animation: pulse 1.6s ease-in-out infinite;
+}}
+
+/* Theme toggle button */
+.theme-toggle {{
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    z-index: 9999;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    backdrop-filter: blur(8px);
+}}
+.theme-toggle:hover {{
+    border-color: var(--brand);
+    color: var(--brand);
+    transform: scale(1.08);
+}}
+
+/* Smooth theme transitions — 0.2s matches existing hover rhythms */
+.gradio-container,
+.sys-meter, .coach-block, .coach-pill, .face-pill, .cf-block,
+.debt-pill, .attr-pill,
+input, textarea, .gr-input, .gr-text-input, .gr-dropdown,
+.gr-checkbox input[type="checkbox"]:not(:checked),
+.gr-checkbox label,
+.theme-toggle,
+.sci-card, .trace-step,
+.plan-line, .plan-tag,
+.sample-badge, .app-header, .app-footer,
+.section-label, .section-label::after,
+.debt-hero-label, .debt-verdict,
+.sys-label, .sys-time, .sys-cause, .sys-bar-fill,
+.proto-conn, .proto-action,
+.face-label, .face-meta,
+.plan-source, .plan-text,
+.cf-label, .cf-body,
+.empty-state .label, .empty-state .sub,
+.orb-wrap::before, .orb-wrap::after,
+#care-checkbox input[type="checkbox"]:not(:checked) {{
+    transition: background 0.2s ease,
+                color 0.2s ease,
+                border-color 0.2s ease;
+}}
+
+/* These have !important on their existing transitions, so !important needed here too */
+.preset-chip,
+button.clear-all,
+button.primary, .gr-button-primary {{
+    transition: background 0.2s ease,
+                color 0.2s ease,
+                border-color 0.2s ease !important;
+}}
+
+/* Comparison card carousel */
+.cmp-section {{ margin-top: 28px; }}
+.cmp-row {{
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 0 12px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+}}
+.cmp-card {{
+    min-width: 170px;
+    max-width: 200px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    padding: 12px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    position: relative;
+}}
+.cmp-hero {{
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 30px;
+    line-height: 1;
+    margin-bottom: 2px;
+}}
+.cmp-label {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}}
+.cmp-time {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: var(--text-faint);
+    margin-top: 2px;
+    margin-bottom: 8px;
+}}
+.cmp-sys {{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+    font-size: 10px;
+}}
+.cmp-sys-glyph {{
+    width: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    flex-shrink: 0;
+}}
+.cmp-sys-bar {{
+    flex: 1;
+    height: 3px;
+    background: rgba(168, 162, 158, 0.10);
+    border-radius: 2px;
+    overflow: hidden;
+}}
+.cmp-sys-fill {{
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}}
+.cmp-del {{
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-faint);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-family: system-ui, sans-serif;
+}}
+.cmp-del:hover {{
+    background: rgba(244, 63, 94, 0.15);
+    color: #F43F5E;
+}}
+.cmp-empty {{
+    text-align: center;
+    padding: 24px;
+    color: var(--text-faint);
+    font-size: 12px;
+}}
+
+/* Save compare button */
+.save-compare {{
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    padding: 5px 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--border) !important;
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+    transition: all 0.15s !important;
+}}
+.save-compare:hover {{
+    border-color: var(--brand) !important;
+    color: var(--brand) !important;
 }}
 
 /* Mobile / narrow viewport */
@@ -574,24 +879,62 @@ input:focus, textarea:focus {{ border-color: {BRAND_PRIMARY} !important; outline
     .app-header {{ padding: 24px 0 20px; margin-bottom: 18px; }}
     .debt-hero {{ font-size: clamp(5.5rem, 28vw, 8rem); }}
     .orb-wrap {{ padding: 28px 20px 22px; }}
+    .theme-toggle {{ top: 12px; right: 12px; width: 32px; height: 32px; font-size: 14px; }}
 }}
 @media (max-width: 720px) {{
     .gradio-container {{ padding: 0 12px 32px !important; }}
-    /* Stack the right column on small screens */
     .gradio-row > div {{ flex-wrap: wrap !important; }}
 }}
+"""
+
+# ─── Theme toggle JS ─────────────────────────────────────────────────────────
+
+THEME_TOGGLE_HTML = """
+<button class="theme-toggle" id="themeToggleBtn" onclick="toggleBodyDebtTheme()" aria-label="Toggle theme">🌙</button>
+<script>
+function toggleBodyDebtTheme() {
+    var body = document.body;
+    var btn = document.getElementById('themeToggleBtn');
+    body.classList.toggle('light-mode');
+    var isLight = body.classList.contains('light-mode');
+    btn.textContent = isLight ? '☀️' : '🌙';
+    try { localStorage.setItem('bodydebt-theme', isLight ? 'light' : 'dark'); } catch(e) {}
+}
+function removeCompare(idx) {
+    var el = document.querySelector('#cmp-remove-idx input');
+    if (el) { el.value = idx; el.dispatchEvent(new Event('input', { bubbles: true })); }
+}
+try {
+    if (localStorage.getItem('bodydebt-theme') === 'light') {
+        document.body.classList.add('light-mode');
+        setTimeout(function() {
+            var btn = document.getElementById('themeToggleBtn');
+            if (btn) btn.textContent = '☀️';
+        }, 0);
+    }
+} catch(e) {}
+</script>
 """
 
 # ─── HTML renderers ──────────────────────────────────────────────────────────
 
 
-def render_hero(score: int, verdict: str) -> str:
+def render_hero(score: int, verdict: str, is_sample: bool = False) -> str:
     color, _, _ = debt_tier(score)
+    badge = ""
+    if is_sample:
+        badge = (
+            '<div class="sample-badge">'
+            '<span class="dot"></span>'
+            "SAMPLE · adjust the form and click <strong>Calculate</strong> for your own"
+            "</div>"
+        )
     return f"""
+    {badge}
     <div class="orb-wrap" style="color: {color};">
         <div class="debt-hero-label">Body Debt Score</div>
         <div class="debt-hero" style="color: {color};">{score}</div>
-        <div class="debt-verdict" style="color: {TEXT_PRIMARY};">{html.escape(verdict)}</div>
+        <div class="debt-verdict" style="color: var(--text-primary);">{html.escape(verdict)}</div>
     </div>
     """
 
@@ -605,17 +948,17 @@ def render_system_meters(system_scores) -> str:
     rows = []
     for s in system_scores:
         accent_active, accent_soft, accent_muted = SYSTEM_ACCENTS.get(
-            s.system, (TEXT_SECONDARY, BORDER_SOFT, TEXT_MUTED)
+            s.system, ("var(--text-secondary)", "var(--border-soft)", "var(--text-muted)")
         )
         is_primary = s.system == primary_system
         glyph = SYSTEM_GLYPHS.get(s.system, "•")
         bar_color = accent_active if is_primary else accent_muted
-        label_color = TEXT_PRIMARY if is_primary else TEXT_SECONDARY
+        label_color = "var(--text-primary)" if is_primary else "var(--text-secondary)"
         pct = max(0, min(100, s.score))
         glyph_bg = accent_soft if is_primary else "rgba(168, 162, 158, 0.06)"
 
         rows.append(f"""
-        <div class="sys-meter {'is-primary' if is_primary else ''}" style="border-color: {accent_soft if is_primary else BORDER};">
+        <div class="sys-meter {'is-primary' if is_primary else ''}" style="border-color: {accent_soft if is_primary else 'var(--border)'};">
             <div class="sys-glyph" style="background: {glyph_bg}; color: {bar_color};">{glyph}</div>
             <div class="sys-body">
                 <div class="sys-row">
@@ -643,7 +986,7 @@ def render_prescription(system_scores, debt_score: int) -> str:
         return f"""
         <div class="coach-block">
             <div class="coach-header">Recovery Protocol · Cleared</div>
-            <div class="coach-body" style="color: {RECOVERY_GREEN};">All five systems below threshold. Maintain the streak.</div>
+            <div class="coach-body" style="color: var(--recovery-green);">All five systems below threshold. Maintain the streak.</div>
         </div>
         """
 
@@ -691,7 +1034,7 @@ def render_science(system_scores) -> str:
     items = []
     for s in system_scores:
         if s.score > 20 and s.science_fact and s.science_cite:
-            accent = SYSTEM_ACCENTS.get(s.system, (TEXT_SECONDARY,))[0]
+            accent = SYSTEM_ACCENTS.get(s.system, ("var(--text-secondary)",))[0]
             items.append((accent, s.science_fact, s.science_cite))
 
     if not items:
@@ -715,7 +1058,7 @@ def render_science(system_scores) -> str:
 
 
 def render_face_scan(face_stress, is_healthy, features) -> str:
-    status_color = RECOVERY_GREEN if is_healthy else BRAND_PRIMARY
+    status_color = "var(--recovery-green)" if is_healthy else "var(--brand)"
     status_text = "Healthy" if is_healthy else "Stressed"
     status_bg = "rgba(74, 222, 128, 0.10)" if is_healthy else "rgba(234, 88, 12, 0.10)"
 
@@ -723,7 +1066,7 @@ def render_face_scan(face_stress, is_healthy, features) -> str:
     <div class="face-pill">
         <div>
             <div class="face-label">Face Scan</div>
-            <div class="face-num" style="color: {status_color};">{face_stress:.0f}<span style="font-size: 14px; color: {TEXT_FAINT};">/100</span></div>
+            <div class="face-num" style="color: {status_color};">{face_stress:.0f}<span style="font-size: 14px; color: var(--text-faint);">/100</span></div>
         </div>
         <div style="flex: 1;">
             <span class="face-status" style="color: {status_color}; background: {status_bg};">{status_text}</span>
@@ -767,7 +1110,7 @@ def render_plan(plan: dict | None, lines_so_far: list[str] | None = None) -> str
             color = "#A78BFA"
             label = "AVOID"
         else:
-            color = TEXT_MUTED
+            color = "var(--text-muted)"
             label = ""
         rest = line.split(":", 1)[1].strip() if ":" in line else line
         rendered_lines.append(f"""
@@ -788,15 +1131,15 @@ def render_plan(plan: dict | None, lines_so_far: list[str] | None = None) -> str
 def render_counterfactual(cf: dict | None) -> str:
     if not cf:
         return ""
-    accent = SYSTEM_ACCENTS.get(cf["system"], (TEXT_SECONDARY,))[0]
+    accent = SYSTEM_ACCENTS.get(cf["system"], ("var(--text-secondary)",))[0]
     return f"""
     <div class="cf-block" style="border-left-color: {accent};">
         <span class="cf-label" style="color: {accent};">WHAT WOULD CHANGE THIS</span>
         <span class="cf-body">
-            If you had <strong style="color: {TEXT_PRIMARY};">{html.escape(cf['lever_label'])}</strong>,
+            If you had <strong style="color: var(--text-primary);">{html.escape(cf['lever_label'])}</strong>,
             <strong style="color: {accent};">{html.escape(cf['system_label'])}</strong> debt would drop
-            from <strong style="color: {TEXT_PRIMARY};">{cf['from_score']}</strong> to
-            <strong style="color: {RECOVERY_GREEN};">{cf['to_score']}</strong>.
+            from <strong style="color: var(--text-primary);">{cf['from_score']}</strong> to
+            <strong style="color: var(--recovery-green);">{cf['to_score']}</strong>.
         </span>
     </div>
     """
@@ -811,31 +1154,31 @@ def render_agent_trace(steps: list[tuple[str, str, str]]) -> str:
             <div class="trace-step is-{status}">
                 <span class="trace-dot"></span>
                 <span style="flex: 1;">{html.escape(label)}</span>
-                <span style="color: {TEXT_FAINT}; font-size: 10px;">{html.escape(message)}</span>
+                <span style="color: var(--text-faint); font-size: 10px;">{html.escape(message)}</span>
             </div>
             """)
         body = "".join(items)
     else:
         body = f"""
         <div class="trace-step">
-            <span class="trace-dot" style="background: {TEXT_FAINT};"></span>
-            <span style="flex: 1; color: {TEXT_FAINT};">parse_stressors</span>
+            <span class="trace-dot" style="background: var(--text-faint);"></span>
+            <span style="flex: 1; color: var(--text-faint);">parse_stressors</span>
         </div>
         <div class="trace-step">
-            <span class="trace-dot" style="background: {TEXT_FAINT};"></span>
-            <span style="flex: 1; color: {TEXT_FAINT};">compute_live_score</span>
+            <span class="trace-dot" style="background: var(--text-faint);"></span>
+            <span style="flex: 1; color: var(--text-faint);">compute_live_score</span>
         </div>
         <div class="trace-step">
-            <span class="trace-dot" style="background: {TEXT_FAINT};"></span>
-            <span style="flex: 1; color: {TEXT_FAINT};">face_scan</span>
+            <span class="trace-dot" style="background: var(--text-faint);"></span>
+            <span style="flex: 1; color: var(--text-faint);">face_scan</span>
         </div>
         <div class="trace-step">
-            <span class="trace-dot" style="background: {TEXT_FAINT};"></span>
-            <span style="flex: 1; color: {TEXT_FAINT};">llm_coach</span>
+            <span class="trace-dot" style="background: var(--text-faint);"></span>
+            <span style="flex: 1; color: var(--text-faint);">llm_coach</span>
         </div>
         <div class="trace-step" style="margin-top: 8px;">
             <span class="ready-pulse"></span>
-            <span style="color: {TEXT_MUTED}; font-size: 10px;">Awaiting analysis</span>
+            <span style="color: var(--text-muted); font-size: 10px;">Awaiting analysis</span>
         </div>
         """
 
@@ -853,6 +1196,180 @@ def render_empty_state() -> str:
         <div class="icon">🫀</div>
         <div class="label">Your debt will appear here</div>
         <div class="sub">Log your stressors on the left. Tap calculate.</div>
+    </div>
+    """
+
+
+# ─── Running estimate (live debt pill) ───────────────────────────────────────
+
+
+def compute_running_estimate(
+    alcohol, alcohol_type, alcohol_count,
+    training, training_area, training_intensity,
+    sleep, sleep_hours,
+    stress, stress_carried,
+    ill, ill_severity,
+    care,
+    bed_time, wake_time,
+) -> str:
+    """Return a small HTML pill showing the current running debt score."""
+    stressors = build_stressors(
+        alcohol, alcohol_type, alcohol_count,
+        training, training_area, training_intensity,
+        sleep, sleep_hours, stress, stress_carried,
+        ill, ill_severity, care,
+    )
+    score = compute_live_score(stressors)
+    color, _, _ = debt_tier(score)
+    return f'<span class="debt-pill" style="color: {color};">Running debt · <strong>{score}</strong>/100</span>'
+
+
+# ─── Preset scenario fillers ─────────────────────────────────────────────────
+
+
+def _fill_preset(
+    a, a_t, a_c, a_v,
+    t, t_a, t_i, t_v,
+    s, s_h, s_v,
+    st, st_c, st_v,
+    i, i_s, i_v,
+    c,
+    bt, wt,
+):
+    """Return (20-element) tuple matching the preset outputs list below."""
+    return (a, a_t, a_c, gr.Group(visible=a_v),
+            t, t_a, t_i, gr.Group(visible=t_v),
+            s, s_h, gr.Group(visible=s_v),
+            st, st_c, gr.Group(visible=st_v),
+            i, i_s, gr.Group(visible=i_v),
+            c, bt, wt)
+
+
+def fill_bad_night():
+    """Drank red wine 3-4, trained legs hard, slept 4-6."""
+    return _fill_preset(
+        True, "red_wine", "3-4", True,
+        True, "legs", "hard", True,
+        True, "4-6", True,
+        False, "yes", False,
+        False, "moderate", False,
+        False,
+        "2:00 AM", "8:00 AM",
+    )
+
+
+def fill_recovery_day():
+    """Beer 1-2, slept 6-7, took care of myself."""
+    return _fill_preset(
+        True, "beer", "1-2", True,
+        False, "full_body", "hard", False,
+        True, "6-7", True,
+        False, "yes", False,
+        False, "moderate", False,
+        True,
+        "10:00 PM", "6:30 AM",
+    )
+
+
+def fill_hit_it_hard():
+    """No alcohol, trained destroyed, slept okay, took care."""
+    return _fill_preset(
+        False, "red_wine", "3-4", False,
+        True, "legs", "destroyed", True,
+        True, "6-7", True,
+        False, "yes", False,
+        False, "moderate", False,
+        True,
+        "10:30 PM", "6:00 AM",
+    )
+
+
+def fill_sick():
+    """Slept terribly, high stress, floored by illness."""
+    return _fill_preset(
+        False, "red_wine", "3-4", False,
+        False, "full_body", "hard", False,
+        True, "under_4", True,
+        True, "yes", True,
+        True, "floored", True,
+        False,
+        "11:00 PM", "7:00 AM",
+    )
+
+
+def clear_all_form():
+    """Reset all form inputs to defaults."""
+    return _fill_preset(
+        False, "red_wine", "3-4", False,
+        False, "full_body", "hard", False,
+        False, "4-6", False,
+        False, "yes", False,
+        False, "moderate", False,
+        False,
+        "", "",
+    )
+
+
+# ─── Sample preview builder ──────────────────────────────────────────────────
+
+
+def render_sample_preview():
+    """Pre-render a sample analysis so the right column has content on first load."""
+    sample_stressors = build_stressors(
+        True, "red_wine", "3-4",
+        True, "legs", "hard",
+        True, "4-6",
+        False, "yes",
+        False, "moderate",
+        False,
+    )
+    sample_now = datetime.now()
+    sample_score = compute_live_score(sample_stressors)
+    sample_system_scores = compute_system_scores(
+        sample_stressors,
+        now=sample_now,
+        bed_time="2:00 AM",
+        wake_time="8:00 AM",
+    )
+
+    _, sample_verdict, _ = debt_tier(sample_score)
+    hero_html = render_hero(sample_score, sample_verdict, is_sample=True)
+    meters_html = render_system_meters(sample_system_scores)
+    rx_html = render_prescription(sample_system_scores, sample_score)
+    science_html = render_science(sample_system_scores)
+
+    system_dicts = [
+        {"label": s.label, "score": s.score, "cleared_at": s.cleared_at}
+        for s in sample_system_scores
+    ]
+    fallback_plan = _fallback_plan(system_dicts)
+    plan_html = render_plan(fallback_plan)
+
+    cf = compute_counterfactual(sample_stressors, sample_system_scores, "2:00 AM", "8:00 AM")
+    cf_html = render_counterfactual(cf)
+
+    sample_trace = [
+        ("parse_stressors", "done", "3 stressors"),
+        ("compute_live_score", "done", f"score={sample_score}/100"),
+        ("triage_plan", "done", "PRIORITY · SECONDARY · AVOID"),
+        ("llm_coach", "done", "sample"),
+    ]
+    trace_html = render_agent_trace(sample_trace)
+
+    return hero_html, plan_html, meters_html, "", rx_html + science_html, trace_html, cf_html, _sample_coach()
+
+
+def _sample_coach() -> str:
+    return f"""
+    <div class="coach-block">
+        <div class="coach-header">
+            <span>AI Recovery Coach</span>
+            <span class="coach-pill">SmolLM2-360M · local</span>
+        </div>
+        <div class="coach-body" style="color: var(--text-faint);">
+            <span class="ready-pulse"></span>
+            Sample advice shown. Tap <strong style="color: var(--text-secondary);">Calculate Body Debt</strong> for your own.
+        </div>
     </div>
     """
 
@@ -1043,8 +1560,8 @@ def _empty_coach() -> str:
             <span>AI Recovery Coach</span>
             <span class="coach-pill">SmolLM2-360M · local</span>
         </div>
-        <div class="coach-body" style="color: {TEXT_FAINT};">
-            <span class="ready-pulse"></span>Ready. Tap <strong style="color: {TEXT_SECONDARY};">Calculate Body Debt</strong> to stream advice.
+        <div class="coach-body" style="color: var(--text-faint);">
+            <span class="ready-pulse"></span>Ready. Tap <strong style="color: var(--text-secondary);">Calculate Body Debt</strong> to stream advice.
         </div>
     </div>
     """
@@ -1060,9 +1577,114 @@ def _coach_with_cursor(text: str) -> str:
     """
 
 
-# ─── Layout ───────────────────────────────────────────────────────────────────
+# ─── Compare scenarios ───────────────────────────────────────────────────
+
+
+def _build_compare_label(stressors: list) -> str:
+    """Build a short label from stressor icons."""
+    if not stressors:
+        return "Clear day"
+    icons = [STRESSOR_DEFS[s.type]["icon"] for s in stressors]
+    return " ".join(icons)
+
+
+def render_comparison_html(comparisons: list) -> str:
+    """Render the horizontal comparison carousel as HTML."""
+    if not comparisons:
+        return ''
+
+    cards = []
+    for i, c in enumerate(comparisons):
+        color, verdict, _ = debt_tier(c["score"])
+        systems_html = ""
+        for sys in c["system_scores"]:
+            accent = SYSTEM_ACCENTS.get(sys["system"], ("var(--text-secondary)",))[0]
+            pct = max(0, min(100, sys["score"]))
+            systems_html += f"""
+            <div class="cmp-sys">
+                <span class="cmp-sys-glyph" style="color: {accent};">{sys['glyph']}</span>
+                <div class="cmp-sys-bar"><div class="cmp-sys-fill" style="width:{pct}%;background:{accent}"></div></div>
+            </div>"""
+        cards.append(f"""
+        <div class="cmp-card">
+            <button class="cmp-del" onclick="removeCompare({i})" aria-label="Remove">×</button>
+            <div class="cmp-hero" style="color: {color};">{c['score']}</div>
+            <div class="cmp-label">{html.escape(c['label'])}</div>
+            <div class="cmp-time">{html.escape(c['timestamp'])}</div>
+            {systems_html}
+        </div>
+        """)
+    return f'<div class="cmp-row">{"".join(cards)}</div>'
+
+
+def save_compare(
+    comparisons,  # list from gr.State
+    alcohol, alcohol_type, alcohol_count,
+    training, training_area, training_intensity,
+    sleep, sleep_hours,
+    stress, stress_carried,
+    ill, ill_severity,
+    care,
+    bed_time, wake_time,
+):
+    """Recompute from current form inputs, append to comparisons, return updated state + HTML."""
+    stressors = build_stressors(
+        alcohol, alcohol_type, alcohol_count,
+        training, training_area, training_intensity,
+        sleep, sleep_hours, stress, stress_carried,
+        ill, ill_severity, care,
+    )
+    score = compute_live_score(stressors)
+    system_scores = compute_system_scores(
+        stressors,
+        now=datetime.now(),
+        bed_time=bed_time or None,
+        wake_time=wake_time or None,
+    )
+
+    label = _build_compare_label(stressors)
+    now_str = datetime.now().strftime("%I:%M %p").lstrip("0")
+
+    entry = {
+        "score": score,
+        "label": label,
+        "timestamp": now_str,
+        "system_scores": [
+            {
+                "system": s.system,
+                "glyph": SYSTEM_GLYPHS.get(s.system, "•"),
+                "score": s.score,
+            }
+            for s in system_scores
+        ],
+    }
+
+    new_list = list(comparisons or [])
+    new_list.append(entry)
+    return new_list, render_comparison_html(new_list)
+
+
+def remove_compare(comparisons, idx: int):
+    """Remove a comparison by index. Returns -1 sentinel to reset the trigger."""
+    new_list = list(comparisons or [])
+    if 0 <= idx < len(new_list):
+        del new_list[idx]
+    return new_list, render_comparison_html(new_list), -1
+
+
+def clear_comparisons():
+    """Clear all comparisons."""
+    return [], ""
+
+
+# ─── Pre-compute sample preview ─────────────────────────────────────────────
+
+SAMPLE_HERO, SAMPLE_PLAN, SAMPLE_METERS, SAMPLE_FACE, SAMPLE_RX, SAMPLE_TRACE, SAMPLE_CF, SAMPLE_COACH = render_sample_preview()
+
+# ─── Layout ──────────────────────────────────────────────────────────────────
 
 with gr.Blocks(title="Body Debt") as demo:
+    gr.HTML(THEME_TOGGLE_HTML)
     gr.HTML(f"""
     <div class="app-header">
         <h1 class="app-title">🫀 Body Debt</h1>
@@ -1077,7 +1699,19 @@ with gr.Blocks(title="Body Debt") as demo:
 
     with gr.Row():
         with gr.Column(scale=1):
-            gr.HTML('<div class="section-label">What happened</div>')
+            # Preset scenario chips
+            gr.HTML('<div class="section-label">Try a scenario</div>')
+            with gr.Row():
+                preset_bad_night = gr.Button("🌙 Bad night", elem_classes="preset-chip", size="sm")
+                preset_recovery = gr.Button("♻️ Recovery day", elem_classes="preset-chip", size="sm")
+            with gr.Row():
+                preset_hit_hard = gr.Button("🔥 Hit it hard", elem_classes="preset-chip", size="sm")
+                preset_sick = gr.Button("🤒 Sick", elem_classes="preset-chip", size="sm")
+
+            gr.HTML('<div class="section-label" style="margin-top: 4px;">What happened</div>')
+
+            # Running debt pill
+            debt_pill = gr.HTML(value='<span class="debt-pill" style="color: var(--text-muted);">Running debt · <strong>0</strong>/100</span>')
 
             alcohol = gr.Checkbox(label="🍺 Drank", value=False)
             with gr.Group(visible=False) as alcohol_details:
@@ -1122,33 +1756,73 @@ with gr.Blocks(title="Body Debt") as demo:
                     value="moderate", label="How bad?",
                 )
 
-            care = gr.Checkbox(label="✦ Took care of myself", value=False)
+            care = gr.Checkbox(label="✦ Took care of myself", value=False, elem_id="care-checkbox")
 
             gr.HTML('<div class="section-label" style="margin-top: 20px;">Timing</div>')
-            bed_time = gr.Textbox(label="Bedtime", placeholder="2:00 AM")
-            wake_time = gr.Textbox(label="Wake time", placeholder="8:30 AM")
+            bed_time = gr.Dropdown(
+                choices=TIME_OPTIONS,
+                value="",
+                label="Bedtime",
+                allow_custom_value=True,
+                placeholder="Select or type (e.g. 2:00 AM)",
+            )
+            wake_time = gr.Dropdown(
+                choices=TIME_OPTIONS,
+                value="",
+                label="Wake time",
+                allow_custom_value=True,
+                placeholder="Select or type (e.g. 8:30 AM)",
+            )
 
-            gr.HTML('<div class="section-label" style="margin-top: 20px;">Face scan <span style="font-weight: 400; text-transform: none; letter-spacing: normal; color: #524f4c;">(optional)</span></div>')
+            gr.HTML('<div class="section-label" style="margin-top: 20px;">Face scan <span style="font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--text-muted);">(optional)</span></div>')
             face_image = gr.Image(
                 label="Capture or upload",
                 sources=["webcam", "upload"],
                 type="numpy",
             )
 
-            analyze_btn = gr.Button("Calculate Body Debt", variant="primary", size="lg")
+            with gr.Row():
+                clear_btn = gr.Button("Clear all", elem_classes="clear-all", size="sm")
+                analyze_btn = gr.Button("Calculate Body Debt", variant="primary", size="lg")
+            with gr.Row():
+                save_compare_btn = gr.Button("📋 Save to compare", elem_classes="save-compare", size="sm")
+                clear_compare_btn = gr.Button("✕ Clear saved", elem_classes="save-compare", size="sm")
 
         with gr.Column(scale=2):
-            hero_output = gr.HTML(value=render_empty_state())
-            plan_output = gr.HTML(value="")
-            meters_output = gr.HTML(value="")
-            face_output = gr.HTML(value="")
+            hero_output = gr.HTML(value=SAMPLE_HERO)
+            plan_output = gr.HTML(value=SAMPLE_PLAN)
+            meters_output = gr.HTML(value=SAMPLE_METERS)
+            face_output = gr.HTML(value=SAMPLE_FACE)
             with gr.Row():
                 with gr.Column(scale=3):
-                    rx_output = gr.HTML(value="")
+                    rx_output = gr.HTML(value=SAMPLE_RX)
                 with gr.Column(scale=2):
-                    trace_output = gr.HTML(value=render_agent_trace([]))
-            counterfactual_output = gr.HTML(value="")
-            coach_output = gr.HTML(value=_empty_coach())
+                    trace_output = gr.HTML(value=SAMPLE_TRACE)
+            counterfactual_output = gr.HTML(value=SAMPLE_CF)
+            coach_output = gr.HTML(value=SAMPLE_COACH)
+            gr.HTML('<div class="section-label cmp-section">Saved comparisons</div>')
+            compare_output = gr.HTML(value="", visible=True)
+            remove_idx = gr.Number(value=-1, visible=False, elem_id="cmp-remove-idx")
+
+    comparisons_state = gr.State([])
+
+    ANALYSIS_INPUTS = [
+        alcohol, alcohol_type, alcohol_count,
+        training, training_area, training_intensity,
+        sleep, sleep_hours,
+        stress, stress_carried,
+        ill, ill_severity,
+        care,
+        bed_time, wake_time,
+        face_image,
+    ]
+
+    ANALYSIS_OUTPUTS = [
+        hero_output, meters_output, rx_output, face_output,
+        plan_output, trace_output, counterfactual_output, coach_output,
+    ]
+
+    # ─── Event wiring ────────────────────────────────────────────────────────
 
     # Toggle detail sections
     alcohol.change(lambda v: gr.Group(visible=v), alcohol, alcohol_details)
@@ -1157,22 +1831,90 @@ with gr.Blocks(title="Body Debt") as demo:
     stress.change(lambda v: gr.Group(visible=v), stress, stress_details)
     ill.change(lambda v: gr.Group(visible=v), ill, ill_details)
 
+    # Live running debt pill — update on any form input change
+    debt_inputs = [
+        alcohol, alcohol_type, alcohol_count,
+        training, training_area, training_intensity,
+        sleep, sleep_hours,
+        stress, stress_carried,
+        ill, ill_severity,
+        care,
+        bed_time, wake_time,
+    ]
+    for inp in debt_inputs:
+        inp.change(
+            fn=compute_running_estimate,
+            inputs=debt_inputs,
+            outputs=debt_pill,
+        )
+
+    # Preset scenario buttons: fill form then auto-run analysis
+    _PRESET_FILL_OUTPUTS = [
+        alcohol, alcohol_type, alcohol_count, alcohol_details,
+        training, training_area, training_intensity, training_details,
+        sleep, sleep_hours, sleep_details,
+        stress, stress_carried, stress_details,
+        ill, ill_severity, ill_details,
+        care,
+        bed_time, wake_time,
+    ]
+
+    for preset_btn, fill_fn in [
+        (preset_bad_night, fill_bad_night),
+        (preset_recovery, fill_recovery_day),
+        (preset_hit_hard, fill_hit_it_hard),
+        (preset_sick, fill_sick),
+    ]:
+        preset_btn.click(
+            fn=fill_fn,
+            outputs=_PRESET_FILL_OUTPUTS,
+        ).then(
+            fn=run_analysis_stream,
+            inputs=ANALYSIS_INPUTS,
+            outputs=ANALYSIS_OUTPUTS,
+        )
+
+    # Clear all button
+    clear_btn.click(
+        fn=clear_all_form,
+        outputs=_PRESET_FILL_OUTPUTS,
+    )
+
+    # Main Calculate button
     analyze_btn.click(
         fn=run_analysis_stream,
-        inputs=[
-            alcohol, alcohol_type, alcohol_count,
-            training, training_area, training_intensity,
-            sleep, sleep_hours,
-            stress, stress_carried,
-            ill, ill_severity,
-            care,
-            bed_time, wake_time,
-            face_image,
-        ],
-        outputs=[
-            hero_output, meters_output, rx_output, face_output,
-            plan_output, trace_output, counterfactual_output, coach_output,
-        ],
+        inputs=ANALYSIS_INPUTS,
+        outputs=ANALYSIS_OUTPUTS,
+    )
+
+    # Save to compare
+    COMPARE_INPUTS = [
+        alcohol, alcohol_type, alcohol_count,
+        training, training_area, training_intensity,
+        sleep, sleep_hours,
+        stress, stress_carried,
+        ill, ill_severity,
+        care,
+        bed_time, wake_time,
+    ]
+
+    save_compare_btn.click(
+        fn=save_compare,
+        inputs=[comparisons_state] + COMPARE_INPUTS,
+        outputs=[comparisons_state, compare_output],
+    )
+
+    # Remove comparison by index
+    remove_idx.change(
+        fn=remove_compare,
+        inputs=[comparisons_state, remove_idx],
+        outputs=[comparisons_state, compare_output, remove_idx],
+    )
+
+    # Clear all comparisons
+    clear_compare_btn.click(
+        fn=clear_comparisons,
+        outputs=[comparisons_state, compare_output],
     )
 
     gr.HTML(f"""
