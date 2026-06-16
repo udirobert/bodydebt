@@ -160,7 +160,7 @@ html, body, .gradio-container {{
     font-family: 'Inter', system-ui, sans-serif !important;
 }}
 
-.gradio-container {{ max-width: 1180px !important; padding: 0 24px 60px !important; }}
+.gradio-container {{ max-width: 1180px !important; margin: 0 auto !important; padding: 0 24px 60px !important; }}
 footer {{ display: none !important; }}
 
 /* Hide default Gradio chrome we don't need */
@@ -613,6 +613,33 @@ input:focus, textarea:focus {{ border-color: var(--brand) !important; outline: n
     line-height: 1.45;
 }}
 
+.scenario-panel {{
+    max-width: 760px;
+    margin: -8px auto 26px;
+    text-align: center;
+}}
+.scenario-panel .section-label {{
+    justify-content: center;
+}}
+.scenario-panel .start-hint {{
+    max-width: 560px;
+    margin: -2px auto 16px;
+}}
+.scenario-actions {{
+    max-width: 680px;
+    margin: 0 auto;
+    gap: 8px;
+}}
+
+.input-panel {{
+    max-width: 380px;
+}}
+
+.results-panel {{
+    max-width: 760px;
+    margin: 0 auto;
+}}
+
 /* Ready pulse for empty coach/trace */
 .ready-pulse {{
     display: inline-block;
@@ -1029,6 +1056,7 @@ button.primary, .gr-button-primary {{
     .gradio-container {{ padding: 0 16px 40px !important; }}
     .app-header {{ padding: 24px 0 20px; margin-bottom: 18px; }}
     .value-grid {{ grid-template-columns: 1fr; margin: -4px 0 22px; }}
+    .input-panel, .results-panel {{ max-width: 100%; }}
     .debt-hero {{ font-size: clamp(5.5rem, 28vw, 8rem); }}
     .orb-wrap {{ padding: 28px 20px 22px; }}
     .gradio-row > div {{ flex-wrap: wrap !important; }}
@@ -2062,99 +2090,99 @@ with gr.Blocks(title="Body Debt", theme=APP_THEME, css=CUSTOM_CSS) as demo:
     </div>
     """)
 
+    with gr.Group(elem_classes="scenario-panel"):
+        gr.HTML('<div class="section-label">Start with a scenario</div>')
+        gr.HTML('<p class="start-hint">Fastest path: choose a preset to see Body Debt calculate a realistic recovery plan, or customize your own day below.</p>')
+        with gr.Row(elem_classes="scenario-actions"):
+            preset_bad_night = gr.Button("🌙 Bad night", elem_classes="preset-chip", size="sm")
+            preset_recovery = gr.Button("♻️ Recovery day", elem_classes="preset-chip", size="sm")
+            preset_hit_hard = gr.Button("🔥 Hit it hard", elem_classes="preset-chip", size="sm")
+            preset_sick = gr.Button("🤒 Sick", elem_classes="preset-chip", size="sm")
+
     with gr.Row():
-        with gr.Column(scale=1):
-            # Preset scenario chips
-            gr.HTML('<div class="section-label">Try a scenario</div>')
-            gr.HTML('<p class="start-hint">Fastest path: choose a preset to auto-fill the demo, or build your own day below.</p>')
-            with gr.Row():
-                preset_bad_night = gr.Button("🌙 Bad night", elem_classes="preset-chip", size="sm")
-                preset_recovery = gr.Button("♻️ Recovery day", elem_classes="preset-chip", size="sm")
-            with gr.Row():
-                preset_hit_hard = gr.Button("🔥 Hit it hard", elem_classes="preset-chip", size="sm")
-                preset_sick = gr.Button("🤒 Sick", elem_classes="preset-chip", size="sm")
+        with gr.Column(scale=1, elem_classes="input-panel"):
+            with gr.Accordion("Customize your day", open=False):
+                gr.HTML('<div class="section-label" style="margin-top: 4px;">Log today’s stressors</div>')
 
-            gr.HTML('<div class="section-label" style="margin-top: 4px;">Log today’s stressors</div>')
+                # Running debt pill
+                debt_pill = gr.HTML(value='<span class="debt-pill" style="color: var(--text-muted);">Running debt · <strong>0</strong>/100</span>')
 
-            # Running debt pill
-            debt_pill = gr.HTML(value='<span class="debt-pill" style="color: var(--text-muted);">Running debt · <strong>0</strong>/100</span>')
+                alcohol = gr.Checkbox(label="🍺 Drank", value=False)
+                with gr.Group(visible=False) as alcohol_details:
+                    alcohol_type = gr.Dropdown(
+                        choices=["beer", "red_wine", "white_wine", "spirits", "cocktails", "champagne"],
+                        value="red_wine", label="What?",
+                    )
+                    alcohol_count = gr.Dropdown(
+                        choices=["1-2", "3-4", "5+", "lost_count"],
+                        value="3-4", label="How many?",
+                    )
 
-            alcohol = gr.Checkbox(label="🍺 Drank", value=False)
-            with gr.Group(visible=False) as alcohol_details:
-                alcohol_type = gr.Dropdown(
-                    choices=["beer", "red_wine", "white_wine", "spirits", "cocktails", "champagne"],
-                    value="red_wine", label="What?",
+                training = gr.Checkbox(label="💪 Trained", value=False)
+                with gr.Group(visible=False) as training_details:
+                    training_area = gr.Dropdown(
+                        choices=["legs", "upper", "cardio", "hiit", "full_body", "mobility"],
+                        value="full_body", label="What?",
+                    )
+                    training_intensity = gr.Dropdown(
+                        choices=["easy", "hard", "destroyed"],
+                        value="hard", label="Intensity?",
+                    )
+
+                sleep = gr.Checkbox(label="😴 Slept badly", value=False)
+                with gr.Group(visible=False) as sleep_details:
+                    sleep_hours = gr.Dropdown(
+                        choices=["under_4", "4-6", "6-7"],
+                        value="4-6", label="How many hours?",
+                    )
+
+                stress = gr.Checkbox(label="😤 High stress", value=False)
+                with gr.Group(visible=False) as stress_details:
+                    stress_carried = gr.Dropdown(
+                        choices=["yes", "mostly_gone"],
+                        value="yes", label="Still carrying it?",
+                    )
+
+                ill = gr.Checkbox(label="🤒 Feeling ill", value=False)
+                with gr.Group(visible=False) as ill_details:
+                    ill_severity = gr.Dropdown(
+                        choices=["mild", "moderate", "floored"],
+                        value="moderate", label="How bad?",
+                    )
+
+                care = gr.Checkbox(label="✦ Took care of myself", value=False, elem_id="care-checkbox")
+
+                gr.HTML('<div class="section-label" style="margin-top: 20px;">Sleep timing</div>')
+                bed_time = gr.Dropdown(
+                    choices=TIME_OPTIONS,
+                    value="",
+                    label="Bedtime",
+                    allow_custom_value=True,
+                    info="Select or type (e.g. 2:00 AM)",
                 )
-                alcohol_count = gr.Dropdown(
-                    choices=["1-2", "3-4", "5+", "lost_count"],
-                    value="3-4", label="How many?",
+                wake_time = gr.Dropdown(
+                    choices=TIME_OPTIONS,
+                    value="",
+                    label="Wake time",
+                    allow_custom_value=True,
+                    info="Select or type (e.g. 8:30 AM)",
                 )
 
-            training = gr.Checkbox(label="💪 Trained", value=False)
-            with gr.Group(visible=False) as training_details:
-                training_area = gr.Dropdown(
-                    choices=["legs", "upper", "cardio", "hiit", "full_body", "mobility"],
-                    value="full_body", label="What?",
-                )
-                training_intensity = gr.Dropdown(
-                    choices=["easy", "hard", "destroyed"],
-                    value="hard", label="Intensity?",
+                gr.HTML('<div class="section-label" style="margin-top: 20px;">Face scan <span style="font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--text-muted);">(optional)</span></div>')
+                face_image = gr.Image(
+                    label="Capture or upload",
+                    sources=["webcam", "upload"],
+                    type="numpy",
                 )
 
-            sleep = gr.Checkbox(label="😴 Slept badly", value=False)
-            with gr.Group(visible=False) as sleep_details:
-                sleep_hours = gr.Dropdown(
-                    choices=["under_4", "4-6", "6-7"],
-                    value="4-6", label="How many hours?",
-                )
+                with gr.Row():
+                    clear_btn = gr.Button("Clear all", elem_classes="clear-all", size="sm")
+                    analyze_btn = gr.Button("Calculate Body Debt →", variant="primary", size="lg")
+                with gr.Row():
+                    save_compare_btn = gr.Button("📋 Save to compare", elem_classes="save-compare", size="sm")
+                    clear_compare_btn = gr.Button("✕ Clear saved", elem_classes="save-compare", size="sm")
 
-            stress = gr.Checkbox(label="😤 High stress", value=False)
-            with gr.Group(visible=False) as stress_details:
-                stress_carried = gr.Dropdown(
-                    choices=["yes", "mostly_gone"],
-                    value="yes", label="Still carrying it?",
-                )
-
-            ill = gr.Checkbox(label="🤒 Feeling ill", value=False)
-            with gr.Group(visible=False) as ill_details:
-                ill_severity = gr.Dropdown(
-                    choices=["mild", "moderate", "floored"],
-                    value="moderate", label="How bad?",
-                )
-
-            care = gr.Checkbox(label="✦ Took care of myself", value=False, elem_id="care-checkbox")
-
-            gr.HTML('<div class="section-label" style="margin-top: 20px;">Sleep timing</div>')
-            bed_time = gr.Dropdown(
-                choices=TIME_OPTIONS,
-                value="",
-                label="Bedtime",
-                allow_custom_value=True,
-                info="Select or type (e.g. 2:00 AM)",
-            )
-            wake_time = gr.Dropdown(
-                choices=TIME_OPTIONS,
-                value="",
-                label="Wake time",
-                allow_custom_value=True,
-                info="Select or type (e.g. 8:30 AM)",
-            )
-
-            gr.HTML('<div class="section-label" style="margin-top: 20px;">Face scan <span style="font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--text-muted);">(optional)</span></div>')
-            face_image = gr.Image(
-                label="Capture or upload",
-                sources=["webcam", "upload"],
-                type="numpy",
-            )
-
-            with gr.Row():
-                clear_btn = gr.Button("Clear all", elem_classes="clear-all", size="sm")
-                analyze_btn = gr.Button("Calculate Body Debt →", variant="primary", size="lg")
-            with gr.Row():
-                save_compare_btn = gr.Button("📋 Save to compare", elem_classes="save-compare", size="sm")
-                clear_compare_btn = gr.Button("✕ Clear saved", elem_classes="save-compare", size="sm")
-
-        with gr.Column(scale=2):
+        with gr.Column(scale=2, elem_classes="results-panel"):
             hero_output = gr.HTML(value=SAMPLE_HERO)
             plan_output = gr.HTML(value=SAMPLE_PLAN)
             meters_output = gr.HTML(value=SAMPLE_METERS)
