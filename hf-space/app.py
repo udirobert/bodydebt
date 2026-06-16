@@ -44,14 +44,14 @@ RECOVERY_GREEN  = "#4ADE80"
 
 # Light mode tokens
 LT_BG_BASE       = "#FAFAF9"
-LT_BG_SURFACE    = "#F5F5F4"
-LT_BG_ELEVATED   = "#E7E5E4"
+LT_BG_SURFACE    = "#FFFFFF"
+LT_BG_ELEVATED   = "#F5F5F4"
 LT_BORDER        = "rgba(0, 0, 0, 0.08)"
 LT_BORDER_SOFT   = "rgba(0, 0, 0, 0.04)"
 LT_TEXT_PRIMARY   = "#1C1917"
 LT_TEXT_SECONDARY = "#57534E"
-LT_TEXT_MUTED     = "#7A7672"
-LT_TEXT_FAINT     = "#B8B4B0"
+LT_TEXT_MUTED     = "#78716C"
+LT_TEXT_FAINT     = "#A8A29E"
 
 SYSTEM_ACCENTS = {
     "cardiovascular": ("#F43F5E", "rgba(244, 63, 94, 0.18)", "rgba(244, 63, 94, 0.40)"),
@@ -112,21 +112,6 @@ CUSTOM_CSS = f"""
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
 :root {{
-    --bg-base: {BG_BASE};
-    --bg-surface: {BG_SURFACE};
-    --bg-elevated: {BG_ELEVATED};
-    --border: {BORDER};
-    --border-soft: {BORDER_SOFT};
-    --text-primary: {TEXT_PRIMARY};
-    --text-secondary: {TEXT_SECONDARY};
-    --text-muted: {TEXT_MUTED};
-    --text-faint: {TEXT_FAINT};
-    --brand: {BRAND_PRIMARY};
-    --brand-secondary: {BRAND_SECONDARY};
-    --recovery-green: {RECOVERY_GREEN};
-}}
-
-body.light-mode {{
     --bg-base: {LT_BG_BASE};
     --bg-surface: {LT_BG_SURFACE};
     --bg-elevated: {LT_BG_ELEVATED};
@@ -139,6 +124,27 @@ body.light-mode {{
     --brand: {BRAND_PRIMARY};
     --brand-secondary: {BRAND_SECONDARY};
     --recovery-green: {RECOVERY_GREEN};
+    --surface-glint: rgba(0, 0, 0, 0.02);
+    --surface-wash: rgba(234, 88, 12, 0.08);
+    --bar-track: rgba(28, 25, 23, 0.10);
+}}
+
+:root[data-theme="dark"] {{
+    --bg-base: {BG_BASE};
+    --bg-surface: {BG_SURFACE};
+    --bg-elevated: {BG_ELEVATED};
+    --border: {BORDER};
+    --border-soft: {BORDER_SOFT};
+    --text-primary: {TEXT_PRIMARY};
+    --text-secondary: {TEXT_SECONDARY};
+    --text-muted: #8A8580;
+    --text-faint: #6F6A64;
+    --brand: {BRAND_PRIMARY};
+    --brand-secondary: {BRAND_SECONDARY};
+    --recovery-green: {RECOVERY_GREEN};
+    --surface-glint: rgba(255,255,255,0.03);
+    --surface-wash: rgba(234, 88, 12, 0.10);
+    --bar-track: rgba(168, 162, 158, 0.14);
 }}
 
 html, body, .gradio-container {{
@@ -234,11 +240,11 @@ footer {{ display: none !important; }}
 /* Section labels */
 .section-label {{
     font-family: 'Inter', sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin: 0 0 12px;
     display: flex;
     align-items: center;
@@ -271,7 +277,7 @@ footer {{ display: none !important; }}
 .sys-meter:nth-child(4) {{ animation-delay: 0.20s; }}
 .sys-meter:nth-child(5) {{ animation-delay: 0.25s; }}
 .sys-meter.is-primary {{
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    background: linear-gradient(180deg, var(--surface-glint), transparent);
 }}
 .sys-glyph {{
     width: 28px;
@@ -289,7 +295,7 @@ footer {{ display: none !important; }}
 .sys-row {{ display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }}
 .sys-label {{ font-size: 13px; font-weight: 600; color: var(--text-primary); }}
 .sys-time {{ font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); }}
-.sys-bar {{ margin-top: 8px; height: 3px; background: rgba(168, 162, 158, 0.10); border-radius: 2px; overflow: hidden; }}
+.sys-bar {{ margin-top: 8px; height: 3px; background: var(--bar-track); border-radius: 2px; overflow: hidden; }}
 .sys-bar-fill {{ height: 100%; border-radius: 2px; transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1); }}
 .sys-cause {{ font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }}
 
@@ -301,7 +307,7 @@ footer {{ display: none !important; }}
     display: flex; align-items: center; justify-content: center;
     font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
     border: 1px solid currentColor;
-    background: rgba(255,255,255,0.02);
+    background: var(--surface-glint);
 }}
 .proto-conn {{ flex: 1; width: 1px; background: var(--border); min-height: 18px; margin-top: 4px; }}
 .proto-window {{
@@ -322,8 +328,8 @@ footer {{ display: none !important; }}
     border-radius: 0 8px 8px 0;
     margin-bottom: 8px;
 }}
-.sci-fact {{ font-size: 12px; color: var(--text-secondary); line-height: 1.55; margin: 0 0 4px; }}
-.sci-cite {{ font-size: 10px; color: var(--text-faint); font-style: italic; margin: 0; font-family: 'JetBrains Mono', monospace; }}
+.sci-fact {{ font-size: 13px; color: var(--text-secondary); line-height: 1.55; margin: 0 0 4px; }}
+.sci-cite {{ font-size: 11px; color: var(--text-muted); font-style: italic; margin: 0; font-family: 'JetBrains Mono', monospace; }}
 
 /* Face scan pill */
 .face-pill {{
@@ -390,7 +396,7 @@ footer {{ display: none !important; }}
 }}
 .coach-pill {{
     background: var(--bg-elevated);
-    color: var(--text-muted);
+    color: var(--text-secondary);
     padding: 3px 8px;
     border-radius: 4px;
     font-size: 9px;
@@ -502,8 +508,9 @@ input:focus, textarea:focus {{ border-color: var(--brand) !important; outline: n
 }}
 .app-subtitle {{
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    color: var(--text-muted);
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.55;
     margin: 0;
     max-width: 480px;
     margin: 0 auto;
@@ -554,6 +561,13 @@ input:focus, textarea:focus {{ border-color: var(--brand) !important; outline: n
     border-radius: 50%;
     background: var(--recovery-green);
     box-shadow: 0 0 8px var(--recovery-green);
+}}
+
+.start-hint {{
+    margin: -2px 0 14px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.45;
 }}
 
 /* Ready pulse for empty coach/trace */
@@ -661,9 +675,9 @@ input:focus, textarea:focus {{ border-color: var(--brand) !important; outline: n
 }}
 .preset-chip {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px !important;
+    font-size: 11px !important;
     font-weight: 700 !important;
-    padding: 5px 14px !important;
+    padding: 7px 14px !important;
     border-radius: 999px !important;
     border: 1px solid var(--border) !important;
     background: var(--bg-surface) !important;
@@ -675,7 +689,7 @@ input:focus, textarea:focus {{ border-color: var(--brand) !important; outline: n
 .preset-chip:hover {{
     border-color: var(--brand) !important;
     color: var(--text-primary) !important;
-    background: rgba(234, 88, 12, 0.06) !important;
+    background: var(--surface-wash) !important;
 }}
 
 /* Clear all button */
@@ -687,7 +701,7 @@ button.clear-all {{
     border: 1px solid var(--border) !important;
     border-radius: 8px !important;
     background: transparent !important;
-    color: var(--text-muted) !important;
+    color: var(--text-secondary) !important;
     transition: all 0.15s !important;
     margin-bottom: 8px !important;
 }}
@@ -835,7 +849,7 @@ button.primary, .gr-button-primary {{
 .cmp-sys-bar {{
     flex: 1;
     height: 3px;
-    background: rgba(168, 162, 158, 0.10);
+    background: var(--bar-track);
     border-radius: 2px;
     overflow: hidden;
 }}
@@ -1079,29 +1093,39 @@ button.primary, .gr-button-primary {{
 # ─── Theme toggle JS ─────────────────────────────────────────────────────────
 
 THEME_TOGGLE_HTML = """
-<button class="theme-toggle" id="themeToggleBtn" onclick="toggleBodyDebtTheme()" aria-label="Toggle theme">🌙</button>
+<button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="Switch to dark theme">☀️</button>
 <script>
 function toggleBodyDebtTheme() {
-    var body = document.body;
+    var root = document.documentElement;
     var btn = document.getElementById('themeToggleBtn');
-    body.classList.toggle('light-mode');
-    var isLight = body.classList.contains('light-mode');
-    btn.textContent = isLight ? '☀️' : '🌙';
-    try { localStorage.setItem('bodydebt-theme', isLight ? 'light' : 'dark'); } catch(e) {}
+    var nextTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    applyBodyDebtTheme(nextTheme);
+}
+function applyBodyDebtTheme(theme) {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggleBtn');
+    root.setAttribute('data-theme', theme);
+    if (btn) {
+        var isDark = theme === 'dark';
+        btn.textContent = isDark ? '🌙' : '☀️';
+        btn.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+    }
+    try { localStorage.setItem('bodydebt-theme', theme); } catch(e) {}
 }
 function removeCompare(idx) {
     var el = document.querySelector('#cmp-remove-idx input');
     if (el) { el.value = idx; el.dispatchEvent(new Event('input', { bubbles: true })); }
 }
 try {
-    if (localStorage.getItem('bodydebt-theme') === 'light') {
-        document.body.classList.add('light-mode');
-        setTimeout(function() {
-            var btn = document.getElementById('themeToggleBtn');
-            if (btn) btn.textContent = '☀️';
-        }, 0);
-    }
+    applyBodyDebtTheme(localStorage.getItem('bodydebt-theme') || 'light');
 } catch(e) {}
+setTimeout(function() {
+    var btn = document.getElementById('themeToggleBtn');
+    if (btn && !btn.dataset.bound) {
+        btn.dataset.bound = 'true';
+        btn.addEventListener('click', toggleBodyDebtTheme);
+    }
+}, 0);
 </script>
 """
 
@@ -2033,7 +2057,7 @@ with gr.Blocks(title="Body Debt") as demo:
     gr.HTML(f"""
     <div class="app-header">
         <h1 class="app-title">🫀 Body Debt</h1>
-        <p class="app-subtitle">Quantify your physiological debt. Get a precise, system-level recovery plan. On-device AI. Zero cloud calls.</p>
+        <p class="app-subtitle">Pick a scenario or log your day to calculate physiological debt, see the body systems affected, and get a focused recovery plan from local AI.</p>
         <div class="attr-row">
             <span class="attr-pill"><span class="dot"></span>SmolLM2-360M · local</span>
             <a class="attr-pill" href="https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct">360M params · 250MB RAM</a>
@@ -2046,6 +2070,7 @@ with gr.Blocks(title="Body Debt") as demo:
         with gr.Column(scale=1):
             # Preset scenario chips
             gr.HTML('<div class="section-label">Try a scenario</div>')
+            gr.HTML('<p class="start-hint">Fastest path: choose a preset to auto-fill the demo, or build your own day below.</p>')
             with gr.Row():
                 preset_bad_night = gr.Button("🌙 Bad night", elem_classes="preset-chip", size="sm")
                 preset_recovery = gr.Button("♻️ Recovery day", elem_classes="preset-chip", size="sm")
@@ -2053,7 +2078,7 @@ with gr.Blocks(title="Body Debt") as demo:
                 preset_hit_hard = gr.Button("🔥 Hit it hard", elem_classes="preset-chip", size="sm")
                 preset_sick = gr.Button("🤒 Sick", elem_classes="preset-chip", size="sm")
 
-            gr.HTML('<div class="section-label" style="margin-top: 4px;">What happened</div>')
+            gr.HTML('<div class="section-label" style="margin-top: 4px;">Log today’s stressors</div>')
 
             # Running debt pill
             debt_pill = gr.HTML(value='<span class="debt-pill" style="color: var(--text-muted);">Running debt · <strong>0</strong>/100</span>')
@@ -2103,7 +2128,7 @@ with gr.Blocks(title="Body Debt") as demo:
 
             care = gr.Checkbox(label="✦ Took care of myself", value=False, elem_id="care-checkbox")
 
-            gr.HTML('<div class="section-label" style="margin-top: 20px;">Timing</div>')
+            gr.HTML('<div class="section-label" style="margin-top: 20px;">Sleep timing</div>')
             bed_time = gr.Dropdown(
                 choices=TIME_OPTIONS,
                 value="",
@@ -2128,7 +2153,7 @@ with gr.Blocks(title="Body Debt") as demo:
 
             with gr.Row():
                 clear_btn = gr.Button("Clear all", elem_classes="clear-all", size="sm")
-                analyze_btn = gr.Button("Calculate Body Debt", variant="primary", size="lg")
+                analyze_btn = gr.Button("Calculate Body Debt →", variant="primary", size="lg")
             with gr.Row():
                 save_compare_btn = gr.Button("📋 Save to compare", elem_classes="save-compare", size="sm")
                 clear_compare_btn = gr.Button("✕ Clear saved", elem_classes="save-compare", size="sm")
@@ -2143,9 +2168,9 @@ with gr.Blocks(title="Body Debt") as demo:
                 with gr.Column(scale=3):
                     rx_output = gr.HTML(value=SAMPLE_RX)
                 with gr.Column(scale=2):
-                    trace_output = gr.HTML(value=SAMPLE_TRACE)
+                    coach_output = gr.HTML(value=SAMPLE_COACH)
             counterfactual_output = gr.HTML(value=SAMPLE_CF)
-            coach_output = gr.HTML(value=SAMPLE_COACH)
+            trace_output = gr.HTML(value=SAMPLE_TRACE)
             gr.HTML('<div class="section-label cmp-section">Saved comparisons</div>')
             compare_output = gr.HTML(value="", visible=True)
             remove_idx = gr.Number(value=-1, visible=False, elem_id="cmp-remove-idx")
