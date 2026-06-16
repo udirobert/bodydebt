@@ -361,10 +361,46 @@ footer {{ display: none !important; }}
 .face-label {{ font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); }}
 .face-status {{ font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }}
 .face-meta {{ font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-faint); margin-top: 4px; }}
-.face-bar {{ margin-top: 8px; height: 4px; background: rgba(168, 162, 158, 0.08); border-radius: 2px; overflow: hidden; }}
+.face-bar {{ margin-top: 8px; height: 4px; background: var(--bar-track); border-radius: 2px; overflow: hidden; }}
 .face-bar-fill {{ height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }}
 
+/* Onboarding explainer */
+.value-grid {{
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin: -8px 0 28px;
+}}
+.value-card {{
+    padding: 12px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}}
+.value-kicker {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand);
+    margin-bottom: 4px;
+}}
+.value-copy {{
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}}
+
 /* Agent trace */
+.trace-wrap {{
+    margin-top: 8px;
+    padding: 12px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    opacity: 0.82;
+}}
 .trace-step {{
     display: flex; align-items: center; gap: 10px;
     padding: 6px 10px;
@@ -583,6 +619,11 @@ input:focus, textarea:focus {{ border-color: var(--brand) !important; outline: n
 /* Triage plan */
 .plan-block {{
     margin-bottom: 20px;
+    padding: 16px 18px;
+    background: linear-gradient(180deg, var(--bg-surface), var(--bg-elevated));
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--brand);
+    border-radius: 14px;
     animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s backwards;
 }}
 .plan-source {{
@@ -598,7 +639,7 @@ input:focus, textarea:focus {{ border-color: var(--brand) !important; outline: n
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 9px 0;
+    padding: 11px 0;
     border-bottom: 1px solid var(--border-soft);
     animation: fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }}
@@ -617,7 +658,7 @@ input:focus, textarea:focus {{ border-color: var(--brand) !important; outline: n
 }}
 .plan-text {{
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--text-primary);
     line-height: 1.4;
@@ -1007,6 +1048,7 @@ button.primary, .gr-button-primary {{
 @media (max-width: 900px) {{
     .gradio-container {{ padding: 0 16px 40px !important; }}
     .app-header {{ padding: 24px 0 20px; margin-bottom: 18px; }}
+    .value-grid {{ grid-template-columns: 1fr; margin: -4px 0 22px; }}
     .debt-hero {{ font-size: clamp(5.5rem, 28vw, 8rem); }}
     .orb-wrap {{ padding: 28px 20px 22px; }}
     .theme-toggle {{ top: 12px; right: 12px; width: 32px; height: 32px; font-size: 14px; }}
@@ -1024,7 +1066,10 @@ button.primary, .gr-button-primary {{
     .orb-wrap {{ padding: 20px 12px 16px; }}
     .orb-wrap::before {{ inset: -20px; }}
     .orb-wrap::after {{ inset: -35px; }}
-    .section-label {{ font-size: 8px; margin: 0 0 8px; }}
+    .section-label {{ font-size: 10px; margin: 0 0 8px; }}
+    .value-card {{ padding: 10px 12px; }}
+    .value-kicker {{ font-size: 9px; }}
+    .value-copy {{ font-size: 12px; }}
     .sys-meter {{ padding: 8px 10px; gap: 8px; }}
     .sys-glyph {{ width: 22px; height: 22px; font-size: 10px; }}
     .sys-label {{ font-size: 11px; }}
@@ -1139,7 +1184,7 @@ def render_hero(score: int, verdict: str, is_sample: bool = False) -> str:
         badge = (
             '<div class="sample-badge">'
             '<span class="dot"></span>'
-            "SAMPLE · adjust the form and click <strong>Calculate</strong> for your own"
+            "SAMPLE RESULT · choose a scenario or click <strong>Calculate Body Debt</strong> for your own"
             "</div>"
         )
     return f"""
@@ -1466,7 +1511,7 @@ def render_plan(plan: dict | None, lines_so_far: list[str] | None = None) -> str
         up = line.upper().strip()
         if up.startswith("PRIORITY:"):
             color = "#DC2626"
-            label = "PRIORITY"
+            label = "DO FIRST"
         elif up.startswith("SECONDARY:"):
             color = "#EA580C"
             label = "SECONDARY"
@@ -1486,7 +1531,7 @@ def render_plan(plan: dict | None, lines_so_far: list[str] | None = None) -> str
 
     return f"""
     <div class="plan-block">
-        <div class="section-label">Triage plan <span class="plan-source">SmolLM2-360M</span></div>
+        <div class="section-label">Recovery plan <span class="plan-source">SmolLM2-360M</span></div>
         {''.join(rendered_lines)}
     </div>
     """
@@ -1547,8 +1592,8 @@ def render_agent_trace(steps: list[tuple[str, str, str]]) -> str:
         """
 
     return f"""
-    <div>
-        <div class="section-label">Agent trace</div>
+    <div class="trace-wrap">
+        <div class="section-label">How this was generated</div>
         {body}
     </div>
     """
@@ -2062,6 +2107,20 @@ with gr.Blocks(title="Body Debt") as demo:
             <span class="attr-pill"><span class="dot"></span>SmolLM2-360M · local</span>
             <a class="attr-pill" href="https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct">360M params · 250MB RAM</a>
             <a class="attr-pill" href="https://github.com/udirobert/bodydebt">Built with OpenAI Codex</a>
+        </div>
+    </div>
+    <div class="value-grid">
+        <div class="value-card">
+            <div class="value-kicker">Score</div>
+            <div class="value-copy">A 0–100 read on the recovery load your body is carrying right now.</div>
+        </div>
+        <div class="value-card">
+            <div class="value-kicker">Systems</div>
+            <div class="value-copy">See which body systems are driving the debt and when they clear.</div>
+        </div>
+        <div class="value-card">
+            <div class="value-kicker">Plan</div>
+            <div class="value-copy">Get the next action, secondary support, and what to avoid today.</div>
         </div>
     </div>
     """)
