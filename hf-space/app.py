@@ -27,17 +27,6 @@ from health_coach import stream_advice, stream_plan, _fallback_advice, _fallback
 
 # ─── Design tokens (mirrors src/lib/design-tokens.ts) ────────────────────────
 
-BG_BASE       = "#0A0A0B"
-BG_SURFACE    = "#141416"
-BG_ELEVATED   = "#1C1C1F"
-BORDER        = "rgba(168, 162, 158, 0.10)"
-BORDER_SOFT   = "rgba(168, 162, 158, 0.06)"
-
-TEXT_PRIMARY   = "#F5F5F4"
-TEXT_SECONDARY = "#A8A29E"
-TEXT_MUTED     = "#524F4C"
-TEXT_FAINT     = "#3a3835"
-
 BRAND_PRIMARY   = "#EA580C"
 BRAND_SECONDARY = "#F59E0B"
 RECOVERY_GREEN  = "#4ADE80"
@@ -106,6 +95,42 @@ def debt_tier(score: int) -> tuple[str, str, str]:
     return "#4ADE80", "You're clear. Minimal debt.", "low"
 
 
+APP_THEME = gr.themes.Soft(
+    primary_hue="orange",
+    secondary_hue="amber",
+    neutral_hue="stone",
+    font=[gr.themes.GoogleFont("Inter"), "system-ui", "sans-serif"],
+    font_mono=[gr.themes.GoogleFont("JetBrains Mono"), "monospace"],
+).set(
+    body_background_fill=LT_BG_BASE,
+    body_background_fill_dark=LT_BG_BASE,
+    body_text_color=LT_TEXT_PRIMARY,
+    body_text_color_dark=LT_TEXT_PRIMARY,
+    body_text_color_subdued=LT_TEXT_SECONDARY,
+    body_text_color_subdued_dark=LT_TEXT_SECONDARY,
+    block_background_fill=LT_BG_SURFACE,
+    block_background_fill_dark=LT_BG_SURFACE,
+    block_border_color=LT_BORDER,
+    block_border_color_dark=LT_BORDER,
+    block_title_text_color=LT_TEXT_PRIMARY,
+    block_title_text_color_dark=LT_TEXT_PRIMARY,
+    input_background_fill=LT_BG_SURFACE,
+    input_background_fill_dark=LT_BG_SURFACE,
+    input_border_color=LT_BORDER,
+    input_border_color_dark=LT_BORDER,
+    input_placeholder_color=LT_TEXT_MUTED,
+    input_placeholder_color_dark=LT_TEXT_MUTED,
+    button_primary_background_fill=BRAND_PRIMARY,
+    button_primary_background_fill_dark=BRAND_PRIMARY,
+    button_primary_text_color="#FFFFFF",
+    button_primary_text_color_dark="#FFFFFF",
+    button_secondary_background_fill=LT_BG_SURFACE,
+    button_secondary_background_fill_dark=LT_BG_SURFACE,
+    button_secondary_text_color=LT_TEXT_SECONDARY,
+    button_secondary_text_color_dark=LT_TEXT_SECONDARY,
+)
+
+
 # ─── Custom CSS (off-brand dark theme) ───────────────────────────────────────
 
 CUSTOM_CSS = f"""
@@ -127,24 +152,6 @@ CUSTOM_CSS = f"""
     --surface-glint: rgba(0, 0, 0, 0.02);
     --surface-wash: rgba(234, 88, 12, 0.08);
     --bar-track: rgba(28, 25, 23, 0.10);
-}}
-
-:root[data-theme="dark"] {{
-    --bg-base: {BG_BASE};
-    --bg-surface: {BG_SURFACE};
-    --bg-elevated: {BG_ELEVATED};
-    --border: {BORDER};
-    --border-soft: {BORDER_SOFT};
-    --text-primary: {TEXT_PRIMARY};
-    --text-secondary: {TEXT_SECONDARY};
-    --text-muted: #8A8580;
-    --text-faint: #6F6A64;
-    --brand: {BRAND_PRIMARY};
-    --brand-secondary: {BRAND_SECONDARY};
-    --recovery-green: {RECOVERY_GREEN};
-    --surface-glint: rgba(255,255,255,0.03);
-    --surface-wash: rgba(234, 88, 12, 0.10);
-    --bar-track: rgba(168, 162, 158, 0.14);
 }}
 
 html, body, .gradio-container {{
@@ -771,32 +778,6 @@ button.clear-all:hover {{
     animation: pulse 1.6s ease-in-out infinite;
 }}
 
-/* Theme toggle button */
-.theme-toggle {{
-    position: fixed;
-    top: 16px;
-    right: 20px;
-    z-index: 9999;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-    background: var(--bg-surface);
-    color: var(--text-secondary);
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    backdrop-filter: blur(8px);
-}}
-.theme-toggle:hover {{
-    border-color: var(--brand);
-    color: var(--brand);
-    transform: scale(1.08);
-}}
-
 /* Smooth theme transitions — 0.2s matches existing hover rhythms */
 .gradio-container,
 .sys-meter, .coach-block, .coach-pill, .tl-wrap, .face-pill, .face-pill-placeholder, .cf-block,
@@ -804,7 +785,6 @@ button.clear-all:hover {{
 input, textarea, .gr-input, .gr-text-input, .gr-dropdown,
 .gr-checkbox input[type="checkbox"]:not(:checked),
 .gr-checkbox label,
-.theme-toggle,
 .sci-card, .trace-step,
 .plan-line, .plan-tag,
 .sample-badge, .app-header, .app-footer,
@@ -1051,7 +1031,6 @@ button.primary, .gr-button-primary {{
     .value-grid {{ grid-template-columns: 1fr; margin: -4px 0 22px; }}
     .debt-hero {{ font-size: clamp(5.5rem, 28vw, 8rem); }}
     .orb-wrap {{ padding: 28px 20px 22px; }}
-    .theme-toggle {{ top: 12px; right: 12px; width: 32px; height: 32px; font-size: 14px; }}
     .gradio-row > div {{ flex-wrap: wrap !important; }}
 }}
 @media (max-width: 600px) {{
@@ -1104,7 +1083,6 @@ button.primary, .gr-button-primary {{
     .sci-card {{ padding: 10px 12px; }}
     .sci-fact {{ font-size: 11px; }}
     .sci-cite {{ font-size: 9px; }}
-    .theme-toggle {{ top: 10px; right: 10px; width: 28px; height: 28px; font-size: 12px; }}
     .face-meta {{ font-size: 8px; }}
     .face-status {{ font-size: 9px; }}
     input, textarea {{ font-size: 14px !important; }}
@@ -1133,45 +1111,6 @@ button.primary, .gr-button-primary {{
     button.clear-all {{ font-size: 9px !important; padding: 3px 8px !important; }}
     .save-compare {{ font-size: 9px !important; padding: 3px 10px !important; }}
 }}
-"""
-
-# ─── Theme toggle JS ─────────────────────────────────────────────────────────
-
-THEME_TOGGLE_HTML = """
-<button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="Switch to dark theme">☀️</button>
-<script>
-function toggleBodyDebtTheme() {
-    var root = document.documentElement;
-    var btn = document.getElementById('themeToggleBtn');
-    var nextTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    applyBodyDebtTheme(nextTheme);
-}
-function applyBodyDebtTheme(theme) {
-    var root = document.documentElement;
-    var btn = document.getElementById('themeToggleBtn');
-    root.setAttribute('data-theme', theme);
-    if (btn) {
-        var isDark = theme === 'dark';
-        btn.textContent = isDark ? '🌙' : '☀️';
-        btn.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
-    }
-    try { localStorage.setItem('bodydebt-theme', theme); } catch(e) {}
-}
-function removeCompare(idx) {
-    var el = document.querySelector('#cmp-remove-idx input');
-    if (el) { el.value = idx; el.dispatchEvent(new Event('input', { bubbles: true })); }
-}
-try {
-    applyBodyDebtTheme(localStorage.getItem('bodydebt-theme') || 'light');
-} catch(e) {}
-setTimeout(function() {
-    var btn = document.getElementById('themeToggleBtn');
-    if (btn && !btn.dataset.bound) {
-        btn.dataset.bound = 'true';
-        btn.addEventListener('click', toggleBodyDebtTheme);
-    }
-}, 0);
-</script>
 """
 
 # ─── HTML renderers ──────────────────────────────────────────────────────────
@@ -2021,7 +1960,6 @@ def render_comparison_html(comparisons: list) -> str:
             </div>"""
         cards.append(f"""
         <div class="cmp-card">
-            <button class="cmp-del" onclick="removeCompare({i})" aria-label="Remove">×</button>
             <div class="cmp-hero" style="color: {color};">{c['score']}</div>
             <div class="cmp-label">{html.escape(c['label'])}</div>
             <div class="cmp-time">{html.escape(c['timestamp'])}</div>
@@ -2097,8 +2035,7 @@ SAMPLE_HERO, SAMPLE_PLAN, SAMPLE_METERS, SAMPLE_FACE, SAMPLE_TIMELINE, SAMPLE_RX
 
 # ─── Layout ──────────────────────────────────────────────────────────────────
 
-with gr.Blocks(title="Body Debt") as demo:
-    gr.HTML(THEME_TOGGLE_HTML)
+with gr.Blocks(title="Body Debt", theme=APP_THEME, css=CUSTOM_CSS) as demo:
     gr.HTML(f"""
     <div class="app-header">
         <h1 class="app-title">🫀 Body Debt</h1>
@@ -2229,10 +2166,10 @@ with gr.Blocks(title="Body Debt") as demo:
                 with gr.Column(scale=2):
                     coach_output = gr.HTML(value=SAMPLE_COACH)
             counterfactual_output = gr.HTML(value=SAMPLE_CF)
-            trace_output = gr.HTML(value=SAMPLE_TRACE)
+            with gr.Accordion("How this was generated", open=False):
+                trace_output = gr.HTML(value=SAMPLE_TRACE)
             gr.HTML('<div class="section-label cmp-section">Saved comparisons</div>')
             compare_output = gr.HTML(value="", visible=True)
-            remove_idx = gr.Number(value=-1, visible=False, elem_id="cmp-remove-idx")
 
     comparisons_state = gr.State([])
 
@@ -2334,13 +2271,6 @@ with gr.Blocks(title="Body Debt") as demo:
         outputs=[comparisons_state, compare_output],
     )
 
-    # Remove comparison by index
-    remove_idx.change(
-        fn=remove_compare,
-        inputs=[comparisons_state, remove_idx],
-        outputs=[comparisons_state, compare_output, remove_idx],
-    )
-
     # Clear all comparisons
     clear_compare_btn.click(
         fn=clear_comparisons,
@@ -2358,4 +2288,4 @@ with gr.Blocks(title="Body Debt") as demo:
 
 
 if __name__ == "__main__":
-    demo.launch(css=CUSTOM_CSS)
+    demo.launch()
