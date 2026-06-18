@@ -346,3 +346,64 @@ export function deterministicPrescription(
       : "Anything that raises cortisol further — late nights, processed food, stimulants.",
   };
 }
+
+// ─── Deterministic schedule fallback ─────────────────────────────────────────
+
+export function deterministicSchedule(
+  systemScores: SystemScore[],
+  debtScore: number,
+): { time: string; action: string; system: string }[] {
+  const ranked = [...systemScores].sort((a, b) => b.score - a.score);
+  const top = ranked[0];
+  const second = ranked[1];
+
+  const blocks: { time: string; action: string; system: string }[] = [];
+
+  // Block 1: immediate (worst system)
+  if (top && top.score > 20) {
+    blocks.push({
+      time: "NOW-10AM",
+      action: debtScore >= 60
+        ? "500ml water + electrolytes. No caffeine."
+        : "Light hydration. Gentle start.",
+      system: top.system,
+    });
+  }
+
+  // Block 2: mid-morning (second worst system)
+  if (second && second.score > 15) {
+    blocks.push({
+      time: "10AM-12PM",
+      action: debtScore >= 40
+        ? "Light walk outside. Natural light. No intense activity."
+        : "Protein-rich meal. Normal routine.",
+      system: second.system,
+    });
+  } else {
+    blocks.push({
+      time: "10AM-12PM",
+      action: "Protein-rich meal. Protect your focus window.",
+      system: "brain",
+    });
+  }
+
+  // Block 3: afternoon
+  blocks.push({
+    time: "12PM-3PM",
+    action: debtScore >= 60
+      ? "No training. Hydrate. Light tasks only."
+      : "Light movement OK. Front-load harder work.",
+    system: "muscular",
+  });
+
+  // Block 4: late afternoon / evening
+  blocks.push({
+    time: "3PM-6PM",
+    action: debtScore >= 60
+      ? "No alcohol, no stimulants. Prepare for early sleep."
+      : "Wind down. No caffeine after 2pm.",
+    system: "cardiovascular",
+  });
+
+  return blocks;
+}

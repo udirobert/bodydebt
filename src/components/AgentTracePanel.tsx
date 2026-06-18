@@ -180,6 +180,67 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                     </div>
                   </div>
                 )}
+
+                {/* Edge vs Cloud performance comparison */}
+                {trace.totalDurationMs != null && trace.source === "qvac-local" && (
+                  <div className="mt-3 rounded-xl p-3"
+                    style={{ backgroundColor: "rgba(74,222,128,0.04)", border: "1px solid rgba(74,222,128,0.1)" }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[8px] font-mono uppercase tracking-widest font-semibold" style={{ color: "#4ADE80" }}>
+                        Performance
+                      </span>
+                      {trace.cloudDurationMs != null && trace.cloudDurationMs > 0 && trace.totalDurationMs > 0 && (
+                        <span className="text-[8px] font-mono" style={{ color: "#4ADE80" }}>
+                          {Math.round(trace.cloudDurationMs / trace.totalDurationMs)}x faster
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {/* Edge bar */}
+                      <div className="flex-1">
+                        <div className="flex justify-between text-[8px] font-mono mb-0.5">
+                          <span style={{ color: "#4ADE80" }}>Edge (on-device)</span>
+                          <span style={{ color: "#F5F5F4" }}>{(trace.totalDurationMs / 1000).toFixed(1)}s</span>
+                        </div>
+                        <div className="relative h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
+                          <motion.div
+                            className="absolute inset-y-0 left-0 rounded-full"
+                            style={{
+                              backgroundColor: "#4ADE80",
+                              width: trace.cloudDurationMs != null && trace.cloudDurationMs > 0
+                                ? `${Math.min(100, (trace.totalDurationMs / trace.cloudDurationMs) * 100)}%`
+                                : "50%",
+                            }}
+                            initial={{ width: "0%" }}
+                            animate={{
+                              width: trace.cloudDurationMs != null && trace.cloudDurationMs > 0
+                                ? `${Math.min(100, (trace.totalDurationMs / trace.cloudDurationMs) * 100)}%`
+                                : "50%",
+                            }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                          />
+                        </div>
+                      </div>
+                      {/* Cloud bar */}
+                      {trace.cloudDurationMs != null && trace.cloudDurationMs > 0 && (
+                        <div className="flex-1">
+                          <div className="flex justify-between text-[8px] font-mono mb-0.5">
+                            <span style={{ color: "#DC2626" }}>Cloud (parallel)</span>
+                            <span style={{ color: "#A8A29E" }}>{(trace.cloudDurationMs / 1000).toFixed(1)}s</span>
+                          </div>
+                          <div className="relative h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(168,162,158,0.1)" }}>
+                            <div className="absolute inset-y-0 left-0 rounded-full" style={{ backgroundColor: "#DC2626", width: "100%" }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[8px] font-mono mt-1.5 text-center" style={{ color: "#524F4C" }}>
+                      Edge AI ran {trace.cloudDurationMs != null && trace.cloudDurationMs > trace.totalDurationMs
+                        ? `${Math.round(trace.cloudDurationMs / trace.totalDurationMs)}x faster than cloud`
+                        : "on-device with zero data leaving"}
+                    </p>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

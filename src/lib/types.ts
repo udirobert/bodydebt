@@ -153,6 +153,7 @@ export interface AgentTrace {
   triage?: TriageResult;
   source: "qvac-local" | "eazo-cloud" | "deterministic";
   totalDurationMs?: number;
+  cloudDurationMs?: number;
   model?: string;
 }
 

@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { createDebtSession } from "@/lib/db/queries";
 import type { AnalyzeBodyRequest, DebtAnalysis } from "@/lib/types";
-import { computeScore, deterministicPrescription } from "../score/route";
+import { computeScore, deterministicPrescription, deterministicSchedule } from "../score/route";
 import { ai } from "@eazo/sdk";
 import { runMultiAgentPipeline, buildAgentTrace } from "@/lib/qvac";
 import type { MultiAgentInput } from "@/lib/qvac";
@@ -63,11 +63,17 @@ export async function POST(request: NextRequest) {
       });
 
       // ── Layer 2: AI verdict (runs in parallel with agents) ──────────────
-      const verdictPromise = fetchVerdict(body, layer1).catch(() => ({
+      // Also serves as the cloud AI benchmark for the Edge vs Cloud comparison
+      const cloudStartTime = Date.now();
+      const verdictPromise = fetchVerdict(body, layer1).then((result) => {
+        const cloudDurationMs = Date.now() - cloudStartTime;
+        return { ...result, _cloudDurationMs: cloudDurationMs };
+      }).catch(() => ({
         verdict:     layer1.verdict,
         recoveryTime: layer1.recoveryTime,
         recoveryArc: layer1.recoveryArc,
         _layer: "fallback",
+        _cloudDurationMs: Date.now() - cloudStartTime,
       }));
 
       // ── Layer 3: QVAC multi-agent pipeline (primary AI path) ─────────────
@@ -115,9 +121,13 @@ export async function POST(request: NextRequest) {
         } else {
           // QVAC unavailable — fall back to cloud AI
           prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
+          // Generate deterministic schedule fallback so the UI always has output
+          schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore);
         }
       } catch {
         prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
+        // Generate deterministic schedule fallback
+        schedule = deterministicSchedule(layer1.systemScores ?? [], layer1.debtScore);
       }
 
       // Emit prescription as soon as it's ready
@@ -130,6 +140,21 @@ export async function POST(request: NextRequest) {
       // ── Emit verdict (may have arrived earlier in parallel) ──────────────
       const verdictData = await verdictPromise;
       emit("verdict", verdictData);
+
+      // Attach cloud timing to agent trace for Edge vs Cloud comparison
+      const cloudDurationMs = verdictData._cloudDurationMs;
+      if (agentTrace && typeof cloudDurationMs === "number") {
+        agentTrace = { ...agentTrace, cloudDurationMs };
+      }
+
+      // Re-emit prescription with updated agent trace (now includes cloud timing)
+      if (agentTrace?.cloudDurationMs != null) {
+        emit("prescription", {
+          ...prescriptionData,
+          schedule,
+          agentTrace,
+        });
+      }
 
       // ── Final merged result ───────────────────────────────────────────────
       const final: DebtAnalysis = {
@@ -175,6 +200,7 @@ export async function POST(request: NextRequest) {
       "Connection":    "keep-alive",
       "X-Accel-Buffering": "no",
       "X-AI-Source":   "qvac-local",
+      "X-Offline-Capable": "true",
     },
   });
 }
@@ -205,14 +231,22 @@ Respond with JSON only:
 
   for (const model of ["anthropic.claude-3-5-haiku", "deepseek.v3.1"] as const) {
     try {
-      const res  = await ai.chat({
-        model,
-        messages: [
-          { role: "system", content: "Body recovery intelligence. Respond with JSON only. No caveats." },
-          { role: "user",   content: prompt },
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 250,
+      // Race against a 5s timeout — offline/network issues should fail fast
+      // so the deterministic fallback kicks in without making the user wait
+      const res = await Promise.race([
+        ai.chat({
+          model,
+          messages: [
+            { role: "system", content: "Body recovery intelligence. Respond with JSON only. No caveats." },
+            { role: "user",   content: prompt },
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 250,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("verdict_timeout")), 5000)
+        ),
+      ]);
       });
       const parsed = JSON.parse(res.choices[0]?.message?.content ?? "{}");
       if (typeof parsed.verdict !== "string") throw new Error("bad shape");
@@ -258,15 +292,20 @@ Rules: specific quantities, times, substances. No generic advice. No caveats.`;
 
   for (const model of ["deepseek.v3.1", "anthropic.claude-3-5-haiku"] as const) {
     try {
-      const res  = await ai.chat({
-        model,
-        messages: [
-          { role: "system", content: "Body recovery intelligence. JSON only. Specific. Direct. No caveats." },
-          { role: "user",   content: prompt },
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 500,
-      });
+      const res = await Promise.race([
+        ai.chat({
+          model,
+          messages: [
+            { role: "system", content: "Body recovery intelligence. JSON only. Specific. Direct. No caveats." },
+            { role: "user",   content: prompt },
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 500,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("prescription_timeout")), 8000)
+        ),
+      ]);
       const parsed = JSON.parse(res.choices[0]?.message?.content ?? "{}");
       const p = parsed.prescription ?? parsed;
       if (!p.rightNow || !p.thisMorning || !p.today || !p.avoid) throw new Error("incomplete");
