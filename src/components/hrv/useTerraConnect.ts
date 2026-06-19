@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { getTerraWidgetSession, getTerraData } from "@/lib/api";
 import type { HRVData } from "@/lib/types";
