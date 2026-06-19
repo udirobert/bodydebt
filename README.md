@@ -130,7 +130,15 @@ Requirements:
 
 ### Evidence page for judges
 
-A single-page summary of architecture, agent pipeline, measured performance, and graceful degradation lives at [`/evidence`](https://bodydebt.app/evidence). It links back to this repo and is meant to be the first thing a hackathon judge screenshots.
+A single-page summary of architecture, agent pipeline, measured performance, and graceful degradation lives at [bodydebt.thisyearnofear.com/evidence](https://bodydebt.thisyearnofear.com/evidence). It links back to this repo and is meant to be the first thing a hackathon judge screenshots.
+
+### Live deployment
+
+- **Live URL:** https://bodydebt.thisyearnofear.com
+- **Evidence page:** https://bodydebt.thisyearnofear.com/evidence
+- **Hosted on:** Hetzner CX21 (snel-bot, AMD EPYC-Genoa 4-core, 7.6GB RAM, no GPU)
+- **Process manager:** pm2 (`bodydebt` process on port 3050, proxied via nginx with Let's Encrypt SSL)
+- **QVAC model:** Llama-3.2-1B-Instruct Q4_0 (738MB), cached at `~/.qvac/models/` after first inference
 
 ---
 
