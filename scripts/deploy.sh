@@ -33,7 +33,7 @@ echo ">>> Trim platform: $TRIM_PLATFORM (set TRIM_PLATFORM to override)"
 
 # 1. Build locally (idempotent — Next.js will skip if no changes)
 echo ">>> Building locally..."
-NEXT_TELEMETRY_DISABLED=1 bun run build
+NEXT_TELEMETRY_DISABLED=1 npm run build
 
 # 2. Trim local node_modules so we don't ship every platform's prebuilds
 echo ">>> Trimming local node_modules for $TRIM_PLATFORM..."
@@ -50,7 +50,6 @@ RSYNC_EXCLUDES=(
   --exclude='docs/'
   --exclude='contracts/'
   --exclude='hf-space/'
-  --exclude='models/'
   --exclude='*.py'
   --exclude='requirements.txt'
   --exclude='bun.lock'
@@ -85,7 +84,6 @@ ssh "$SERVER" "pm2 stop bodydebt 2>/dev/null || true"
 rsync -avz --delete \
   "${RSYNC_EXCLUDES[@]}" \
   --exclude='.env' \
-  --exclude='ecosystem.config.cjs' \
   ./ "$SERVER:$DEPLOY_PATH/"
 
 # .env and ecosystem.config.cjs are managed on the server — only push if missing
