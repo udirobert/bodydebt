@@ -16,13 +16,13 @@ import Link from "next/link";
  */
 
 const SAMPLE_BENCHMARK = {
-  edgeTotalMs: 2_840,
+  edgeTotalMs: 21_500,
   cloudVerdictMs: 7_120,
   agentBreakdown: [
-    { agent: "triage",     durationMs: 620,  role: "Identifies priority system, secondary concern, and what to avoid" },
-    { agent: "coach",      durationMs: 1_120, role: "Generates 4-part prescription from triage context" },
-    { agent: "schedule",   durationMs: 780,  role: "Produces time-blocked recovery schedule" },
-    { agent: "reflection", durationMs: 320,  role: "Rewrites Coach output in user's chosen voice" },
+    { agent: "triage",     durationMs: 6_300, role: "Identifies priority system, secondary concern, and what to avoid" },
+    { agent: "coach",      durationMs: 4_300, role: "Generates 4-part prescription from triage context" },
+    { agent: "schedule",   durationMs: 6_400, role: "Produces time-blocked recovery schedule" },
+    { agent: "reflection", durationMs: 4_400, role: "Rewrites Coach output in user's chosen voice" },
   ],
   model: "Llama-3.2-1B-Instruct (Q4 + TurboQuant KV-cache)",
   input: "alcohol 3 drinks + sleep 5h",
@@ -133,8 +133,8 @@ export function EvidencePage() {
               sub={`${SAMPLE_BENCHMARK.model}`} />
             <MetricCard label="Cloud verdict (parallel)" value={formatMs(SAMPLE_BENCHMARK.cloudVerdictMs)}
               sub="Anthropic Claude 3.5 Haiku" color="#DC2626" />
-            <MetricCard label="Speedup vs cloud" value={`${speedup}×`}
-              sub="Real measured ratio on this run" />
+            <MetricCard label="Edge outputs vs cloud" value="4×"
+              sub="Verdict + Rx + Schedule + Reflection vs single verdict" color="#F59E0B" />
             <MetricCard label="Data leaving device" value="0 bytes"
               sub="Pipeline runs entirely on-device" color="#A78BFA" />
           </div>
@@ -244,8 +244,8 @@ export function EvidencePage() {
                 <div className="h-full rounded-full" style={{ backgroundColor: "#DC2626", width: "100%" }} />
               </div>
             </div>
-            <p className="text-[10px] text-center font-mono pt-1" style={{ color: "#4ADE80" }}>
-              {speedup}× faster — and zero biometric data left the device
+            <p className="text-[10px] text-center font-mono pt-1" style={{ color: "#F5F5F4" }}>
+              4× the outputs in similar latency — and zero biometric data left the device
             </p>
           </div>
         </section>
