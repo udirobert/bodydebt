@@ -85,7 +85,7 @@ The Next.js app uses **QVAC SDK** for all AI inference. Three agents run sequent
 2. **Recovery Coach Agent** — generates a 4-part prescription (Right Now / This Morning / Today / Avoid) using the triage output as context
 3. **Schedule Agent** — produces a time-blocked recovery schedule for the next 12 hours
 
-Each agent streams tokens live to the UI. The agent trace panel shows each agent's role, duration, and QVAC source badge. Cloud AI (Eazo/deepseek) is fallback only when QVAC is unavailable.
+Each agent streams tokens live to the UI. The agent trace panel shows each agent's role, duration, and QVAC source badge. A real **Edge vs Cloud** performance comparison bars the on-device pipeline against a parallel cloud verdict call, with the "Nx faster" multiplier visible. Cloud AI (Eazo/deepseek) is fallback only when QVAC is unavailable, with 5s and 8s timeouts so offline mode fails fast to deterministic schedules, prescriptions, and verdicts.
 
 ### Architecture
 
@@ -96,9 +96,21 @@ Camera frame
   -> EZKL ZK proof (Web Worker)
   -> local verify + SKALE on-chain commit
   -> Deterministic 5-system score (instant, <5ms)
+  -> Counterfactual engine (single-variable re-run, highest-leverage change)
   -> QVAC 3-agent pipeline (Llama-3.2-1B, on-device)
+  -> Deterministic schedule + prescription + verdict fallbacks at every layer
   -> Streaming SSE to dashboard
 ```
+
+### Offline mode
+
+After the first inference, the QVAC model is cached locally. Subsequent runs work fully offline:
+
+- QVAC pipeline: cached model loads instantly, no network
+- Cloud verdict (parallel): 5s timeout → deterministic fallback
+- Cloud prescription (fallback): 8s timeout → deterministic fallback
+- Schedule: always deterministic, never needs the cloud
+- Response header `X-Offline-Capable: true` signals readiness
 
 ### Reproduce
 

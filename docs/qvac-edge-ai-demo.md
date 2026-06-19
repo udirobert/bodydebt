@@ -71,6 +71,8 @@
 - The Edge AI badge next to "BODY DEBT"
 - The Agent Trace panel (collapsible, showing all 3 agents, their durations, and QVAC source)
 - The Recovery Schedule from the Schedule Agent
+- The Edge vs Cloud performance comparison bars (real measured timings)
+- The Counterfactual callout — "What would change this"
 
 ---
 
@@ -85,6 +87,15 @@
 - Each agent's name, description, duration, and "QVAC local" source badge
 - The triage output (PRIORITY / SECONDARY / AVOID)
 - Total pipeline duration
+- **Edge vs Cloud performance bars** — a green bar showing the total on-device pipeline time next to a red bar showing the parallel cloud verdict time. Judges see the exact "Nx faster" multiplier live.
+
+**Say:**
+> *"This bar is real — the cloud verdict runs in parallel with the QVAC pipeline, and we record both durations. On this run, edge finished in Nx the time of the cloud call. That's not a marketing claim; it's a measured comparison you can see on screen."*
+
+**Show:** Scroll to the counterfactual callout below the system panels
+
+**Say:**
+> *"Here's the counterfactual — a deterministic engine re-run with one variable flipped. 'If you had slept 7+ hours, Brain debt would drop from 67 to 22.' This isn't an LLM. It's three minutes of math that converts a score into a lever. Users screenshot this line."*
 
 ---
 
@@ -105,15 +116,29 @@
 | **Multi-agent orchestration** | "Triage Agent feeds Coach Agent feeds Schedule Agent — sequential pipeline with structured outputs." |
 | **QVAC SDK** | "Llama-3.2-1B Q4 with TurboQuant KV-cache quantization via @qvac/sdk." |
 | **Fork isolation** | "The LLM runs in `child_process.fork()` — if it crashes, your session doesn't." |
-| **Real benchmarks** | "Each agent reports its own duration. Total pipeline time is visible in the UI." |
+| **Real benchmarks** | "Each agent reports its own duration. Total pipeline time is visible in the UI. Edge vs Cloud bars show real measured timings, not estimates." |
+| **Counterfactual engine** | "Deterministic re-run with one variable flipped. Not an LLM. Converts a score into the one change that would help most." |
+| **Offline resilience** | "Cloud calls have 5s and 8s timeouts. When offline, deterministic fallbacks at every layer mean the user still gets a score, a prescription, and a schedule. The QVAC model caches locally after first download, so the pipeline works with no network." |
 | **ZK as privacy layer** | "The ZK proof verifies the face scan was real without exposing biometric data. It's the privacy layer for the edge AI." |
-| **Offline** | "The entire pipeline works with the network disabled." |
+| **Continuous return loop** | "Sticky section nav, confidence explainer, progressive system reveal, and 'check back tomorrow' nudge close the loop." |
+
+## Demo checklist
+
+- [ ] QVAC model cached before recording (visit app once, let first inference complete)
+- [ ] Face scan calibrated to current lighting
+- [ ] Stressors pre-filled (don't burn 15s clicking)
+- [ ] Browser zoom at 100% so the Agent Trace panel text reads on screen
+- [ ] DevTools Network tab filtered to `/api/analyze/stream` for the SSE event narrative
 
 ## Pitfalls to avoid
 
 - ❌ Don't spend more than 15 seconds on the intake flow — pre-fill stressors or have them ready
 - ❌ Don't let the model download phase stall — ensure the QVAC model is cached before recording
 - ❌ Don't skip the Agent Trace panel — this is the key differentiator for the multi-agent criteria
+- ❌ Don't gloss over the Edge vs Cloud bars — they're measurable proof of the performance claim
+- ❌ Don't skip the counterfactual — it's the highest-leverage line in the UI and the cheapest "wow"
 - ✅ Do point out the "Edge AI" badge on the dashboard — it proves QVAC was used
 - ✅ Do expand the Agent Trace panel so judges see all 3 agents and their timings
 - ✅ Do mention the schedule output from the Schedule Agent — it's a tangible multi-agent result
+- ✅ Do point at the confidence tier badge and tap it to show the inline explanation
+- ✅ Do mention offline mode: kill wifi and re-run the analysis to demonstrate the deterministic fallback chain
