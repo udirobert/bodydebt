@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { AnalyzeBodyRequest, HRVData, FaceAnalysisResult, StressorType, ConfidenceTier } from "@/lib/types";
+import type { AnalyzeBodyRequest, HRVData, FaceAnalysisResult, StressorType, ConfidenceTier, SystemScore } from "@/lib/types";
 import { computeSystemScores } from "@/lib/systemScoring";
 import { computeCounterfactual } from "@/lib/systemScoring";
 import { getStrings, type Locale } from "@/lib/i18n";
