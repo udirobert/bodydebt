@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   icons: {
-    icon: "https://eazo.ai/favicon.ico",
+    icon: "/favicon.ico",
   },
   // Social preview cards (Open Graph + Twitter). Most platforms (X,
   // Facebook, LinkedIn, Slack, Discord, WeChat, iMessage) read these
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   // metadata and overrides `openGraph.images` below at build time.
   openGraph: {
     type: "website",
-    siteName: "Eazo",
+    siteName: "BODY DEBT",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     url: "/",
