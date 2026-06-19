@@ -130,19 +130,22 @@ Requirements:
 
 ### Evidence page for judges
 
-A single-page summary of architecture, agent pipeline, measured performance, and graceful degradation lives at [bodydebt.thisyearnofear.com/evidence](https://bodydebt.thisyearnofear.com/evidence). It links back to this repo and is meant to be the first thing a hackathon judge screenshots.
+A single-page summary of architecture, agent pipeline, measured performance, and graceful degradation lives at [bodydebt.thisyearnofear.com:8765/evidence](http://bodydebt.thisyearnofear.com:8765/evidence). It links back to this repo and is meant to be the first thing a hackathon judge screenshots.
 
 ### Live deployment
 
-- **Live URL:** https://bodydebt.thisyearnofear.com
-- **Evidence page:** https://bodydebt.thisyearnofear.com/evidence
-- **Hosted on:** Hetzner CX21 (snel-bot, AMD EPYC-Genoa 4-core, 7.6GB RAM, no GPU)
-- **Process manager:** pm2 (`bodydebt` process on port 3050, proxied via nginx with Let's Encrypt SSL)
+- **Live URL:** http://bodydebt.thisyearnofear.com:8765
+- **Evidence page:** http://bodydebt.thisyearnofear.com:8765/evidence
+- **Hosted on:** Vultr (nuncio-vultr, Intel Broadwell 4-core, 7.7GB RAM, 150GB disk, 85GB free)
+- **Process manager:** pm2 (`bodydebt` process on port 3050, proxied via nginx on port 8765)
+- **Why port 8765:** the server also runs Coolify/Traefik which owns ports 80/443. Using a non-standard high port keeps the existing PaaS stack untouched.
+- **Why no HTTPS yet:** standard Let's Encrypt HTTP-01 challenge needs port 80 which Coolify owns. DNS-01 challenge is on the roadmap once a Cloudflare API token is provisioned.
 - **QVAC model:** Llama-3.2-1B-Instruct Q4_0 (738MB), cached at `~/.qvac/models/` after first inference
+- **Measured pipeline on nuncio-vultr:** 4 agents complete in ~95s end-to-end (Intel Broadwell is slower than the AMD EPYC we tested on snel-bot, which was 22s).
 
 ### Lean deploy
 
-The server is space-constrained (38 GB disk, ~2 GB free after deploy), so we don't ship the full repo. Use `scripts/deploy.sh` instead of `git clone && bun install && bun build` on the server.
+The server has plenty of space (150 GB disk, 85 GB free) but the local-build approach is still preferred so we don't pay 7 GB of native binaries we don't need. Use `scripts/deploy.sh` instead of `git clone && bun install && bun build` on the server.
 
 ```bash
 # From your local Mac — builds, trims, and rsyncs only runtime artifacts

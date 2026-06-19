@@ -2,12 +2,12 @@
 
 ## Setup (before recording)
 
-1. Open the live deployment at https://bodydebt.thisyearnofear.com in Chrome (Safari on iPhone for the mobile-camera demo)
+1. Open the live deployment at http://bodydebt.thisyearnofear.com:8765 in Chrome (Safari on iPhone for the mobile-camera demo)
 2. Ensure you have **no other tabs open** (judges see your screen)
 3. Open DevTools → Console so the QVAC progress logs are visible
 4. Have a webcam ready (or hold your phone camera to the laptop screen)
 5. **Open the DevTools Network tab** and filter to `/api/analyze/stream` — the judges will see the SSE events stream live, including `agent_start`, `agent_token`, and `agent_done` events
-6. **Have `/evidence` open in a second tab** at https://bodydebt.thisyearnofear.com/evidence — close with it as the summary page
+6. **Have `/evidence` open in a second tab** at http://bodydebt.thisyearnofear.com:8765/evidence — close with it as the summary page
 
 ---
 
