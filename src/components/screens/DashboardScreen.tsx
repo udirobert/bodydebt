@@ -51,25 +51,49 @@ function getVerdictMeta(score: number): { color: string } {
   return { color: "#4ADE80" };
 }
 
-const CONFIDENCE_CONFIG: Record<string, { dot: string; label: string; color: string }> = {
-  estimated: { dot: "◐", label: "Estimated",       color: "#524F4C" },
-  partial:   { dot: "◑", label: "Partial picture", color: "#A8A29E" },
-  good:      { dot: "◕", label: "Good read",        color: "#F59E0B" },
-  accurate:  { dot: "●", label: "Accurate",         color: "#EA580C" },
-  precise:   { dot: "●", label: "Precise",          color: "#4ADE80" },
+const CONFIDENCE_CONFIG: Record<string, { dot: string; label: string; color: string; explanation: string }> = {
+  estimated: { dot: "◐", label: "Estimated",       color: "#524F4C", explanation: "Based on your reported stressors only. No biometric data used." },
+  partial:   { dot: "◑", label: "Partial picture", color: "#A8A29E", explanation: "Some biometric signal received. Connecting a wearable or doing a face scan would improve accuracy." },
+  good:      { dot: "◕", label: "Good read",        color: "#F59E0B", explanation: "Face scan or HRV data is included. Confidence is high enough to act on." },
+  accurate:  { dot: "●", label: "Accurate",         color: "#EA580C", explanation: "Multiple biometric signals verified. Your score reflects real physiology." },
+  precise:   { dot: "●", label: "Precise",          color: "#4ADE80", explanation: "Full signal coverage: stressors, face scan, and HRV. Maximum confidence." },
 };
 
 function ConfidenceSignal({ tier }: { tier?: ConfidenceTier }) {
+  const [expanded, setExpanded] = useState(false);
   if (!tier || tier === "estimated") return null;
   const cfg = CONFIDENCE_CONFIG[tier] ?? CONFIDENCE_CONFIG.partial;
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="flex items-center justify-center gap-1.5 mt-1">
-      <span className="text-sm" style={{ color: cfg.color }}>{cfg.dot}</span>
-      <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: cfg.color }}>
-        {cfg.label}
-      </span>
-    </motion.div>
+    <div className="flex flex-col items-center">
+      <motion.button
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center justify-center gap-1.5 mt-1"
+      >
+        <span className="text-sm" style={{ color: cfg.color }}>{cfg.dot}</span>
+        <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: cfg.color }}>
+          {cfg.label}
+        </span>
+        <motion.span animate={{ rotate: expanded ? 180 : 0 }} className="text-[8px]" style={{ color: cfg.color }}>
+          ▾
+        </motion.span>
+      </motion.button>
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <p className="text-[9px] text-center px-8 mt-1.5 leading-relaxed" style={{ color: "#524F4C" }}>
+              {cfg.explanation}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -211,8 +235,59 @@ export function DashboardScreen() {
   const scoreColor = getVerdictMeta(data.debtScore).color;
 
   const systemsRef = useRef<HTMLDivElement>(null);
+  const counterfactualRef = useRef<HTMLDivElement>(null);
+  const breakdownRef = useRef<HTMLDivElement>(null);
+  const traceRef = useRef<HTMLDivElement>(null);
+  const scheduleRef = useRef<HTMLDivElement>(null);
   const scrollToSystems = () => {
     systemsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Track scroll position to show/hide sticky nav
+  const [showStickyNav, setShowStickyNav] = useState(false);
+  const [activeSection, setActiveSection] = useState("score");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onScroll = () => {
+      const sc = scrollContainerRef.current;
+      if (!sc) return;
+      const scrollTop = sc.scrollTop;
+      setShowStickyNav(scrollTop > 400);
+
+      // Determine active section
+      const sections = [
+        { id: "score", ref: null, threshold: 0 },
+        { id: "systems", ref: systemsRef, threshold: 0 },
+        { id: "counterfactual", ref: counterfactualRef, threshold: 0 },
+        { id: "breakdown", ref: breakdownRef, threshold: 0 },
+        { id: "trace", ref: traceRef, threshold: 0 },
+        { id: "schedule", ref: scheduleRef, threshold: 0 },
+      ];
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const ref = sections[i].ref;
+        if (ref?.current && ref.current.getBoundingClientRect().top < 200) {
+          setActiveSection(sections[i].id);
+          return;
+        }
+      }
+      setActiveSection("score");
+    };
+    const sc = scrollContainerRef.current;
+    if (sc) sc.addEventListener("scroll", onScroll, { passive: true });
+    return () => { if (sc) sc.removeEventListener("scroll", onScroll); };
+  }, [systemsRef, counterfactualRef, breakdownRef, traceRef, scheduleRef]);
+
+  const scrollToSection = (id: string) => {
+    const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
+      score: null as never,
+      systems: systemsRef,
+      counterfactual: counterfactualRef,
+      breakdown: breakdownRef,
+      trace: traceRef,
+      schedule: scheduleRef,
+    };
+    const ref = refs[id];
+    ref?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // ── Loading state ───────────────────────────────────────────────────────────
@@ -255,8 +330,11 @@ export function DashboardScreen() {
 
   // ── Main dashboard ──────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-svh flex flex-col px-5 overflow-hidden"
+    <div className="relative min-h-svh flex flex-col overflow-hidden"
       style={{ backgroundColor: "#0A0A0B" }}>
+
+      {/* Scrollable content */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5">
 
       {/* Header */}
       <header className="relative z-10 mt-10 mb-4">
@@ -376,7 +454,7 @@ export function DashboardScreen() {
 
       {/* ── Layer 2b: Counterfactual insight ────────────────────────── */}
       {data.counterfactual && (
-        <div className="relative z-10 mb-6">
+        <div ref={counterfactualRef} className="relative z-10 mb-6">
           <div className="rounded-2xl p-4 flex items-start gap-3"
             style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)", borderLeft: "2px solid #F59E0B" }}>
             <span className="text-[8px] font-mono font-bold uppercase tracking-widest flex-shrink-0 pt-0.5" style={{ color: "#F59E0B", minWidth: 120 }}>
@@ -393,17 +471,19 @@ export function DashboardScreen() {
       )}
 
       {/* ── Layer 3: Stressor breakdown chart ──────────────────────── */}
-      <div className="relative z-10 mb-6 space-y-4">
+      <div ref={breakdownRef} className="relative z-10 mb-6 space-y-4">
         <DonutChart items={data.stressorBreakdown} />
         <BarChartView items={data.stressorBreakdown} />
       </div>
 
       {/* ── Layer 3b: Agent trace (multi-agent edge AI) ─────────────── */}
-      {data.agentTrace && <AgentTracePanel trace={data.agentTrace} />}
+      <div ref={traceRef} className="relative z-10 mb-6">
+        {data.agentTrace && <AgentTracePanel trace={data.agentTrace} />}
+      </div>
 
       {/* ── Layer 3c: Recovery schedule (from Schedule Agent) ──────── */}
       {data.schedule && data.schedule.length > 0 && (
-        <div className="relative z-10 mb-6">
+        <div ref={scheduleRef} className="relative z-10 mb-6">
           <AgentSchedule schedule={data.schedule} />
         </div>
       )}
@@ -476,6 +556,33 @@ export function DashboardScreen() {
             </motion.button>
           </motion.div>
         )}
+
+        {/* Return-loop nudge — check back tomorrow */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="rounded-2xl p-4 mt-2"
+          style={{ backgroundColor: "#141416", border: "1px solid rgba(74,222,128,0.12)" }}
+        >
+          <div className="flex items-start gap-3">
+            <span className="text-base flex-shrink-0">⏳</span>
+            <div>
+              <p className="text-xs font-semibold mb-0.5" style={{ color: "#F5F5F4" }}>
+                Check back in the morning
+              </p>
+              <p className="text-[10px] leading-relaxed" style={{ color: "#A8A29E" }}>
+                Your systems recover on different timelines. Log tomorrow to see how much debt cleared overnight and keep your streak going.
+              </p>
+              {streakDays > 0 && (
+                <p className="text-[9px] font-mono mt-1.5" style={{ color: "#4ADE80" }}>
+                  {streakDays}-day streak — don&apos;t break the chain
+                </p>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      </div>
       </div>
 
       {/* Personality picker */}
@@ -483,6 +590,47 @@ export function DashboardScreen() {
         open={personalityOpen}
         onClose={() => setPersonalityOpen(false)}
       />
+
+      {/* Sticky section navigator */}
+      <AnimatePresence>
+        {showStickyNav && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-0 left-0 right-0 z-40 flex justify-center px-4 pt-3"
+            style={{ pointerEvents: "none" }}
+          >
+            <div className="flex items-center gap-1 px-2 py-1.5 rounded-full"
+              style={{
+                backgroundColor: "rgba(20,20,22,0.92)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(168,162,158,0.12)",
+                pointerEvents: "auto",
+              }}>
+              {[
+                { id: "score", label: "Score" },
+                { id: "systems", label: "Systems" },
+                ...(data.counterfactual ? [{ id: "counterfactual", label: "Lever" }] : []),
+                { id: "breakdown", label: "Breakdown" },
+                ...(data.agentTrace ? [{ id: "trace", label: "Agents" }] : []),
+                ...(data.schedule?.length ? [{ id: "schedule", label: "Schedule" }] : []),
+              ].map((s) => (
+                <button key={s.id}
+                  onClick={() => scrollToSection(s.id)}
+                  className="px-2.5 py-1 rounded-full text-[9px] font-mono uppercase tracking-wider transition-colors"
+                  style={{
+                    color: activeSection === s.id ? "#F5F5F4" : "#524F4C",
+                    backgroundColor: activeSection === s.id ? "rgba(234,88,12,0.15)" : "transparent",
+                  }}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Re-log confirmation */}
       <AnimatePresence>

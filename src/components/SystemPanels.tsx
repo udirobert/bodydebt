@@ -251,6 +251,7 @@ interface SystemPanelsProps {
 
 export function SystemPanels({ systems }: SystemPanelsProps) {
   const now = useNow();
+  const [expanded, setExpanded] = useState(false);
 
   if (!systems || systems.length === 0) return null;
 
@@ -261,6 +262,8 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
   });
 
   const allClear = sorted.every((s) => new Date(s.clearedAt) <= now || s.score === 0);
+  const visibleSystems = expanded ? sorted : sorted.slice(0, 2);
+  const hiddenCount = sorted.length - visibleSystems.length;
 
   return (
     <div className="space-y-2">
@@ -283,9 +286,40 @@ export function SystemPanels({ systems }: SystemPanelsProps) {
         )}
       </div>
 
-      {sorted.map((sys) => (
+      {visibleSystems.map((sys) => (
         <SystemPanel key={sys.system} sys={sys} now={now} />
       ))}
+
+      {/* Progressive reveal: show worst 2 first, expand for rest */}
+      {hiddenCount > 0 && (
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setExpanded(true)}
+          className="w-full rounded-xl py-2.5 text-center text-[10px] font-mono uppercase tracking-wider"
+          style={{
+            color: "#A8A29E",
+            backgroundColor: "rgba(168,162,158,0.04)",
+            border: "1px solid rgba(168,162,158,0.08)",
+          }}
+        >
+          Show {hiddenCount} more system{hiddenCount !== 1 ? "s" : ""} ↓
+        </motion.button>
+      )}
+
+      {expanded && hiddenCount === 0 && sorted.length > 2 && (
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setExpanded(false)}
+          className="w-full rounded-xl py-2.5 text-center text-[10px] font-mono uppercase tracking-wider"
+          style={{
+            color: "#524F4C",
+            backgroundColor: "rgba(168,162,158,0.04)",
+            border: "1px solid rgba(168,162,158,0.06)",
+          }}
+        >
+          Collapse ↑
+        </motion.button>
+      )}
 
       <p className="text-[9px] text-center pt-1" style={{ color: "#3a3835" }}>
         Tap a system to see cause and recovery action
