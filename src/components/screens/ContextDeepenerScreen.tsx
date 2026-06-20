@@ -1,263 +1,335 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { Check, ChevronRight } from "lucide-react";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory } from "@/lib/sdk/eazo-client";
-import type { StressorType } from "@/lib/types";
-import { MiniOrb } from "@/components/MiniOrb";
-import { bandMeta, bandVerb } from "@/lib/debt-band";
+import type { Stressor, StressorType } from "@/lib/types";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { ScreenHeader } from "@/components/ScreenHeader";
+import { STRESSORS, type StressorDef, type SubOption } from "@/lib/stressor-scoring";
 
-interface Question {
-  type: StressorType;
-  icon: string;
-  label: string;
-  options: { value: string; label: string; points: number }[];
+type Question = {
+  stressorType: StressorType;
+  field: keyof Stressor;
+  question: string;
+  options: SubOption[];
+  currentValue: string | undefined;
+};
+
+interface StressorSummary {
+  def: StressorDef;
+  questions: Question[];
+  /** Display string summarising the answered detail, e.g. "Beer · 1–2" or "Need detail". */
+  detail: string;
+  /** True if every expansion field has a value. */
+  isComplete: boolean;
 }
 
-const QUESTIONS: Question[] = [
-  {
-    type: "alcohol",
-    icon: "🍺",
-    label: "How many drinks?",
-    options: [
-      { value: "1-2 drinks",  label: "1–2",        points: 14 },
-      { value: "3-4 drinks",  label: "3–4",        points: 22 },
-      { value: "5+ drinks",   label: "5+",         points: 32 },
-      { value: "Lost count",  label: "Lost count", points: 38 },
-    ],
-  },
-  {
-    type: "sleep",
-    icon: "😴",
-    label: "How many hours?",
-    options: [
-      { value: "Under 4hrs", label: "Under 4", points: 28 },
-      { value: "4-6hrs",     label: "4–6 hrs", points: 20 },
-      { value: "6-7hrs",     label: "6–7 hrs", points: 12 },
-    ],
-  },
-  {
-    type: "training",
-    icon: "💪",
-    label: "How hard?",
-    options: [
-      { value: "Easy",          label: "Light",     points: 8  },
-      { value: "Moderate",      label: "Moderate",  points: 14 },
-      { value: "Destroyed me",  label: "Crushed it", points: 22 },
-    ],
-  },
-  {
-    type: "stress",
-    icon: "😤",
-    label: "Still carrying it?",
-    options: [
-      { value: "Yes, still carrying it", label: "Still there", points: 18 },
-      { value: "Mostly gone",            label: "Mostly gone", points: 8  },
-    ],
-  },
-  {
-    type: "ill",
-    icon: "🤒",
-    label: "How bad?",
-    options: [
-      { value: "Mild — just off",          label: "Mild",     points: 18 },
-      { value: "Moderate — can function",  label: "Moderate", points: 25 },
-      { value: "Bad — barely moving",      label: "Rough",    points: 35 },
-    ],
-  },
-];
+function buildSummaries(stressors: Stressor[]): StressorSummary[] {
+  return stressors
+    .map((s) => {
+      const def = STRESSORS.find((d) => d.type === s.type);
+      if (!def) return null;
+      const questions: Question[] = (def.expansions ?? []).map((exp) => ({
+        stressorType: s.type,
+        field: exp.field,
+        question: exp.question,
+        options: exp.options,
+        currentValue: s[exp.field] as string | undefined,
+      }));
+      const detail =
+        questions.length === 0
+          ? "Logged"
+          : questions
+              .filter((q) => q.currentValue)
+              .map((q) => q.options.find((o) => o.key === q.currentValue)?.label ?? q.currentValue)
+              .join(" · ") || "Need detail";
+      const isComplete = questions.length === 0 || questions.every((q) => q.currentValue);
+      return { def, questions, detail, isComplete };
+    })
+    .filter(Boolean) as StressorSummary[];
+}
 
 export function ContextDeepenerScreen() {
   const router = useRouter();
-  const { selectedStressors, updateStressorContext } = useBodyDebtStore();
+  const { selectedStressors, updateStressor } = useBodyDebtStore();
 
-  // If no stressors selected (e.g. via skip path), redirect to face scan
+  // Id of the question currently being edited. null = show the next pending.
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+
+  // If the user landed here with nothing selected (via skip path), redirect.
   useEffect(() => {
     if (selectedStressors.length === 0) {
       router.replace("/face-scan");
     }
   }, [selectedStressors, router]);
 
-  const activeQuestions = QUESTIONS.filter((q) =>
-    selectedStressors.some((s) => s.type === q.type)
-  );
+  const summaries = useMemo(() => buildSummaries(selectedStressors), [selectedStressors]);
+  const totalAnswered = summaries.filter((s) => s.isComplete).length;
+  const allAnswered = summaries.length > 0 && totalAnswered === summaries.length;
 
-  const getSelected = (type: StressorType) =>
-    selectedStressors.find((s) => s.type === type)?.context ?? null;
+  // The currently active question — either the one being edited, or the
+  // first unanswered one. null when all are complete (review state).
+  const activeQuestion: Question | null = useMemo(() => {
+    if (editingKey !== null) {
+      for (const s of summaries) {
+        for (const q of s.questions) {
+          if (`${q.stressorType}__${String(q.field)}` === editingKey) return q;
+        }
+      }
+    }
+    for (const s of summaries) {
+      for (const q of s.questions) {
+        if (!q.currentValue) return q;
+      }
+    }
+    return null;
+  }, [editingKey, summaries]);
 
-  const totalPoints = selectedStressors.reduce((acc, s) => {
-    const q = QUESTIONS.find((q2) => q2.type === s.type);
-    if (!q) return acc;
-    const opt = q.options.find((o) => o.value === s.context);
-    return acc + (opt?.points ?? q.options[Math.floor(q.options.length / 2)]?.points ?? 0);
-  }, 0);
-  const clampedPoints = Math.min(100, Math.max(0, totalPoints));
+  const activeSummary: StressorSummary | null = useMemo(() => {
+    if (!activeQuestion) return null;
+    return summaries.find((s) => s.def.type === activeQuestion.stressorType) ?? null;
+  }, [activeQuestion, summaries]);
 
-  const { color: scoreColor } = bandMeta(clampedPoints);
-  const scoreVerbText = bandVerb(clampedPoints);
+  const handleSelectOption = (q: Question, optKey: string) => {
+    updateStressor(q.stressorType, { [q.field]: optKey } as Partial<Stressor>);
+    memory.reportAction({
+      content: `User provided context for ${q.stressorType}: ${optKey}.`,
+      event_type: "update",
+      page: "context-deepener",
+      metadata: { type: "provide_context", stressor: q.stressorType, context: optKey, field: String(q.field) },
+    }).catch(() => {});
+    setEditingKey(null);
+  };
+
+  const handleSkip = () => {
+    // Skip = don't set the field. The stressor stays with no detail for
+    // this question and the next pending question is shown.
+    setEditingKey(null);
+  };
+
+  const handleEdit = (s: StressorSummary, q: Question) => {
+    setEditingKey(`${q.stressorType}__${String(q.field)}`);
+  };
+
+  const handleEditStressor = (s: StressorSummary) => {
+    // Jump to the first unanswered question for this stressor; if all
+    // are answered, jump to the first one (so the user can re-tap).
+    const first = s.questions.find((q) => !q.currentValue) ?? s.questions[0];
+    if (first) setEditingKey(`${first.stressorType}__${String(first.field)}`);
+  };
 
   return (
     <div
       className="relative min-h-svh flex flex-col px-5 overflow-hidden"
       style={{ backgroundColor: "#0A0A0B" }}
     >
-      {/* Orb + interview question */}
-      <div className="relative z-10 flex flex-col items-center pt-14 pb-4">
-        <motion.div
-          initial={{ scale: 0.7, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
-          className="mb-4"
-        >
-          <MiniOrb score={clampedPoints} size={44} />
-        </motion.div>
+      <ScreenHeader
+        back={{ href: "/intake", label: "Back" }}
+        progress={{ current: 3, total: 5 }}
+      />
 
-        <h2
-          className="font-normal text-center leading-snug px-6"
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: "clamp(1.4rem, 5.5vw, 1.75rem)",
-            color: "#F5F5F4",
-            letterSpacing: "-0.01em",
-          }}
+      <div className="relative z-10 flex-1 flex flex-col pt-2">
+        {/* Top panel — carry-over from intake. "What we've got". */}
+        <div
+          className="rounded-2xl p-4 mb-4"
+          style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}
         >
-          A bit more detail.
-        </h2>
-        <p className="text-xs mt-1.5 font-medium" style={{ color: "#524F4C" }}>
-          One tap per answer
-        </p>
-      </div>
-
-      {/* Questions */}
-      <div className="relative z-10 flex flex-col gap-6 flex-1">
-        {activeQuestions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <p className="text-sm text-center" style={{ color: "#524F4C" }}>
-              No stressors selected. Go back and pick what hit you.
-            </p>
-            <button
-              onClick={() => router.push("/intake")}
-              className="text-[11px] font-semibold uppercase tracking-wider px-4 py-3 rounded-xl"
-              style={{ backgroundColor: "#141416", color: "#A8A29E", border: "1px solid rgba(168,162,158,0.15)" }}
+          <div className="flex items-center justify-between mb-3">
+            <span
+              className="text-[9px] font-mono uppercase tracking-widest"
+              style={{ color: "#524F4C" }}
             >
-              Go back
-            </button>
+              What we&apos;ve got
+            </span>
+            <span
+              className="text-[9px] font-mono"
+              style={{ color: totalAnswered === summaries.length ? "#4ADE80" : "#A8A29E" }}
+            >
+              {totalAnswered} of {summaries.length} with detail
+            </span>
           </div>
-        ) : (
-          activeQuestions.map((q, gi) => {
-            const selected = getSelected(q.type);
-            return (
+          <div className="space-y-1">
+            {summaries.map((s) => {
+              const isActiveSummary = activeSummary?.def.type === s.def.type;
+              const isInteractive = s.questions.length > 0;
+              return (
+                <button
+                  key={s.def.type}
+                  onClick={() => isInteractive && handleEditStressor(s)}
+                  disabled={!isInteractive}
+                  className="w-full flex items-center gap-3 py-2 px-2 rounded-lg text-left transition-colors"
+                  style={{
+                    backgroundColor: isActiveSummary ? "rgba(234,88,12,0.08)" : "transparent",
+                    cursor: isInteractive ? "pointer" : "default",
+                  }}
+                >
+                  <span className="text-base flex-shrink-0">{s.def.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="text-xs font-semibold"
+                      style={{ color: "#F5F5F4" }}
+                    >
+                      {s.def.label}
+                    </div>
+                    <div
+                      className="text-[10px] mt-0.5 truncate"
+                      style={{
+                        color: s.isComplete ? "#A8A29E" : "#F59E0B",
+                      }}
+                    >
+                      {s.detail}
+                    </div>
+                  </div>
+                  {s.isComplete ? (
+                    <Check
+                      className="w-3.5 h-3.5 flex-shrink-0"
+                      style={{ color: "#4ADE80" }}
+                    />
+                  ) : isInteractive ? (
+                    <ChevronRight
+                      className="w-3.5 h-3.5 flex-shrink-0"
+                      style={{ color: "#524F4C" }}
+                    />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Active question OR review state */}
+        {activeQuestion && activeSummary ? (
+          <div className="flex-1 flex flex-col">
+            <AnimatePresence mode="wait">
               <motion.div
-                key={q.type}
+                key={editingKey ?? `${activeQuestion.stressorType}__${String(activeQuestion.field)}`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: gi * 0.08 }}
-                className="space-y-2.5"
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25 }}
+                className="flex-1"
               >
-                {/* Question label */}
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{q.icon}</span>
-                  <h3
-                    className="text-sm font-semibold"
-                    style={{ color: "#F5F5F4" }}
+                <div className="text-center px-2 mb-5 pt-2">
+                  <div className="text-3xl mb-2">{activeSummary.def.icon}</div>
+                  <h2
+                    className="text-lg font-normal"
+                    style={{
+                      fontFamily: "var(--font-heading)",
+                      color: "#F5F5F4",
+                      letterSpacing: "-0.01em",
+                    }}
                   >
-                    {q.label}
-                  </h3>
+                    {activeQuestion.question}
+                  </h2>
+                  <p
+                    className="text-[10px] mt-1.5 font-medium"
+                    style={{ color: "#524F4C" }}
+                  >
+                    For {activeSummary.def.label.toLowerCase()} · tap to choose
+                  </p>
                 </div>
-                {/* Option grid */}
-                <div className={q.options.length >= 3 ? "grid grid-cols-2 gap-2" : "flex flex-col gap-2"}>
-                  {q.options.map((opt) => {
-                    const chosen = selected === opt.value;
+                <div
+                  className={
+                    activeQuestion.options.length >= 3
+                      ? "grid grid-cols-2 gap-2"
+                      : "flex flex-col gap-2"
+                  }
+                >
+                  {activeQuestion.options.map((opt) => {
+                    const isSelected = activeQuestion.currentValue === opt.key;
                     return (
                       <motion.button
-                        key={opt.value}
+                        key={opt.key}
                         whileTap={{ scale: 0.97 }}
-                        onClick={() => {
-                          if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
-                          updateStressorContext(q.type, opt.value);
-                          memory.reportAction({
-                            content: `User provided context for ${q.type}: ${opt.value}.`,
-                            event_type: "update",
-                            page: "context-deepener",
-                            metadata: { type: "provide_context", stressor: q.type, context: opt.value },
-                          }).catch(() => {});
-                        }}
-                        className="flex justify-between items-center px-4 rounded-xl transition-all text-left"
+                        onClick={() => handleSelectOption(activeQuestion, opt.key)}
+                        className="flex justify-between items-center px-4 py-3 rounded-xl text-left"
                         style={{
-                          minHeight: "52px",
-                          fontSize: "15px",
+                          backgroundColor: isSelected
+                            ? "rgba(74,222,128,0.1)"
+                            : "#141416",
+                          border: `1.5px solid ${
+                            isSelected
+                              ? "rgba(74,222,128,0.5)"
+                              : "rgba(168,162,158,0.12)"
+                          }`,
+                          color: isSelected ? "#F5F5F4" : "#A8A29E",
+                          minHeight: "56px",
+                          fontSize: "14px",
                           fontWeight: 600,
-                          backgroundColor: chosen ? "rgba(234,88,12,0.1)" : "#141416",
-                          border: `1.5px solid ${chosen ? "rgba(234,88,12,0.55)" : "rgba(168,162,158,0.12)"}`,
-                          color: chosen ? "#F5F5F4" : "#A8A29E",
+                          transition: "all 0.2s",
                         }}
                       >
                         <span>{opt.label}</span>
-                        <span
-                          className="text-[10px] font-mono ml-2 flex-shrink-0"
-                          style={{ color: chosen ? "#EA580C" : "#3a3835" }}
-                        >
-                          +{opt.points}
-                        </span>
+                        {isSelected && (
+                          <Check
+                            className="w-4 h-4 flex-shrink-0"
+                            style={{ color: "#4ADE80" }}
+                          />
+                        )}
                       </motion.button>
                     );
                   })}
                 </div>
               </motion.div>
-            );
-          })
-        )}
-      </div>
-
-      {/* Live debt score */}
-      <div
-        className="relative z-10 rounded-2xl p-4 mt-5"
-        style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.1)" }}
-      >
-        <div className="flex justify-between items-center">
-          <div>
-            <span className="text-[10px] uppercase tracking-widest font-semibold block" style={{ color: "#A8A29E" }}>
-              Running total
-            </span>
-            <span className="text-xs mt-0.5 font-medium" style={{ color: scoreColor }}>
-              {scoreVerbText}
-            </span>
+            </AnimatePresence>
+            {/* Skip link */}
+            <div className="text-center pb-2 pt-5">
+              <button
+                onClick={handleSkip}
+                className="text-[11px] font-medium px-3 py-2"
+                style={{ color: "#524F4C" }}
+              >
+                Skip · accept default
+              </button>
+            </div>
           </div>
-          <div className="text-right">
+        ) : allAnswered ? (
+          /* Review state — all questions answered. */
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
             <motion.div
-              key={clampedPoints}
-              initial={{ scale: 1.2 }}
-              animate={{ scale: 1 }}
-              className="text-3xl font-bold font-mono leading-none"
-              style={{ color: "#EA580C" }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+              style={{
+                background: "rgba(74,222,128,0.1)",
+                border: "1.5px solid rgba(74,222,128,0.3)",
+              }}
             >
-              {clampedPoints}
+              <Check className="w-8 h-8" style={{ color: "#4ADE80" }} />
             </motion.div>
-            <span className="text-[8px] uppercase tracking-widest font-mono block mt-0.5" style={{ color: "#3a3835" }}>
-              PTS
-            </span>
+            <h2
+              className="text-xl font-normal mb-2"
+              style={{
+                fontFamily: "var(--font-heading)",
+                color: "#F5F5F4",
+              }}
+            >
+              Your picture is clear
+            </h2>
+            <p className="text-sm" style={{ color: "#A8A29E" }}>
+              All stressors secured. Ready to check your face.
+            </p>
           </div>
-        </div>
+        ) : null}
       </div>
 
-      {/* CTA */}
-      <div className="relative z-10 pb-10 pt-4">
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={() => router.push("/face-scan")}
-          className="w-full font-semibold text-sm rounded-2xl"
-          style={{
-            backgroundColor: "#EA580C",
-            color: "#F5F5F4",
-            fontFamily: "var(--font-body)",
-            minHeight: "58px",
-          }}
+      {/* CTA — only in review state */}
+      {allAnswered && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 pb-10 pt-4"
         >
-          Next — face check
-        </motion.button>
-      </div>
+          <PrimaryButton size="md" onClick={() => router.push("/face-scan")}>
+            Continue — face check
+          </PrimaryButton>
+        </motion.div>
+      )}
     </div>
   );
 }
