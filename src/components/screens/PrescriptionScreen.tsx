@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Clock } from "lucide-react";
 import { getOrbCopy } from "@/lib/orbPersonality";
 import { GuestAuthCard } from "@/components/GuestAuthCard";
 import { MiniOrb } from "@/components/MiniOrb";
@@ -34,33 +34,6 @@ const FALLBACK_PRESCRIPTION = {
   avoid:       "Intense training. You'll create more debt, not fitness.",
 };
 
-// ─── Notification scheduler ───────────────────────────────────────────────────
-
-async function scheduleReminders(prescription: typeof FALLBACK_PRESCRIPTION): Promise<boolean> {
-  if (typeof window === "undefined") return false;
-  let permission = Notification.permission;
-  if (permission === "default") {
-    try { permission = await Notification.requestPermission(); }
-    catch { return false; }
-  }
-  if (permission !== "granted") return false;
-
-  const reminders = [
-    { delay: 60000,      title: "💧 Right now",     body: prescription.rightNow },
-    { delay: 30 * 60000, title: "☕ This morning",  body: prescription.thisMorning },
-    { delay: 90 * 60000, title: "🎯 Today",          body: prescription.today },
-  ];
-
-  reminders.forEach(r => {
-    setTimeout(() => {
-      try { new Notification(r.title, { body: r.body }); }
-      catch { /* silent */ }
-    }, r.delay);
-  });
-
-  return true;
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function PrescriptionScreen() {
@@ -73,8 +46,6 @@ export function PrescriptionScreen() {
   const score = analysis?.debtScore ?? 0;
   const breakdown = analysis?.stressorBreakdown ?? [];
 
-  const [remindersSet, setRemindersSet] = useState(false);
-  const [reminderPending, setReminderPending] = useState(false);
   const reportedView = useRef(false);
 
   // Report prescription view once
@@ -88,21 +59,6 @@ export function PrescriptionScreen() {
       metadata: { type: "view_prescription", debt_score: score },
     }).catch(() => {});
   }, [score]);
-
-  const handleSetReminders = async () => {
-    setReminderPending(true);
-    const success = await scheduleReminders(rx);
-    setReminderPending(false);
-    if (success) {
-      setRemindersSet(true);
-      memory.reportAction({
-        content: "User set prescription reminders.",
-        event_type: "create",
-        page: "prescription",
-        metadata: { type: "set_reminders" },
-      }).catch(() => {});
-    }
-  };
 
   return (
     <div className="relative min-h-svh flex flex-col px-5 overflow-hidden"
@@ -189,39 +145,26 @@ export function PrescriptionScreen() {
         {/* Reminder prompt */}
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
-          className="rounded-2xl px-4 py-4"
-          style={{ backgroundColor: "#141416", border: "1px solid rgba(234,88,12,0.2)" }}
+          className="rounded-2xl px-4 py-4 text-center"
+          style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.12)" }}
         >
-          <AnimatePresence mode="wait">
-            {remindersSet ? (
-              <motion.div key="set"
-                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="text-center">
-                <p className="text-sm font-semibold" style={{ color: "#4ADE80" }}>✓ Reminders set</p>
-                <p className="text-[10px] mt-1" style={{ color: "#524F4C" }}>
-                  Your orb will prompt you throughout the day.
-                </p>
-              </motion.div>
-            ) : (
-              <motion.div key="prompt" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: "#F5F5F4" }}>
-                  {personalityCopy.reminderPrompt}
-                </p>
-                <p className="text-[10px] mb-3" style={{ color: "#524F4C" }}>
-                  One tap sets timed nudges from this prescription.
-                </p>
-                <motion.button whileTap={{ scale: 0.98 }} onClick={handleSetReminders}
-                  disabled={reminderPending}
-                  className="w-full text-xs font-semibold rounded-xl"
-                  style={{
-                    backgroundColor: reminderPending ? "rgba(234,88,12,0.4)" : "#EA580C",
-                    color: "#F5F5F4", minHeight: 44, fontFamily: "var(--font-body)",
-                  }}>
-                  {reminderPending ? "Setting reminders..." : "Set reminders"}
-                </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div className="flex items-center justify-center gap-1.5 mb-2">
+            <Clock className="w-3 h-3" style={{ color: "#F59E0B" }} />
+            <span
+              className="text-[9px] font-mono uppercase tracking-widest font-semibold"
+              style={{ color: "#F59E0B" }}
+            >
+              Coming soon
+            </span>
+          </div>
+          <p className="text-xs font-semibold mb-1" style={{ color: "#F5F5F4" }}>
+            Reminders need a backend
+          </p>
+          <p className="text-[10px]" style={{ color: "#A8A29E" }}>
+            Push notifications and calendar invites require
+            server-side infrastructure (Zapier-style integration).
+            Until then, use the prescription as-is.
+          </p>
         </motion.div>
 
         {/* Upsell — only at low confidence */}

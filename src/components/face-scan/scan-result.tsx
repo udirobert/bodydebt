@@ -157,7 +157,7 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
       <ProofCircuitVisual steps={lifecycleSteps} />
 
       {/* ── Cryptographic verification status card ──────────────── */}
-      <div className="flex items-center gap-3 rounded-2xl p-4"
+      <div className="flex items-start gap-3 rounded-2xl p-4"
         style={{
           backgroundColor: isCryptoVerified
             ? "rgba(16, 185, 129, 0.1)"
@@ -171,7 +171,7 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
               : "1px solid rgba(245, 158, 11, 0.3)",
         }}>
         <ShieldCheck className={`w-8 h-8 flex-shrink-0 ${isCryptoVerified ? 'text-emerald-500' : isCryptoFailed ? 'text-red-500' : 'text-amber-500'}`} />
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-[9px] font-mono uppercase tracking-widest" style={{
             color: isCryptoVerified ? "#4ADE80" : isCryptoFailed ? "#DC2626" : "#F59E0B",
           }}>
@@ -181,12 +181,29 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
                 ? "✗ Proof verification failed"
                 : "◐ Proof generated — verifying locally..."}
           </p>
-          <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
-            Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
-          </p>
-          {isCryptoVerified && (
-            <p className="text-[9px] font-mono mt-0.5" style={{ color: "#A8A29E" }}>
-              EZKL verify({verifyDuration}) · VK hash committed to SKALE
+          {isCryptoVerified ? (
+            <>
+              <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
+                Stress score: {zkProof ? `${Math.round(zkProof.stressScore * 100)}%` : "—"}
+              </p>
+              <p className="text-[9px] font-mono mt-0.5" style={{ color: "#A8A29E" }}>
+                EZKL verify({verifyDuration}) · VK hash committed to SKALE
+              </p>
+            </>
+          ) : isCryptoFailed ? (
+            <>
+              <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
+                Features extracted · proof not anchored
+              </p>
+              <p className="text-[9px] font-mono mt-1" style={{ color: "#A8A29E" }}>
+                7 stress markers computed from your landmarks. The ZK
+                proof didn't pass verification, so this is not
+                committed on-chain. Your analysis can still continue.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm font-medium mt-0.5" style={{ color: "#F5F5F4" }}>
+              Running local verification...
             </p>
           )}
         </div>
@@ -398,8 +415,17 @@ export function ScanResult({ txHash, onChainStatus }: { txHash?: string; onChain
           onClick={() => router.push("/hrv-pull")}
           className="w-full font-semibold text-sm rounded-2xl"
           style={{ backgroundColor: "#EA580C", color: "#F5F5F4", fontFamily: "var(--font-body)", minHeight: "58px" }}>
-          Accept & Continue
+          {isCryptoVerified
+            ? "Continue to HRV data"
+            : isCryptoFailed
+              ? "Continue without on-chain proof"
+              : "Verifying..."}
         </motion.button>
+        <p className="text-[10px] text-center mt-2" style={{ color: "#524F4C" }}>
+          {isCryptoFailed
+            ? "Your analysis will use intake + HRV data only."
+            : "Next: connect a watch or answer a check-in."}
+        </p>
       </div>
     </motion.div>
   );
