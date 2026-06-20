@@ -1,21 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { DEBT_BAND_META, debtBand } from "@/lib/debt-band";
 
 interface DebtOrbProps {
   score: number; // 0-100
-}
-
-function getOrbColor(score: number): {
-  primary: string;
-  secondary: string;
-  glow: string;
-} {
-  if (score >= 61)
-    return { primary: "#DC2626", secondary: "#EA580C", glow: "rgba(220,38,38,0.25)" };
-  if (score >= 41)
-    return { primary: "#EA580C", secondary: "#F59E0B", glow: "rgba(234,88,12,0.22)" };
-  return { primary: "#F59E0B", secondary: "#F59E0B", glow: "rgba(245,158,11,0.18)" };
 }
 
 // Turbulence — how chaotic the border-radius morphing is based on debt level
@@ -47,7 +36,13 @@ function getTurbulenceFrames(score: number): string[] {
 }
 
 export function DebtOrb({ score }: DebtOrbProps) {
-  const colors = getOrbColor(score);
+  // Hero orb uses a dimmer glow than the nav orb — at 220–252px the
+  // full band glow would wash out. We rescale glow alpha for size.
+  const colors = DEBT_BAND_META[debtBand(score)];
+  const orbGlow =
+    score >= 61 ? "rgba(220,38,38,0.25)" :
+    score >= 41 ? "rgba(234,88,12,0.22)" :
+                  "rgba(245,158,11,0.18)";
   const orbSize = 220 + Math.round((score / 100) * 32); // 220–252px
   const turbulenceFrames = getTurbulenceFrames(score);
   const turbulenceDuration = score >= 75 ? 5 : score >= 50 ? 7 : 10;
@@ -66,7 +61,7 @@ export function DebtOrb({ score }: DebtOrbProps) {
       <motion.div
         className="absolute inset-0 rounded-full"
         style={{
-          boxShadow: `0 0 ${50 + score}px ${15 + score * 0.3}px ${colors.glow}`,
+          boxShadow: `0 0 ${50 + score}px ${15 + score * 0.3}px ${orbGlow}`,
           borderRadius: "50%",
         }}
         animate={{ opacity: [glowIntensity * 0.5, glowIntensity, glowIntensity * 0.5] }}
@@ -76,7 +71,7 @@ export function DebtOrb({ score }: DebtOrbProps) {
       {/* Outer ring — breathes at score-dependent rate */}
       <motion.div
         className="absolute inset-0 rounded-full"
-        style={{ border: `1px solid ${colors.primary}22` }}
+        style={{ border: `1px solid ${colors.color}22` }}
         animate={{ scale: [1, 1 + (pulseDepth - 1) * 1.6, 1], opacity: [0.25, 0.6, 0.25] }}
         transition={{ duration: pulseDuration, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -86,7 +81,7 @@ export function DebtOrb({ score }: DebtOrbProps) {
         className="absolute rounded-full"
         style={{
           inset: "8%",
-          border: `1px solid ${colors.primary}15`,
+          border: `1px solid ${colors.color}15`,
         }}
         animate={{
           scale: [1, 1 + (pulseDepth - 1) * 1.3, 1],
@@ -105,7 +100,7 @@ export function DebtOrb({ score }: DebtOrbProps) {
         <motion.div
           className="absolute inset-0 rounded-full"
           style={{
-            border: `2px solid ${colors.primary}40`,
+            border: `2px solid ${colors.color}40`,
           }}
           animate={{
             scale: [1, 1.25, 1.45, 1],
@@ -126,8 +121,8 @@ export function DebtOrb({ score }: DebtOrbProps) {
         style={{
           width: "72%",
           height: "72%",
-          background: `radial-gradient(circle at 35% 35%, ${colors.secondary}, ${colors.primary} 55%, #050505 100%)`,
-          boxShadow: `0 0 ${30 + score * 0.5}px ${8 + score * 0.1}px ${colors.glow}`,
+          background: `radial-gradient(circle at 35% 35%, ${colors.colorSecondary}, ${colors.color} 55%, #050505 100%)`,
+          boxShadow: `0 0 ${30 + score * 0.5}px ${8 + score * 0.1}px ${orbGlow}`,
         }}
         animate={{
           borderRadius: turbulenceFrames,

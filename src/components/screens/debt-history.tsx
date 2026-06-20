@@ -6,14 +6,9 @@ import { Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { fetchDebtHistory } from "@/lib/api";
 import type { DebtHistoryItem } from "@/lib/api";
 
-// ─── Score colour helper ────────────────────────────────────────────────────
+// ─── Score colour helpers ────────────────────────────────────────────────────
 
-function scoreColor(score: number): string {
-  if (score >= 61) return "#DC2626";
-  if (score >= 41) return "#EA580C";
-  if (score >= 21) return "#F59E0B";
-  return "#4ADE80";
-}
+import { bandMeta } from "@/lib/debt-band";
 
 // ─── Date formatter ─────────────────────────────────────────────────────────
 
@@ -124,7 +119,7 @@ export function DebtHistory() {
             ) : (
               <div className="space-y-2">
                 {items.map((item, i) => {
-                  const color = scoreColor(item.debtScore);
+                  const color = bandMeta(item.debtScore).color;
                   const { date, time } = formatDate(item.createdAt);
                   return (
                     <motion.div

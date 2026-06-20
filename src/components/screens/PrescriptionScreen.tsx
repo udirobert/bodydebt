@@ -4,11 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { auth, memory } from "@/lib/sdk/eazo-client";
+import { memory } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { ChevronLeft } from "lucide-react";
 import { getOrbCopy } from "@/lib/orbPersonality";
+import { GuestAuthCard } from "@/components/GuestAuthCard";
 import { MiniOrb } from "@/components/MiniOrb";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { SecondaryButton } from "@/components/SecondaryButton";
+import { SignalUpsellCard } from "@/components/SignalUpsellCard";
 import { DebtGauge } from "./DebtGauge";
 import { RecoveryTimeline } from "./RecoveryTimeline";
 import { DonutChart, BarChartView } from "./StressorBreakdownChart";
@@ -222,24 +226,7 @@ export function PrescriptionScreen() {
 
         {/* Upsell — only at low confidence */}
         {(confidenceTier === "partial" || confidenceTier === "estimated") && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
-            className="rounded-2xl px-4 py-4 text-center"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(168,162,158,0.08)" }}
-          >
-            <p className="text-xs italic mb-1" style={{ color: "#A8A29E" }}>
-              &ldquo;I can see more if you let me.&rdquo;
-            </p>
-            <p className="text-[10px] mb-3" style={{ color: "#524F4C" }}>
-              Face scan + wearable data makes this prescription 3× more precise.
-            </p>
-            <motion.button whileTap={{ scale: 0.98 }}
-              onClick={() => router.push("/face-scan")}
-              className="text-[10px] font-semibold uppercase tracking-wider px-4 py-2 rounded-xl"
-              style={{ backgroundColor: "rgba(234,88,12,0.15)", color: "#EA580C", border: "1px solid rgba(234,88,12,0.3)" }}>
-              Give your orb more signal
-            </motion.button>
-          </motion.div>
+          <SignalUpsellCard variant="subtle" delay={0.7} />
         )}
       </div>
 
@@ -251,40 +238,16 @@ export function PrescriptionScreen() {
       )}
 
       {/* Auth upgrade */}
-      {isGuest && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="relative z-10 mt-6 rounded-2xl p-4 text-center"
-          style={{ backgroundColor: "#141416", border: "1px solid rgba(234,88,12,0.25)" }}>
-          <p className="text-xs font-semibold mb-1" style={{ color: "#F5F5F4" }}>
-            Your data is saved on this device
-          </p>
-          <p className="text-[10px] mb-3" style={{ color: "#A8A29E" }}>
-            Sign in to keep your history across devices and unlock AI-powered insights.
-          </p>
-          <motion.button whileTap={{ scale: 0.97 }}
-            onClick={() => auth.login().catch(() => undefined)}
-            className="text-xs font-semibold px-5 py-2.5 rounded-xl"
-            style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
-            Sign in to save
-          </motion.button>
-        </motion.div>
-      )}
+      {isGuest && <GuestAuthCard />}
 
       {/* Bottom CTAs */}
       <div className="relative z-10 pb-10 pt-6 flex flex-col gap-2">
-        <motion.button whileTap={{ scale: 0.98 }}
-          onClick={() => router.push("/share-card")}
-          className="w-full font-semibold text-sm rounded-2xl"
-          style={{ backgroundColor: "#EA580C", color: "#F5F5F4", fontFamily: "var(--font-body)", minHeight: 56 }}>
+        <PrimaryButton size="md" onClick={() => router.push("/share-card")}>
           Share my score
-        </motion.button>
-        <motion.button whileTap={{ scale: 0.98 }}
-          onClick={() => router.push("/dashboard")}
-          className="w-full font-semibold text-xs rounded-2xl"
-          style={{ backgroundColor: "#141416", color: "#A8A29E", border: "1px solid rgba(168,162,158,0.15)", minHeight: 48 }}>
+        </PrimaryButton>
+        <SecondaryButton size="sm" onClick={() => router.push("/dashboard")}>
           ← Back to score
-        </motion.button>
+        </SecondaryButton>
       </div>
     </div>
   );

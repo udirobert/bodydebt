@@ -7,18 +7,13 @@ import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory } from "@/lib/sdk/eazo-client";
 import type { Stressor, StressorType } from "@/lib/types";
 import { MiniOrb } from "@/components/MiniOrb";
-import { ProgressBar } from "@/components/ProgressBar";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { StressorCard } from "./stressor-card";
 import { STRESSORS, ACK_COPY, CONFIDENCE_CONFIG, computeLiveScore } from "@/lib/stressor-scoring";
+import { bandMeta } from "@/lib/debt-band";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function liveScoreColor(score: number): string {
-  if (score >= 61) return "#DC2626";
-  if (score >= 41) return "#EA580C";
-  if (score >= 21) return "#F59E0B";
-  return "#4ADE80";
-}
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
@@ -73,42 +68,35 @@ export function DebtIntakeScreen() {
       style={{ backgroundColor: "#0A0A0B" }}
     >
       {/* Nav + live score readout */}
-      <div className="relative z-10 flex items-center justify-between mt-12">
-        <button
-          onClick={() => router.push("/wake-time")}
-          className="text-[11px] font-medium flex items-center gap-1"
-          style={{ color: "#524F4C", minHeight: "44px" }}
-        >
-          ← Back
-        </button>
-        <div className="flex items-center gap-2.5">
-          <motion.div
-            key={liveScore}
-            initial={{ opacity: 0.6, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="flex flex-col items-end leading-none"
-          >
-            <span
-              className="font-mono text-[10px] uppercase tracking-widest"
-              style={{ color: "#524F4C" }}
+      <ScreenHeader
+        back={{ href: "/wake-time", label: "Back" }}
+        progress={{ current: 2, total: 5 }}
+        right={
+          <div className="flex items-center gap-2.5">
+            <motion.div
+              key={liveScore}
+              initial={{ opacity: 0.6, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="flex flex-col items-end leading-none"
             >
-              Live
-            </span>
-            <span
-              className="font-mono text-base font-bold tabular-nums"
-              style={{ color: liveScoreColor(liveScore) }}
-            >
-              {liveScore}
-            </span>
-          </motion.div>
-          <MiniOrb score={liveScore} size={32} />
-        </div>
-      </div>
-
-      <div className="relative z-10 pt-3 pb-2">
-        <ProgressBar current={2} total={5} />
-      </div>
+              <span
+                className="font-mono text-[10px] uppercase tracking-widest"
+                style={{ color: "#524F4C" }}
+              >
+                Live
+              </span>
+              <span
+                className="font-mono text-base font-bold tabular-nums"
+                style={{ color: bandMeta(liveScore).color }}
+              >
+                {liveScore}
+              </span>
+            </motion.div>
+            <MiniOrb score={liveScore} size={32} />
+          </div>
+        }
+      />
 
       {/* Orb question */}
       <div className="relative z-10 mb-5">
@@ -182,22 +170,12 @@ export function DebtIntakeScreen() {
 
       {/* CTA */}
       <div className="relative z-10 pb-10 pt-2">
-        <motion.button
-          whileTap={{ scale: 0.98 }}
+        <PrimaryButton
           onClick={() => router.push("/context-deepener")}
           disabled={!hasSelection}
-          className="w-full font-semibold rounded-2xl"
-          style={{
-            backgroundColor: hasSelection ? "#EA580C" : "#141416",
-            color: hasSelection ? "#F5F5F4" : "#524F4C",
-            fontFamily: "var(--font-body)",
-            minHeight: "58px",
-            border: hasSelection ? "none" : "1px solid rgba(168,162,158,0.1)",
-            transition: "background-color 0.2s, color 0.2s",
-          }}
         >
           {hasSelection ? "Continue" : "Select what hit you"}
-        </motion.button>
+        </PrimaryButton>
 
         <button
           onClick={() => router.push("/dashboard")}

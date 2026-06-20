@@ -2,11 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { ChevronLeft, Camera, AlertTriangle, ShieldCheck, Loader2 } from "lucide-react";
+import { Camera, AlertTriangle, ShieldCheck, Loader2 } from "lucide-react";
 import { MiniOrb } from "@/components/MiniOrb";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { memory } from "@/lib/sdk/eazo-client";
-import { ProgressBar } from "@/components/ProgressBar";
 import { PrivacyNotice } from "@/components/face-scan/PrivacyNotice";
 import {
   useFaceScanPipeline,
@@ -18,7 +18,6 @@ import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { getOrbCopy } from "@/lib/orbPersonality";
 
 export function FaceScanScreen() {
-  const router = useRouter();
   const {
     phase, setPhase, scanMessageIdx, cameraError, analysisError,
     txHash, isConfirmed,
@@ -49,14 +48,17 @@ export function FaceScanScreen() {
 
   return (
     <div className="relative min-h-svh flex flex-col px-5 overflow-hidden" style={{ backgroundColor: "#0A0A0B" }}>
-      <div className="relative z-10 flex items-center justify-between mt-12">
-        <button onClick={() => router.push("/context-deepener")}
-          className="flex items-center gap-2 text-[11px] font-medium" style={{ color: "#A8A29E", minHeight: "44px" }}>
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
-        <MiniOrb score={phase === "result" ? 10 : 0} size={28} forming={isProcessing} />
-      </div>
-      <div className="relative z-10 pt-3 pb-4"><ProgressBar current={4} total={5} /></div>
+      <ScreenHeader
+        back={{ href: "/context-deepener", label: "Back" }}
+        progress={{ current: 4, total: 5 }}
+        right={
+          <MiniOrb
+            score={phase === "result" ? 10 : 0}
+            size={28}
+            forming={isProcessing}
+          />
+        }
+      />
 
       <AnimatePresence mode="sync">
         {phase === "privacy" && (
@@ -93,12 +95,10 @@ export function FaceScanScreen() {
               </div>
             </div>
             <div className="mt-auto flex flex-col gap-3 pb-10">
-              <motion.button whileTap={{ scale: 0.98 }} onClick={startCamera}
-                className="w-full font-semibold text-sm rounded-2xl"
-                style={{ backgroundColor: "#EA580C", color: "#F5F5F4", fontFamily: "var(--font-body)", minHeight: "64px" }}>
+              <PrimaryButton size="lg" onClick={startCamera}>
                 <div className="font-bold text-base mb-0.5">Open camera</div>
                 <div className="text-[10px] font-normal opacity-80">Zero-knowledge edge verification</div>
-              </motion.button>
+              </PrimaryButton>
               <button onClick={handleSkip} className="w-full text-center text-[11px] py-2.5 font-medium" style={{ color: "#524F4C" }}>
                 Skip this step
               </button>
@@ -119,11 +119,11 @@ export function FaceScanScreen() {
               </div>
             </div>
             <div className="mt-auto flex flex-col gap-3 pb-10">
-              <motion.button whileTap={{ scale: 0.98 }} onClick={captureAndProve}
-                className="w-full font-semibold text-sm rounded-2xl flex items-center justify-center gap-2"
-                style={{ backgroundColor: "#EA580C", color: "#F5F5F4", fontFamily: "var(--font-body)", minHeight: "58px" }}>
-                <ShieldCheck className="w-4 h-4" /> Capture & Prove
-              </motion.button>
+              <PrimaryButton onClick={captureAndProve}>
+                <span className="inline-flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4" /> Capture &amp; Prove
+                </span>
+              </PrimaryButton>
             </div>
           </motion.div>
         )}
@@ -173,11 +173,9 @@ export function FaceScanScreen() {
                   {errorCopy?.action ?? "Try again"}
                 </motion.button>
               )}
-              <motion.button whileTap={{ scale: 0.98 }} onClick={handleSkip}
-                className="w-full font-semibold text-sm rounded-2xl"
-                style={{ backgroundColor: "#EA580C", color: "#F5F5F4", minHeight: "58px" }}>
+              <PrimaryButton onClick={handleSkip}>
                 Continue without face scan
-              </motion.button>
+              </PrimaryButton>
             </div>
           </motion.div>
         )}

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { auth, memory } from "@/lib/sdk/eazo-client";
+import { memory } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { DebtOrb } from "./DebtOrb";
 import { DebtGauge } from "./DebtGauge";
@@ -20,6 +20,11 @@ import { NotificationsToggle } from "@/components/notifications/notifications-to
 import { AgentTracePanel } from "@/components/AgentTracePanel";
 import { getOrbCopy, getPersonality } from "@/lib/orbPersonality";
 import { getStrings } from "@/lib/i18n";
+import { bandMeta } from "@/lib/debt-band";
+import { GuestAuthCard } from "@/components/GuestAuthCard";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { SecondaryButton } from "@/components/SecondaryButton";
+import { SignalUpsellCard } from "@/components/SignalUpsellCard";
 import type { DebtAnalysis, ConfidenceTier, RecoverySystem } from "@/lib/types";
 
 // ─── Fallback ─────────────────────────────────────────────────────────────────
@@ -44,13 +49,6 @@ const FALLBACK_ANALYSIS: DebtAnalysis = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getVerdictMeta(score: number): { color: string } {
-  if (score >= 61) return { color: "#DC2626" };
-  if (score >= 41) return { color: "#EA580C" };
-  if (score >= 21) return { color: "#F59E0B" };
-  return { color: "#4ADE80" };
-}
 
 const CONFIDENCE_CONFIG: Record<string, { dot: string; label: string; color: string; explanation: string }> = {
   estimated: { dot: "◐", label: "Estimated",       color: "#524F4C", explanation: "Based on your reported stressors only. No biometric data used." },
@@ -235,7 +233,7 @@ export function DashboardScreen() {
     router.push("/wake-time");
   };
 
-  const scoreColor = getVerdictMeta(data.debtScore).color;
+  const scoreColor = bandMeta(data.debtScore).color;
 
   const systemsRef = useRef<HTMLDivElement>(null);
   const counterfactualRef = useRef<HTMLDivElement>(null);
@@ -555,60 +553,28 @@ export function DashboardScreen() {
       {user && <NotificationsToggle />}
 
       {/* ── Auth upgrade ───────────────────────────────────────────── */}
-      {isGuest && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 mb-6 rounded-2xl p-4 text-center"
-          style={{ backgroundColor: "#141416", border: "1px solid rgba(234,88,12,0.25)" }}>
-          <p className="text-xs font-semibold mb-1" style={{ color: "#F5F5F4" }}>
-            Your data is saved on this device
-          </p>
-          <p className="text-[10px] mb-3" style={{ color: "#A8A29E" }}>
-            Sign in to keep your history across devices and unlock AI-powered insights.
-          </p>
-          <motion.button whileTap={{ scale: 0.97 }}
-            onClick={() => auth.login().catch(() => undefined)}
-            className="text-xs font-semibold px-5 py-2.5 rounded-xl"
-            style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
-            Sign in to save
-          </motion.button>
-        </motion.div>
-      )}
+      {isGuest && <GuestAuthCard />}
 
       {/* CTAs */}
       <div className="relative z-10 flex flex-col gap-3 pb-12 mt-2">
 
         {/* Primary — go to prescription */}
-        <motion.button whileTap={{ scale: 0.98 }}
-          onClick={() => router.push("/prescription")}
-          className="w-full font-semibold text-sm rounded-2xl"
-          style={{ backgroundColor: "#EA580C", color: "#F5F5F4", fontFamily: "var(--font-body)", minHeight: 56 }}>
+        <PrimaryButton size="md" onClick={() => router.push("/prescription")}>
           {t.ctas.viewPrescription}
-        </motion.button>
+        </PrimaryButton>
 
         {/* Secondary — share */}
-        <motion.button whileTap={{ scale: 0.98 }}
+        <SecondaryButton
+          size="sm"
           onClick={() => router.push("/share-card")}
-          className="w-full font-semibold text-xs uppercase tracking-widest rounded-2xl"
-          style={{ backgroundColor: "#141416", color: "#A8A29E", border: "1px solid rgba(168,162,158,0.15)", minHeight: 48 }}>
+          style={{ textTransform: "uppercase", letterSpacing: "0.08em" }}
+        >
           {t.ctas.shareScore}
-        </motion.button>
+        </SecondaryButton>
 
         {/* Signal nudge — only at low confidence */}
         {(confidenceTier === "partial" || confidenceTier === "estimated") && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
-            className="rounded-2xl p-4 text-center"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(234,88,12,0.2)" }}>
-            <p className="text-xs mb-1" style={{ color: "#A8A29E" }}>I can see more if you let me.</p>
-            <p className="text-[10px] mb-3" style={{ color: "#524F4C" }}>
-              Connect your watch and camera for a full picture.
-            </p>
-            <motion.button whileTap={{ scale: 0.98 }}
-              onClick={() => router.push("/face-scan")}
-              className="text-xs font-semibold uppercase tracking-wider px-4 py-2.5 rounded-xl"
-              style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
-              Give your orb more signal
-            </motion.button>
-          </motion.div>
+          <SignalUpsellCard delay={1.2} />
         )}
 
         {/* Return-loop nudge — check back tomorrow */}

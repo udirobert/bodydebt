@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { bandMeta } from "@/lib/debt-band";
 
 // ─── Science facts shown during analysis ─────────────────────────────────────
 const FACTS = [
@@ -126,7 +127,7 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
     return true;
   });
 
-  const orbColor = orbScore >= 61 ? "#DC2626" : orbScore >= 41 ? "#EA580C" : "#F59E0B";
+  const orbColor = bandMeta(orbScore).color;
   const percentLabel = Math.round(elapsed * 100);
 
   // If we have live agent events, show them instead of the simulated signals

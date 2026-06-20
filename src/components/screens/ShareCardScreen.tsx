@@ -4,29 +4,20 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { auth, memory, share } from "@/lib/sdk/eazo-client";
+import { memory, share } from "@/lib/sdk/eazo-client";
 import { useEazo } from "@/lib/sdk/eazo-react";
+import { GuestAuthCard } from "@/components/GuestAuthCard";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { bandLabel, bandMeta } from "@/lib/debt-band";
 
 // ─── Score colour helpers ────────────────────────────────────────────────────
 
-function orbColor(score: number): string {
-  if (score >= 61) return "#DC2626";
-  if (score >= 41) return "#EA580C";
-  return "#F59E0B";
-}
-
+// Note: orb color and label now use the shared band module; orb gradient
+// keeps band-specific deeper mid-stops for the share card hero.
 function orbGradient(score: number): string {
-  const c = orbColor(score);
-  const mid = score >= 61 ? "#991B1B" : score >= 41 ? "#C2410C" : "#D97706";
-  return `radial-gradient(circle at 38% 35%, ${c}, ${mid} 55%, #0A0A0B 100%)`;
-}
-
-function scoreLabel(score: number): string {
-  if (score >= 81) return "Damage control";
-  if (score >= 61) return "Working overtime";
-  if (score >= 41) return "Elevated burden";
-  if (score >= 21) return "Mild debt";
-  return "Body is clear";
+  const c = bandMeta(score);
+  const mid = c.isCritical ? "#991B1B" : c.isElevated ? "#C2410C" : "#D97706";
+  return `radial-gradient(circle at 38% 35%, ${c.color}, ${mid} 55%, #0A0A0B 100%)`;
 }
 
 function formatTimeUntilCleared(clearedAt: string): string {
@@ -90,8 +81,8 @@ function ShareCardVisual({
   recoveryArc?: { dangerEnds: string; partialEnds: string; clearedAt: string };
   revealing: boolean;
 }) {
-  const color = orbColor(score);
-  const label = scoreLabel(score);
+  const color = bandMeta(score).color;
+  const label = bandLabel(score);
 
   return (
     <div
@@ -368,7 +359,7 @@ export function ShareCardScreen() {
     }
   };
 
-  const color = orbColor(score);
+  const color = bandMeta(score).color;
 
   return (
     <div
@@ -475,44 +466,15 @@ export function ShareCardScreen() {
         </AnimatePresence>
 
         {/* Auth upgrade */}
-        {isGuest && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.3, duration: 0.4 }}
-            className="rounded-2xl p-4 text-center"
-            style={{ backgroundColor: "#141416", border: "1px solid rgba(234,88,12,0.25)" }}>
-            <p className="text-xs font-semibold mb-1" style={{ color: "#F5F5F4" }}>
-              Your data is saved on this device
-            </p>
-            <p className="text-[10px] mb-3" style={{ color: "#A8A29E" }}>
-              Sign in to keep your history across devices and unlock AI-powered insights.
-            </p>
-            <motion.button whileTap={{ scale: 0.97 }}
-              onClick={() => auth.login().catch(() => undefined)}
-              className="text-xs font-semibold px-5 py-2.5 rounded-xl"
-              style={{ backgroundColor: "#EA580C", color: "#F5F5F4" }}>
-              Sign in to save
-            </motion.button>
-          </motion.div>
-        )}
+        {isGuest && <GuestAuthCard />}
 
         {/* Recovery reminder CTA — closes the loop */}
-        <motion.button
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.4 }}
-          whileTap={{ scale: 0.98 }}
+        <PrimaryButton
+          size="md"
           onClick={() => router.push("/prescription")}
-          className="w-full font-semibold text-sm rounded-2xl flex items-center justify-center gap-2"
-          style={{
-            backgroundColor: "#141416",
-            color: "#F5F5F4",
-            border: "1px solid rgba(234,88,12,0.2)",
-            fontFamily: "var(--font-body)",
-            minHeight: 52,
-          }}
         >
           Set recovery reminder
-        </motion.button>
+        </PrimaryButton>
 
         {/* Back */}
         <button

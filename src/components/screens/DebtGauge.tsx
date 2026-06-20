@@ -1,25 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-
-function scoreColor(score: number): string {
-  if (score >= 61) return "#DC2626";
-  if (score >= 41) return "#EA580C";
-  if (score >= 21) return "#F59E0B";
-  return "#4ADE80";
-}
-
-function scoreLabel(score: number): string {
-  if (score >= 81) return "Damage control";
-  if (score >= 61) return "Working overtime";
-  if (score >= 41) return "Elevated burden";
-  if (score >= 21) return "Mild debt";
-  return "Body is clear";
-}
+import { bandLabel, bandMeta } from "@/lib/debt-band";
 
 export function DebtGauge({ score, animated = true }: { score: number; animated?: boolean }) {
-  const color = scoreColor(score);
-  const label = scoreLabel(score);
+  const { color } = bandMeta(score);
+  const label = bandLabel(score);
   // Map score (0-100) to angle (0-180 degrees)
   const angle = (score / 100) * 180;
   const radians = (angle * Math.PI) / 180;

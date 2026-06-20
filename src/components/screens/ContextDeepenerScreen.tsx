@@ -7,7 +7,7 @@ import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory } from "@/lib/sdk/eazo-client";
 import type { StressorType } from "@/lib/types";
 import { MiniOrb } from "@/components/MiniOrb";
-import { ProgressBar } from "@/components/ProgressBar";
+import { bandMeta, bandVerb } from "@/lib/debt-band";
 
 interface Question {
   type: StressorType;
@@ -95,13 +95,8 @@ export function ContextDeepenerScreen() {
   }, 0);
   const clampedPoints = Math.min(100, Math.max(0, totalPoints));
 
-  const scoreColor =
-    clampedPoints >= 61 ? "#DC2626" : clampedPoints >= 41 ? "#EA580C" : "#F59E0B";
-
-  const scoreVerb =
-    clampedPoints >= 61 ? "This is significant" :
-    clampedPoints >= 41 ? "Above baseline" :
-    "Below threshold";
+  const { color: scoreColor } = bandMeta(clampedPoints);
+  const scoreVerbText = bandVerb(clampedPoints);
 
   return (
     <div
@@ -133,11 +128,6 @@ export function ContextDeepenerScreen() {
         <p className="text-xs mt-1.5 font-medium" style={{ color: "#524F4C" }}>
           One tap per answer
         </p>
-      </div>
-
-      {/* Progress */}
-      <div className="relative z-10 pb-4">
-        <ProgressBar current={3} total={5} />
       </div>
 
       {/* Questions */}
@@ -232,7 +222,7 @@ export function ContextDeepenerScreen() {
               Running total
             </span>
             <span className="text-xs mt-0.5 font-medium" style={{ color: scoreColor }}>
-              {scoreVerb}
+              {scoreVerbText}
             </span>
           </div>
           <div className="text-right">

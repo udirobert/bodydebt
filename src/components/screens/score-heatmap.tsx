@@ -5,32 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, ChevronDown, ChevronUp } from "lucide-react";
 import { fetchScoreHeatmap } from "@/lib/api";
 import type { HeatmapDay } from "@/lib/api";
-
-// ─── Score colour helpers ────────────────────────────────────────────────────
-
-function scoreColor(score: number): string {
-  if (score >= 61) return "#DC2626";
-  if (score >= 41) return "#EA580C";
-  if (score >= 21) return "#F59E0B";
-  if (score > 0)  return "#4ADE80";
-  return "transparent";
-}
-
-function scoreBg(score: number): string {
-  if (score >= 61) return "rgba(220,38,38,0.25)";
-  if (score >= 41) return "rgba(234,88,12,0.25)";
-  if (score >= 21) return "rgba(245,158,11,0.25)";
-  if (score > 0)  return "rgba(74,222,128,0.25)";
-  return "rgba(168,162,158,0.04)";
-}
-
-function scoreLabel(score: number): string {
-  if (score >= 61) return "High";
-  if (score >= 41) return "Elevated";
-  if (score >= 21) return "Mild";
-  if (score > 0)  return "Low";
-  return "No data";
-}
+import { bandBackground, bandLegend, bandMeta, BAND_BG_NONE } from "@/lib/debt-band";
 
 // ─── Build last-N-days grid ────────────────────────────────────────────────
 
@@ -176,9 +151,9 @@ export function ScoreHeatmap() {
                                 width: 14,
                                 height: 14,
                                 backgroundColor: hasData
-                                  ? scoreBg(cell.score)
-                                  : "rgba(168,162,158,0.04)",
-                                outline: hasData ? `1px solid ${scoreColor(cell.score)}` : "1px solid rgba(168,162,158,0.06)",
+                                  ? bandBackground(cell.score)
+                                  : BAND_BG_NONE,
+                                outline: hasData ? `1px solid ${bandMeta(cell.score).color}` : "1px solid rgba(168,162,158,0.06)",
                                 outlineOffset: -1,
                               }}
                             >
@@ -193,7 +168,7 @@ export function ScoreHeatmap() {
                                   }}
                                 >
                                   {hasData
-                                    ? `${cell.date}: ${cell.score} (${scoreLabel(cell.score)})${cell.count > 1 ? ` · ${cell.count} sessions` : ""}`
+                                    ? `${cell.date}: ${cell.score} (${bandLegend(cell.score)})${cell.count > 1 ? ` · ${cell.count} sessions` : ""}`
                                     : `${cell.date}: —`}
                                 </div>
                               </div>
@@ -215,8 +190,8 @@ export function ScoreHeatmap() {
                       style={{
                         width: 10,
                         height: 10,
-                        backgroundColor: scoreBg(threshold + 1),
-                        outline: `1px solid ${scoreColor(threshold + 1)}`,
+                        backgroundColor: bandBackground(threshold + 1),
+                        outline: `1px solid ${bandMeta(threshold + 1).color}`,
                         outlineOffset: -1,
                       }}
                     />

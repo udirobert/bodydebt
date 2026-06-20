@@ -7,6 +7,7 @@ import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory } from "@/lib/sdk/eazo-client";
 import { DawnParticle } from "./dawn-particle";
 import { TimeDrum } from "./time-drum";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { buildTimeSlots } from "@/lib/time-utils";
 
 const TIME_SLOTS = buildTimeSlots();
@@ -124,15 +125,9 @@ export function WakeTimeScreen() {
       {/* CTA */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
         className="relative z-10 w-full px-6 pb-12 pt-5">
-        <motion.button whileTap={{ scale: 0.98 }} onClick={handleConfirm}
-          className="w-full font-semibold rounded-2xl relative overflow-hidden"
-          style={{ backgroundColor: "#EA580C", color: "#F5F5F4", fontFamily: "var(--font-body)", minHeight: "60px", fontSize: "15px" }}>
-          <motion.div className="absolute inset-0 pointer-events-none"
-            style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%)" }}
-            animate={{ x: ["-100%", "100%"] }}
-            transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }} />
-          <span className="relative z-10">That&apos;s right</span>
-        </motion.button>
+        <PrimaryButton size="lg" shimmer onClick={handleConfirm}>
+          That&apos;s right
+        </PrimaryButton>
       </motion.div>
     </div>
   );

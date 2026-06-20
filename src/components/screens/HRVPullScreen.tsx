@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft, AlertCircle } from "lucide-react";
 import { MiniOrb } from "@/components/MiniOrb";
+import { ScreenHeader } from "@/components/ScreenHeader";
 import { memory } from "@/lib/sdk/eazo-client";
-import { ProgressBar } from "@/components/ProgressBar";
 import { ManualProxy } from "@/components/hrv/ManualProxy";
 import { useTerraConnect } from "@/components/hrv/useTerraConnect";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
@@ -23,7 +23,6 @@ import { ConnectedPanel } from "./connected-panel";
 type Layer = "picker" | "terra" | "google_fit" | "garmin" | "manual" | "connected" | "analyzing";
 
 export function HRVPullScreen() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const isDemoMode = searchParams.get("demo") === "true";
 
@@ -133,20 +132,21 @@ export function HRVPullScreen() {
   return (
     <div className="relative min-h-svh flex flex-col px-5 overflow-hidden" style={{ backgroundColor: "#0A0A0B" }}>
 
-      {/* Nav */}
-      <div className="relative z-10 flex items-center justify-between mt-12">
-        <button onClick={() => layer === "picker" ? router.push("/face-scan") : setLayer("picker")}
-          className="flex items-center gap-2 text-[11px] font-medium"
-          style={{ color: "#A8A29E", minHeight: "44px" }}>
-          <ChevronLeft className="w-4 h-4" />
-          {layer === "picker" ? "Back" : "Change device"}
-        </button>
-        <MiniOrb score={resolvedHrv ? Math.abs(resolvedHrv.hrvDeltaPercent ?? 0) : 0} size={28} forming={layer === "analyzing"} />
-      </div>
-
-      <div className="relative z-10 pt-3 pb-4">
-        <ProgressBar current={5} total={5} />
-      </div>
+      <ScreenHeader
+        back={
+          layer === "picker"
+            ? { href: "/face-scan", label: "Back" }
+            : { onBack: () => setLayer("picker"), label: "Change device" }
+        }
+        progress={{ current: 5, total: 5 }}
+        right={
+          <MiniOrb
+            score={resolvedHrv ? Math.abs(resolvedHrv.hrvDeltaPercent ?? 0) : 0}
+            size={28}
+            forming={layer === "analyzing"}
+          />
+        }
+      />
 
       <AnimatePresence mode="wait">
 

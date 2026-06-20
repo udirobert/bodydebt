@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { bandMeta } from "@/lib/debt-band";
 
 interface MiniOrbProps {
   score: number; // 0–100, or 0 for "forming"
@@ -8,14 +9,10 @@ interface MiniOrbProps {
   forming?: boolean; // true = materialising animation (during AI calc)
 }
 
-function getColor(score: number) {
-  if (score >= 61) return { primary: "#DC2626", secondary: "#EA580C", glow: "rgba(220,38,38,0.35)" };
-  if (score >= 41) return { primary: "#EA580C", secondary: "#F59E0B", glow: "rgba(234,88,12,0.3)" };
-  return { primary: "#F59E0B", secondary: "#F59E0B", glow: "rgba(245,158,11,0.25)" };
-}
-
 export function MiniOrb({ score, size = 36, forming = false }: MiniOrbProps) {
-  const c = getColor(score);
+  // Collapse clear + mild into amber for nav-sized orbs — the brand
+  // language uses amber/orange/red only; green is reserved for "cleared".
+  const c = score >= 41 ? bandMeta(score) : bandMeta(Math.max(score, 21));
 
   return (
     <div
@@ -40,7 +37,7 @@ export function MiniOrb({ score, size = 36, forming = false }: MiniOrbProps) {
         style={{
           width: size * 0.72,
           height: size * 0.72,
-          background: `radial-gradient(circle at 35% 35%, ${c.secondary}, ${c.primary} 60%, #050505 100%)`,
+          background: `radial-gradient(circle at 35% 35%, ${c.colorSecondary}, ${c.color} 60%, #050505 100%)`,
         }}
         animate={
           forming

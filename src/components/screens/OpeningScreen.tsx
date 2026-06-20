@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { memory } from "@/lib/sdk/eazo-client";
+import { PrimaryButton } from "@/components/PrimaryButton";
 
 // Turbulence frames for dormant orb
 const DORMANT_FRAMES = [
@@ -181,28 +182,14 @@ export function OpeningScreen() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease: "easeOut" }}
             >
-              <motion.button
-                whileTap={{ scale: 0.97 }}
+              <PrimaryButton
+                size="lg"
+                shimmer
                 onClick={handleFindOut}
-                className="w-full font-bold uppercase tracking-[0.18em] rounded-2xl relative overflow-hidden"
-                style={{
-                  backgroundColor: "#EA580C",
-                  color: "#F5F5F4",
-                  fontFamily: "var(--font-body)",
-                  minHeight: "64px",
-                  fontSize: "15px",
-                }}
+                className="font-bold uppercase tracking-[0.18em]"
               >
-                <motion.div
-                  className="absolute inset-0"
-                  style={{
-                    background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)",
-                  }}
-                  animate={{ x: ["-100%", "200%"] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: "linear", delay: 1 }}
-                />
-                <span className="relative z-10">Find Out</span>
-              </motion.button>
+                Find Out
+              </PrimaryButton>
               <p
                 className="text-center mt-4 text-[10px] tracking-widest uppercase font-mono"
                 style={{ color: "rgba(82,79,76,0.7)" }}
