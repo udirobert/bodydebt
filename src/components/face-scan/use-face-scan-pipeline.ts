@@ -96,6 +96,10 @@ export function useFaceScanPipeline() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [lastProof, setLastProof] = useState<ProofResultShape | null>(null);
   const [onChainStatus, setOnChainStatus] = useState<OnChainVerificationStatus>("idle");
+  // Live face detection status for the camera preview. Set by the
+  // continuous-detection loop in startCamera; consumed by the
+  // camera-phase UI to gate the Capture button.
+  const [faceStatus, setFaceStatus] = useState<"pending" | "detected" | "not_detected">("pending");
 
   const { isConnected, chainId } = useAccount();
   const { connectAsync } = useConnect();
@@ -207,6 +211,36 @@ export function useFaceScanPipeline() {
       streamRef.current = stream;
       faceMeshRef.current = initializeFaceMesh(() => {});
       setPhase("camera");
+      setFaceStatus("pending");
+
+      // Continuous face detection at ~2 FPS — enough for live guidance,
+      // light enough to not bog down the camera preview on mobile.
+      // Resolves into faceStatus, which gates the Capture button.
+      let cancelled = false;
+      const runContinuousDetection = async () => {
+        const check = async () => {
+          if (cancelled) return;
+          const v = videoRef.current;
+          if (v && v.readyState >= 2 && faceMeshRef.current) {
+            await new Promise<void>((resolve) => {
+              faceMeshRef.current!.onResults((results: { multiFaceLandmarks?: { x: number; y: number; z: number }[][] }) => {
+                const landmarks = results.multiFaceLandmarks?.[0];
+                if (landmarks && landmarks.length >= 468) {
+                  setFaceStatus("detected");
+                } else {
+                  setFaceStatus("not_detected");
+                }
+                resolve();
+              });
+              faceMeshRef.current!.send({ image: v }).catch(() => resolve());
+            });
+          }
+          if (!cancelled) setTimeout(check, 500);
+        };
+        await check();
+      };
+      runContinuousDetection();
+      return () => { cancelled = true; };
     } catch (err) {
       setCameraError(classifyError(err));
       setPhase("error");
@@ -346,12 +380,14 @@ export function useFaceScanPipeline() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     setFaceSkipped(true);
     setFaceAnalysis(null);
+    setFaceStatus("pending");
     router.push("/hrv-pull");
   }, [router, setFaceAnalysis, setFaceSkipped]);
 
   const retry = useCallback(() => {
     setCameraError(null);
     setAnalysisError(null);
+    setFaceStatus("pending");
     setPhase("prompt");
     startCamera();
   }, [startCamera]);
@@ -360,6 +396,7 @@ export function useFaceScanPipeline() {
     phase: effectivePhase, setPhase, scanMessageIdx, cameraError, analysisError,
     txHash, lastProof, isConfirmed,
     onChainStatus,
+    faceStatus,
     videoRef, canvasRef, streamRef,
     startCamera, captureAndProve, handleSkip, retry,
   };

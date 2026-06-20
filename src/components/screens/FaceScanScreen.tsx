@@ -20,6 +20,7 @@ import { getOrbCopy } from "@/lib/orbPersonality";
 export function FaceScanScreen() {
   const {
     phase, setPhase, scanMessageIdx, cameraError, analysisError,
+    faceStatus,
     txHash, isConfirmed,
     onChainStatus,
     videoRef, canvasRef, streamRef,
@@ -109,7 +110,7 @@ export function FaceScanScreen() {
         {phase === "camera" && (
           <motion.div key="camera" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="relative z-10 flex-1 flex flex-col">
-            <div className="relative mx-auto w-full max-w-xs rounded-2xl overflow-hidden mb-5" style={{ aspectRatio: "4/5" }}>
+            <div className="relative mx-auto w-full max-w-xs rounded-2xl overflow-hidden mb-3" style={{ aspectRatio: "4/5" }}>
               <video ref={(el) => { videoRef.current = el; if (el && streamRef.current) { el.srcObject = streamRef.current; el.play().catch(() => {}); } }}
                 autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
               <canvas ref={canvasRef} className="hidden" />
@@ -117,11 +118,48 @@ export function FaceScanScreen() {
                 <motion.div className="absolute inset-0 rounded-2xl" style={{ border: "1px solid rgba(16, 185, 129, 0.3)" }}
                   animate={{ scale: [1, 1.025, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} />
               </div>
+              {/* Face-position guide oval — dashed, where the user should put their face */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 125" preserveAspectRatio="none">
+                <ellipse
+                  cx="50" cy="55" rx="28" ry="38"
+                  fill="none"
+                  stroke={faceStatus === "detected" ? "rgba(74,222,128,0.7)" : "rgba(234,88,12,0.7)"}
+                  strokeWidth="0.6"
+                  strokeDasharray="2.5 1.8"
+                />
+              </svg>
+            </div>
+            {/* Live detection status — guides the user to a successful capture */}
+            <div className="flex items-center justify-center gap-2 mb-5" style={{ minHeight: 28 }}>
+              {faceStatus === "pending" && (
+                <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#524F4C" }}>
+                  <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }}>
+                    Looking for your face…
+                  </motion.span>
+                </span>
+              )}
+              {faceStatus === "detected" && (
+                <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                  className="text-[10px] font-mono uppercase tracking-widest flex items-center gap-1.5"
+                  style={{ color: "#4ADE80" }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
+                  Face in position
+                </motion.span>
+              )}
+              {faceStatus === "not_detected" && (
+                <span className="text-[10px] font-mono uppercase tracking-widest text-center px-6" style={{ color: "#F59E0B" }}>
+                  Center your face in the oval · move closer or improve lighting
+                </span>
+              )}
             </div>
             <div className="mt-auto flex flex-col gap-3 pb-10">
-              <PrimaryButton onClick={captureAndProve}>
+              <PrimaryButton
+                onClick={captureAndProve}
+                disabled={faceStatus !== "detected"}
+              >
                 <span className="inline-flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4" /> Capture &amp; Prove
+                  <ShieldCheck className="w-4 h-4" />
+                  {faceStatus === "detected" ? "Capture & Prove" : faceStatus === "pending" ? "Looking for face…" : "Position face to continue"}
                 </span>
               </PrimaryButton>
             </div>
