@@ -8,7 +8,7 @@ module.exports = {
       NODE_ENV: 'production',
       PORT: '3050',
       HOSTNAME: '127.0.0.1',
-      NEXT_PUBLIC_APP_URL: 'https://bodydebt.thisyearnofear.com',
+      NEXT_PUBLIC_APP_URL: 'http://bodydebt.thisyearnofear.com:8765',
     },
     instances: 1,
     exec_mode: 'fork',
