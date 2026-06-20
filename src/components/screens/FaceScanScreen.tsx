@@ -20,7 +20,7 @@ import { getOrbCopy } from "@/lib/orbPersonality";
 export function FaceScanScreen() {
   const {
     phase, setPhase, scanMessageIdx, cameraError, analysisError,
-    faceStatus, lightingStatus, captureCountdown,
+    faceStatus, lightingStatus, blurStatus, distanceStatus, captureCountdown,
     txHash, isConfirmed,
     onChainStatus,
     videoRef, canvasRef, streamRef,
@@ -147,52 +147,95 @@ export function FaceScanScreen() {
                 </div>
               )}
             </div>
-            {/* Live status line — face + lighting + a brief nudge. Stays at a fixed
-                height so the layout doesn't jump as the states change. */}
-            <div className="flex flex-col items-center gap-1.5 mb-5" style={{ minHeight: 44 }}>
-              {faceStatus === "detected" ? (
-                <motion.span initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+            {/* Single status line — prioritises the most important issue so we
+                don't stack four lines. Order: position → distance → lighting →
+                blur. When everything is OK, show the success state. */}
+            <div className="flex items-center justify-center mb-5" style={{ minHeight: 32 }}>
+            {(() => {
+              if (faceStatus !== "detected") {
+                return (
+                  <span
+                    className="text-[10px] font-mono uppercase tracking-widest text-center px-6"
+                    style={{ color: "#F59E0B", minHeight: 28 }}
+                  >
+                    <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }}>
+                      Center your face in the oval
+                    </motion.span>
+                  </span>
+                );
+              }
+              if (distanceStatus === "too_far") {
+                return (
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                    Move closer to the camera
+                  </span>
+                );
+              }
+              if (distanceStatus === "too_close") {
+                return (
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                    Move back from the camera
+                  </span>
+                );
+              }
+              if (lightingStatus === "dark") {
+                return (
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                    Too dark — face a light source
+                  </span>
+                );
+              }
+              if (lightingStatus === "bright") {
+                return (
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                    Too bright — back away from the light
+                  </span>
+                );
+              }
+              if (blurStatus === "blurry") {
+                return (
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#F59E0B" }}>
+                    Hold camera stiller
+                  </span>
+                );
+              }
+              // captureReady === true
+              return (
+                <motion.span
+                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                   className="text-[10px] font-mono uppercase tracking-widest flex items-center gap-1.5"
-                  style={{ color: "#4ADE80" }}>
+                  style={{ color: "#4ADE80" }}
+                >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#4ADE80" }} />
-                  Face in position
+                  Face in position · ready to capture
                 </motion.span>
-              ) : faceStatus === "not_detected" ? (
-                <span className="text-[10px] font-mono uppercase tracking-widest text-center px-6" style={{ color: "#F59E0B" }}>
-                  Center your face in the oval · move closer
-                </span>
-              ) : (
-                <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "#524F4C" }}>
-                  <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }}>
-                    Looking for your face…
-                  </motion.span>
-                </span>
-              )}
-              {faceStatus !== "detected" && (
-                <span className="text-[10px] font-mono" style={{
-                  color: lightingStatus === "dark" ? "#F59E0B"
-                    : lightingStatus === "bright" ? "#F59E0B"
-                    : lightingStatus === "ok" ? "#4ADE80" : "#524F4C",
-                }}>
-                  {lightingStatus === "dark" && "Too dark — face a light source"}
-                  {lightingStatus === "bright" && "Too bright — back away from the light"}
-                  {lightingStatus === "ok" && "Lighting looks good"}
-                  {lightingStatus === "pending" && " "}
-                </span>
-              )}
+              );
+            })()}
             </div>
             <div className="mt-auto flex flex-col gap-3 pb-10">
               <PrimaryButton
                 onClick={captureAndProve}
-                disabled={faceStatus !== "detected" || captureCountdown !== null}
+                disabled={(() => {
+                  if (captureCountdown !== null) return true;
+                  if (faceStatus !== "detected") return true;
+                  if (distanceStatus !== "ok") return true;
+                  if (lightingStatus !== "ok") return true;
+                  if (blurStatus === "blurry") return true;
+                  return false;
+                })()}
               >
                 <span className="inline-flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4" />
                   {captureCountdown !== null
                     ? `Hold still… ${captureCountdown}`
-                    : faceStatus === "detected" ? "Capture & Prove"
-                    : faceStatus === "pending" ? "Looking for face…"
-                    : "Position face to continue"}
+                    : (faceStatus === "detected" &&
+                       distanceStatus === "ok" &&
+                       lightingStatus === "ok" &&
+                       blurStatus !== "blurry")
+                      ? "Capture & Prove"
+                      : faceStatus !== "detected"
+                        ? "Looking for face…"
+                        : "Adjust to continue"}
                 </span>
               </PrimaryButton>
               <button

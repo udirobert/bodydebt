@@ -79,6 +79,84 @@ function analyzeLighting(video: HTMLVideoElement): "dark" | "ok" | "bright" {
   }
 }
 
+/**
+ * Blur estimator via Laplacian variance on a 100×100 patch. A sharp
+ * image has high-frequency edges, so the variance of the Laplacian
+ * is high. A blurry image has smeared-out edges, so the variance
+ * collapses. Threshold tuned conservatively — the exact number
+ * depends on camera/sensor, but a clear separation between "sharp"
+ * and "blurry" emerges well below typical sharp-image variance.
+ */
+function analyzeBlur(video: HTMLVideoElement): "blurry" | "sharp" {
+  if (typeof document === "undefined") return "sharp";
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 100;
+    canvas.height = 100;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "sharp";
+    ctx.drawImage(video, 0, 0, 100, 100);
+    const { data, width: w, height: h } = ctx.getImageData(0, 0, 100, 100);
+    // Build a grayscale buffer first (cheaper to index than per-pixel rgb).
+    const gray = new Float32Array(w * h);
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+      gray[j] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    }
+    // 3×3 Laplacian kernel. Skip the 1-pixel border to avoid padding.
+    let sum = 0;
+    let sumSq = 0;
+    let count = 0;
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const idx = y * w + x;
+        const lap =
+          gray[idx - w] + gray[idx + w] +
+          gray[idx - 1] + gray[idx + 1] -
+          4 * gray[idx];
+        sum += lap;
+        sumSq += lap * lap;
+        count++;
+      }
+    }
+    const mean = sum / count;
+    const variance = sumSq / count - mean * mean;
+    return variance < 30 ? "blurry" : "sharp";
+  } catch {
+    return "sharp";
+  }
+}
+
+/**
+ * Distance estimator from the bounding box of the detected face
+ * landmarks. Returns "too_far" if the face covers less than 15% of
+ * the frame width, "too_close" if more than 65%, and "ok"
+ * otherwise. The bbox is normalised to [0,1] space using the
+ * landmarks' own x range, so the result is camera-resolution
+ * independent.
+ */
+function analyzeDistance(
+  landmarks: { x: number; y: number; z: number }[],
+): "too_far" | "too_close" | "ok" {
+  if (!landmarks.length) return "too_far";
+  let minX = 1, maxX = 0, minY = 1, maxY = 0;
+  for (const p of landmarks) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  // Landmarks are in [0,1] normalised space relative to the frame
+  // that was sent to MediaPipe. Since we draw to a canvas at the
+  // video's native resolution and send that, the values are still
+  // in [0,1].
+  const w = maxX - minX;
+  const h = maxY - minY;
+  const fillRatio = Math.max(w, h);
+  if (fillRatio < 0.15) return "too_far";
+  if (fillRatio > 0.65) return "too_close";
+  return "ok";
+}
+
 function classifyError(err: unknown): CameraError {
   if (err instanceof DOMException) {
     if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") return "denied";
@@ -135,6 +213,11 @@ export function useFaceScanPipeline() {
   // detection in the continuous loop. Drives a one-line status hint
   // so the user knows when the environment is the problem, not them.
   const [lightingStatus, setLightingStatus] = useState<"pending" | "dark" | "ok" | "bright">("pending");
+  // Blur (Laplacian variance) and distance (face bbox fill ratio)
+  // checks. Combined with faceStatus + lightingStatus, these gate
+  // the Capture button via the derived `captureReady` flag.
+  const [blurStatus, setBlurStatus] = useState<"pending" | "blurry" | "sharp">("pending");
+  const [distanceStatus, setDistanceStatus] = useState<"pending" | "too_far" | "too_close" | "ok">("pending");
   // 3-2-1 countdown shown after the user taps Capture, before the
   // actual frame grab. Reduces motion blur and gives the user a
   // clear "something is happening" signal.
@@ -252,6 +335,8 @@ export function useFaceScanPipeline() {
       setPhase("camera");
       setFaceStatus("pending");
       setLightingStatus("pending");
+      setBlurStatus("pending");
+      setDistanceStatus("pending");
       setCaptureCountdown(null);
 
       // Continuous face detection at ~2 FPS — enough for live guidance,
@@ -260,6 +345,9 @@ export function useFaceScanPipeline() {
       // Also samples a 60×60 patch of the frame to estimate lighting
       // so the user can be told if their environment is too dark or
       // blown out — a leading cause of unreliable face detection.
+      // Plus a 100×100 Laplacian-variance check for blur and a
+      // face-bbox fill ratio for distance. The three signals together
+      // gate the Capture button via the derived `captureReady` flag.
       let cancelled = false;
       const runContinuousDetection = async () => {
         const check = async () => {
@@ -267,13 +355,16 @@ export function useFaceScanPipeline() {
           const v = videoRef.current;
           if (v && v.readyState >= 2 && faceMeshRef.current) {
             setLightingStatus(analyzeLighting(v));
+            setBlurStatus(analyzeBlur(v));
             await new Promise<void>((resolve) => {
               faceMeshRef.current!.onResults((results: { multiFaceLandmarks?: { x: number; y: number; z: number }[][] }) => {
                 const landmarks = results.multiFaceLandmarks?.[0];
                 if (landmarks && landmarks.length >= 468) {
                   setFaceStatus("detected");
+                  setDistanceStatus(analyzeDistance(landmarks));
                 } else {
                   setFaceStatus("not_detected");
+                  setDistanceStatus("too_far");
                 }
                 resolve();
               });
@@ -439,6 +530,8 @@ export function useFaceScanPipeline() {
     setFaceAnalysis(null);
     setFaceStatus("pending");
     setLightingStatus("pending");
+    setBlurStatus("pending");
+    setDistanceStatus("pending");
     setCaptureCountdown(null);
     router.push("/hrv-pull");
   }, [router, setFaceAnalysis, setFaceSkipped]);
@@ -448,6 +541,8 @@ export function useFaceScanPipeline() {
     setAnalysisError(null);
     setFaceStatus("pending");
     setLightingStatus("pending");
+    setBlurStatus("pending");
+    setDistanceStatus("pending");
     setCaptureCountdown(null);
     setPhase("prompt");
     startCamera();
@@ -457,7 +552,7 @@ export function useFaceScanPipeline() {
     phase: effectivePhase, setPhase, scanMessageIdx, cameraError, analysisError,
     txHash, lastProof, isConfirmed,
     onChainStatus,
-    faceStatus, lightingStatus, captureCountdown,
+    faceStatus, lightingStatus, blurStatus, distanceStatus, captureCountdown,
     videoRef, canvasRef, streamRef,
     startCamera, captureAndProve, handleSkip, retry,
   };
