@@ -6,7 +6,7 @@
 2. Ensure you have **no other tabs open** (judges see your screen)
 3. Open DevTools → Console so the QVAC progress logs are visible
 4. Have a webcam ready (or hold your phone camera to the laptop screen)
-5. **Open the DevTools Network tab** and filter to `/api/analyze/stream` — the judges will see the SSE events stream live, including `agent_start`, `agent_token`, and `agent_done` events
+5. **Open the DevTools Network tab** and filter to `/api/qvac/infer` — the judges will see the SSE events stream live, including `agent_start`, `agent_token`, and `agent_done` events
 6. **Have `/evidence` open in a second tab** at https://bodydebt.thisyearnofear.com/evidence — close with it as the summary page
 
 ---
@@ -140,11 +140,13 @@
 
 ## Demo checklist
 
-- [ ] QVAC model cached before recording (visit app once, let first inference complete)
+- [ ] QVAC model cached before recording (visit app once, let first inference complete — ~738MB downloads on first run, then cached at `~/.qvac/models/`)
+- [ ] `bare` runtime installed on server (`which bare` returns a path)
+- [ ] pm2 restarted after latest build (`pm2 restart bodydebt`)
 - [ ] Face scan calibrated to current lighting
 - [ ] Stressors pre-filled (don't burn 15s clicking)
 - [ ] Browser zoom at 100% so the Agent Trace panel text reads on screen
-- [ ] DevTools Network tab filtered to `/api/analyze/stream` for the SSE event narrative
+- [ ] DevTools Network tab filtered to `/api/qvac/infer` for the SSE event narrative
 
 ## Pitfalls to avoid
 
