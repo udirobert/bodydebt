@@ -133,13 +133,22 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
   const isLoadingModel = agentProgress && !hasLiveAgents;
 
   // Drive progress from real agent state when agents are live.
-  // Each agent contributes equally: triage 25%, coach 50%, schedule 75%, reflection 100%.
-  const agentProgressPct = hasLiveAgents && agentEvents
-    ? Math.round((agentEvents.filter(a => a.status === "done").length / agentEvents.length) * 100)
+  // Blend with simulated progress to avoid jarring resets.
+  // Each completed agent = 25%. Active agent adds partial credit.
+  const agentPct = hasLiveAgents && agentEvents
+    ? Math.round(
+        agentEvents.reduce((sum, a) => {
+          if (a.status === "done") return sum + 1;
+          if (a.status === "active") return sum + 0.3; // partial credit for in-progress
+          return sum;
+        }, 0) / agentEvents.length * 100
+      )
     : null;
 
   const orbColor = bandMeta(orbScore).color;
-  const percentLabel = agentProgressPct ?? Math.round(elapsed * 100);
+  // Use the higher of simulated or agent-based progress — no jarring resets
+  const simulatedPct = Math.round(elapsed * 100);
+  const percentLabel = agentPct != null ? Math.max(agentPct, simulatedPct) : simulatedPct;
 
   return (
     <div className="relative flex flex-col items-center justify-between min-h-svh px-5 py-12 overflow-hidden"

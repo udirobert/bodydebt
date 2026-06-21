@@ -84,6 +84,9 @@ export function useStreamingAnalysis() {
       let partial: Partial<DebtAnalysis> = {};
       // Agent trace built up from live events
       const agentSteps: AgentStep[] = [];
+      // SSE event type persists across chunks — event: and data: lines
+      // may arrive in separate reads
+      let eventType = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -93,7 +96,6 @@ export function useStreamingAnalysis() {
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? "";  // keep incomplete line in buffer
 
-        let eventType = "";
         for (const line of lines) {
           if (line.startsWith("event: ")) {
             eventType = line.slice(7).trim();
