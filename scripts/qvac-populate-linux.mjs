@@ -10,7 +10,7 @@
  * Idempotent — safe to run multiple times.
  */
 
-import { rmSync, mkdirSync, existsSync, readdirSync, statSync } from "node:fs";
+import { rmSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
 

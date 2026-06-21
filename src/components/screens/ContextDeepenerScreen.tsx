@@ -111,10 +111,6 @@ export function ContextDeepenerScreen() {
     setEditingKey(null);
   };
 
-  const handleEdit = (s: StressorSummary, q: Question) => {
-    setEditingKey(`${q.stressorType}__${String(q.field)}`);
-  };
-
   const handleEditStressor = (s: StressorSummary) => {
     // Jump to the first unanswered question for this stressor; if all
     // are answered, jump to the first one (so the user can re-tap).

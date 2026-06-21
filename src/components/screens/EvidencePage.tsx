@@ -76,8 +76,6 @@ function MetricCard({ label, value, sub, color = "#4ADE80" }: {
 }
 
 export function EvidencePage() {
-  const speedup = (SAMPLE_BENCHMARK.cloudVerdictMs / SAMPLE_BENCHMARK.edgeTotalMs).toFixed(1);
-
   return (
     <div className="min-h-svh px-5 py-10 overflow-x-hidden"
       style={{ backgroundColor: "#0A0A0B", color: "#F5F5F4" }}>
@@ -186,7 +184,7 @@ export function EvidencePage() {
                 Personality: {SAMPLE_BENCHMARK.personality}
               </span>
             </div>
-            {SAMPLE_BENCHMARK.agentBreakdown.map((a, i) => (
+            {SAMPLE_BENCHMARK.agentBreakdown.map((a) => (
               <div key={a.agent} className="flex items-start gap-3">
                 <span className="text-sm flex-shrink-0 mt-0.5">
                   {a.agent === "triage" ? "🔬" : a.agent === "coach" ? "💊" : a.agent === "schedule" ? "📅" : "🎭"}

@@ -33,7 +33,6 @@ export function useTerraConnect() {
     hrvData: null,
     errorMsg: null,
   });
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const popupRef = useRef<Window | null>(null);
   const popupTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 

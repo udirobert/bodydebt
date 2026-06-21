@@ -124,9 +124,9 @@ export function useStreamingAnalysis() {
 
             if (eventType === "agent_progress") {
               // Model download / loading progress from QVAC
-              useBodyDebtStore.setState((state) => ({
+              useBodyDebtStore.setState({
                 agentProgress: data as { status: string; percent?: number; loaded?: number; total?: number },
-              }));
+              });
             }
 
             if (eventType === "agent_token") {

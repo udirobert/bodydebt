@@ -171,11 +171,9 @@ export function DashboardScreen() {
 
   // Animated score count-up
   const [displayScore, setDisplayScore] = useState(0);
-  const [scoreLanded, setScoreLanded] = useState(false);
   const countRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     if (!analysis) return;
-    setScoreLanded(false);
     const target = analysis.debtScore;
     const duration = 1500;
     const steps = 40;
@@ -186,7 +184,6 @@ export function DashboardScreen() {
       setDisplayScore(Math.round(current));
       if (current >= target) {
         clearInterval(countRef.current!);
-        setScoreLanded(true);
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(target >= 60 ? [10, 50, 30] : 15);
         }
@@ -194,6 +191,10 @@ export function DashboardScreen() {
     }, duration / steps);
     return () => clearInterval(countRef.current!);
   }, [analysis]);
+  // Derived — the landing animation fires once displayScore reaches
+  // the target. Keeping this out of state avoids a cascading render
+  // (setState inside effect → re-render → effect re-runs → ...).
+  const scoreLanded = !!analysis && displayScore >= analysis.debtScore;
 
   const [personalityOpen, setPersonalityOpen] = useState(false);
   const personalityCfg = getPersonality(orbPersonality);
