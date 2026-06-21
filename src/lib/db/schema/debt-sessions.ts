@@ -23,10 +23,10 @@ export const debtSessions = pgTable("debt_sessions", {
     }>
   >(),
   faceAnalysis: json("face_analysis").$type<{
-    periorbitalPuffiness: "none" | "mild" | "moderate" | "severe";
+    periorbitalPuffiness: "none" | "mild" | "moderate" | "severe" | "unmeasured";
     skinPerfusion: "good" | "low" | "very_low";
     eyeClarity: "clear" | "fatigued" | "very_fatigued";
-    inflammation: "none" | "mild" | "moderate" | "severe";
+    inflammation: "none" | "mild" | "moderate" | "severe" | "unmeasured";
     debtContribution: number; // 0-30 points from face
   }>(),
   hrvData: json("hrv_data").$type<{

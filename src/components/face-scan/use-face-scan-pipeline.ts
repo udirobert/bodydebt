@@ -22,7 +22,7 @@ export type ScanPhase =
   | "extracting" | "proving" | "verifying"
   | "result" | "error" | "skipped";
 
-export type CameraError = "denied" | "unavailable" | "in_use" | "generic";
+export type CameraError = "denied" | "unavailable" | "in_use" | "insecure" | "generic";
 
 export const SCAN_MESSAGES = [
   "Extracting facial geometry locally...",
@@ -44,6 +44,7 @@ export function cameraErrorCopy(kind: CameraError) {
     case "denied": return { title: "Camera access blocked", body: "Enable camera access in your browser settings.", action: "Try again" };
     case "unavailable": return { title: "No camera found", body: "This device doesn't appear to have a camera.", action: "Continue without scan" };
     case "in_use": return { title: "Camera is in use", body: "Another app is using your camera.", action: "Try again" };
+    case "insecure": return { title: "HTTPS required for camera", body: "Browsers block camera access on non-HTTPS pages. Open this app over HTTPS (or localhost) to use face scan.", action: "Continue without scan" };
     case "generic": return { title: "Camera unavailable", body: "The camera API is blocked on this connection. The page must be served over HTTPS to access the camera. Use “Continue without scan” or open the HTTPS URL.", action: "Continue without scan" };
   }
 }
@@ -159,9 +160,11 @@ function analyzeDistance(
 
 function classifyError(err: unknown): CameraError {
   if (err instanceof DOMException) {
+    if ((err as DOMException & { insecureOrigin?: boolean }).insecureOrigin) return "insecure";
     if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") return "denied";
     if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") return "unavailable";
     if (err.name === "NotReadableError" || err.name === "TrackStartError") return "in_use";
+    if (err.name === "SecurityError") return "insecure";
   }
   return "generic";
 }
@@ -246,10 +249,13 @@ export function useFaceScanPipeline() {
     const parsed = JSON.parse(proofResult.publicInputs);
     setZkProof(buildZkResult(proofResult, status));
     setFaceAnalysis({
-      periorbitalPuffiness: "mild",
+      // The circuit only proves stress_score / is_healthy. Puffiness and
+      // inflammation aren't derived from the face, so we mark them
+      // honestly instead of fabricating "mild" / "none".
+      periorbitalPuffiness: "unmeasured",
       skinPerfusion: parsed.is_healthy ? "good" : "low",
       eyeClarity: parsed.is_healthy ? "clear" : "fatigued",
-      inflammation: "none",
+      inflammation: "unmeasured",
       debtContribution: Math.round((parsed.stress_score ?? 0.5) * 20),
       summary: `ZK-verified facial stress analysis (${summarySuffix}).`,
     });
@@ -261,6 +267,19 @@ export function useFaceScanPipeline() {
   const streamRef = useRef<MediaStream | null>(null);
   const faceMeshRef = useRef<ReturnType<typeof initializeFaceMesh> | null>(null);
   const workerRef = useRef<Worker | null>(null);
+  // Stops the ~2 FPS detection loop started in startCamera. Held in a
+  // ref because startCamera is called from fire-and-forget onClick
+  // handlers — the returned cleanup has nowhere to go, so we stash it
+  // here and invoke it from skip/retry/capture/unmount.
+  const detectionCleanupRef = useRef<(() => void) | null>(null);
+  // Swappable MediaPipe results listener. The face mesh has ONE
+  // permanent onResults handler (attached in startCamera) that
+  // dispatches into this ref. The detection loop and the capture
+  // retry loop each install their own listener while awaiting a
+  // single `send`, then clear it. Avoids the per-frame onResults
+  // reassignment race that previously depended on send serialisation.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const resultsListenerRef = useRef<((results: any) => void) | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !workerRef.current) {
@@ -292,7 +311,11 @@ export function useFaceScanPipeline() {
   }, [phase]);
 
   useEffect(() => {
-    return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); };
+    return () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      detectionCleanupRef.current?.();
+      detectionCleanupRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -317,10 +340,10 @@ export function useFaceScanPipeline() {
     const zkResult = buildZkResult(lastProof, "verified", txHash as string);
     setZkProof(zkResult);
     setFaceAnalysis({
-      periorbitalPuffiness: "mild",
+      periorbitalPuffiness: "unmeasured",
       skinPerfusion: parsed.is_healthy ? "good" : "low",
       eyeClarity: parsed.is_healthy ? "clear" : "fatigued",
-      inflammation: "none",
+      inflammation: "unmeasured",
       debtContribution: Math.round((parsed.stress_score ?? 0.5) * 20),
       summary: "ZK-verified facial stress analysis completed.",
     });
@@ -329,6 +352,21 @@ export function useFaceScanPipeline() {
   const startCamera = useCallback(async () => {
     setCameraError(null);
     try {
+      // Preflight: browsers require a secure context (HTTPS or localhost)
+      // to expose getUserMedia. Without this, an insecure-origin page
+      // falls into the generic "Camera unavailable" bucket and the real
+      // cause is invisible. A SecurityError from getUserMedia is also
+      // mapped to "insecure" in classifyError, but some browsers refuse
+      // to even expose `navigator.mediaDevices` so we check first.
+      if (typeof window !== "undefined" && !window.isSecureContext) {
+        const err = new DOMException("Secure context required for camera access", "SecurityError") as DOMException & { insecureOrigin?: boolean };
+        err.insecureOrigin = true;
+        throw err;
+      }
+      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        throw new DOMException("Camera API unavailable", "NotFoundError");
+      }
+
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -341,7 +379,15 @@ export function useFaceScanPipeline() {
         } else throw frontErr;
       }
       streamRef.current = stream;
+      // Initialise the mesh with a no-op listener, then immediately
+      // replace it with a single dispatcher that forwards to whichever
+      // listener the detection/capture loops have installed. This is
+      // the only onResults binding for the lifetime of the mesh.
       faceMeshRef.current = initializeFaceMesh(() => {});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      faceMeshRef.current.onResults((results: any) => {
+        resultsListenerRef.current?.(results);
+      });
       setPhase("camera");
       setFaceStatus("pending");
       setLightingStatus("pending");
@@ -367,7 +413,7 @@ export function useFaceScanPipeline() {
             setLightingStatus(analyzeLighting(v));
             setBlurStatus(analyzeBlur(v));
             await new Promise<void>((resolve) => {
-              faceMeshRef.current!.onResults((results: { multiFaceLandmarks?: { x: number; y: number; z: number }[][] }) => {
+              resultsListenerRef.current = (results: { multiFaceLandmarks?: { x: number; y: number; z: number }[][] }) => {
                 const landmarks = results.multiFaceLandmarks?.[0];
                 if (landmarks && landmarks.length >= 468) {
                   setFaceStatus("detected");
@@ -376,9 +422,13 @@ export function useFaceScanPipeline() {
                   setFaceStatus("not_detected");
                   setDistanceStatus("too_far");
                 }
+                resultsListenerRef.current = null;
+                resolve();
+              };
+              faceMeshRef.current!.send({ image: v }).catch(() => {
+                resultsListenerRef.current = null;
                 resolve();
               });
-              faceMeshRef.current!.send({ image: v }).catch(() => resolve());
             });
           }
           if (!cancelled) setTimeout(check, 500);
@@ -386,7 +436,7 @@ export function useFaceScanPipeline() {
         await check();
       };
       runContinuousDetection();
-      return () => { cancelled = true; };
+      detectionCleanupRef.current = () => { cancelled = true; };
     } catch (err) {
       setCameraError(classifyError(err));
       setPhase("error");
@@ -429,6 +479,11 @@ export function useFaceScanPipeline() {
     ctx.translate(w, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, w, h);
+    // Detection loop is no longer useful — we've grabbed the frame and
+    // are about to run the proof. Stopping it avoids the 500ms timer
+    // chain racing with the capture retry loop below.
+    detectionCleanupRef.current?.();
+    detectionCleanupRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     setPhase("extracting");
 
@@ -442,8 +497,30 @@ export function useFaceScanPipeline() {
       let features: ReturnType<typeof extractStressFeatures> = null;
       for (let attempt = 1; attempt <= MAX_FACE_ATTEMPTS && !features; attempt++) {
         const results = await new Promise<{ multiFaceLandmarks: { x: number; y: number; z: number }[][] }>((resolve) => {
-          faceMeshRef.current!.onResults(resolve);
-          faceMeshRef.current!.send({ image: video });
+          let settled = false;
+          // Safety timeout — if MediaPipe never calls back (CDN miss,
+          // wasm error), fall through so we can retry or surface a
+          // failure instead of hanging forever.
+          const timer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            resultsListenerRef.current = null;
+            resolve({ multiFaceLandmarks: [] });
+          }, 2500);
+          resultsListenerRef.current = (r: { multiFaceLandmarks: { x: number; y: number; z: number }[][] }) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            resultsListenerRef.current = null;
+            resolve(r);
+          };
+          faceMeshRef.current!.send({ image: video }).catch(() => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            resultsListenerRef.current = null;
+            resolve({ multiFaceLandmarks: [] });
+          });
         });
         features = extractStressFeatures(results.multiFaceLandmarks[0]);
         if (!features && attempt < MAX_FACE_ATTEMPTS) {
@@ -555,6 +632,8 @@ export function useFaceScanPipeline() {
   }, [isConnected, chainId, writeContractAsync, connectAsync, switchChainAsync, setFaceAnalysis, setFaceSkipped, setLocalResult]);
 
   const handleSkip = useCallback(() => {
+    detectionCleanupRef.current?.();
+    detectionCleanupRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     setFaceSkipped(true);
     setFaceAnalysis(null);
@@ -567,6 +646,8 @@ export function useFaceScanPipeline() {
   }, [router, setFaceAnalysis, setFaceSkipped]);
 
   const retry = useCallback(() => {
+    detectionCleanupRef.current?.();
+    detectionCleanupRef.current = null;
     setCameraError(null);
     setAnalysisError(null);
     setFaceStatus("pending");

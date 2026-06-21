@@ -53,9 +53,30 @@ export function extractStressFeatures(landmarks: MediaPipeLandmark[]): StressFea
   if (!landmarks || landmarks.length < 468) return null;
   const p = (i: number) => landmarks[i];
 
-  const leftEAR = calculateEAR(p(LANDMARKS.LEFT_EYE_OUTER), p(LANDMARKS.LEFT_EYE_INNER), p(LANDMARKS.LEFT_EYE_TOP), p(LANDMARKS.LEFT_EYE_BOTTOM));
-  const rightEAR = calculateEAR(p(LANDMARKS.RIGHT_EYE_OUTER), p(LANDMARKS.RIGHT_EYE_INNER), p(LANDMARKS.RIGHT_EYE_TOP), p(LANDMARKS.RIGHT_EYE_BOTTOM));
-  const browTension = (distance(p(LANDMARKS.LEFT_EYEBROW_INNER), p(LANDMARKS.LEFT_EYE_TOP)) + distance(p(LANDMARKS.RIGHT_EYEBROW_INNER), p(LANDMARKS.RIGHT_EYE_TOP))) / 2;
+  const leftEyeOuter = p(LANDMARKS.LEFT_EYE_OUTER);
+  const leftEyeInner = p(LANDMARKS.LEFT_EYE_INNER);
+  const leftEyeTop   = p(LANDMARKS.LEFT_EYE_TOP);
+  const leftEyeBottom = p(LANDMARKS.LEFT_EYE_BOTTOM);
+  const rightEyeOuter = p(LANDMARKS.RIGHT_EYE_OUTER);
+  const rightEyeInner = p(LANDMARKS.RIGHT_EYE_INNER);
+  const rightEyeTop   = p(LANDMARKS.RIGHT_EYE_TOP);
+  const rightEyeBottom = p(LANDMARKS.RIGHT_EYE_BOTTOM);
+
+  const leftEAR = calculateEAR(leftEyeOuter, leftEyeInner, leftEyeTop, leftEyeBottom);
+  const rightEAR = calculateEAR(rightEyeOuter, rightEyeInner, rightEyeTop, rightEyeBottom);
+
+  // Interocular distance is the standard scale-invariant reference for
+  // horizontal face geometry. Averaging outer-corner and inner-corner
+  // spans smooths out small yaw rotations.
+  const iod = (distance(leftEyeOuter, rightEyeOuter) +
+               distance(leftEyeInner, rightEyeInner)) / 2 || 1;
+
+  const rawBrow = (
+    distance(p(LANDMARKS.LEFT_EYEBROW_INNER), leftEyeTop) +
+    distance(p(LANDMARKS.RIGHT_EYEBROW_INNER), rightEyeTop)
+  ) / 2;
+  const browTension = rawBrow / iod;
+
   const mouthWidth = distance(p(LANDMARKS.MOUTH_LEFT), p(LANDMARKS.MOUTH_RIGHT));
   const mouthHeight = distance(p(LANDMARKS.MOUTH_TOP), p(LANDMARKS.MOUTH_BOTTOM));
   const mouthTension = mouthHeight > 0 ? mouthWidth / mouthHeight : 1;
@@ -73,7 +94,10 @@ export function initializeFaceMesh(onResults: (results: { multiFaceLandmarks: Me
   const { FaceMesh } = require("@mediapipe/face_mesh");
 
   const faceMesh = new FaceMesh({
-    locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+    // Self-hosted from public/mediapipe so the face scan doesn't depend on
+    // jsdelivr at runtime. Keep the bundle small by only shipping the
+    // files FaceMesh actually requests via locateFile.
+    locateFile: (file: string) => `/mediapipe/${file}`,
   });
 
   faceMesh.setOptions({
@@ -85,18 +109,4 @@ export function initializeFaceMesh(onResults: (results: { multiFaceLandmarks: Me
 
   faceMesh.onResults(onResults);
   return faceMesh;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function startCamera(videoElement: HTMLVideoElement, faceMesh: any): any {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { Camera } = require("@mediapipe/camera_utils");
-
-  const camera = new Camera(videoElement, {
-    onFrame: async () => { await faceMesh.send({ image: videoElement }); },
-    width: 640,
-    height: 480,
-  });
-  camera.start();
-  return camera;
 }

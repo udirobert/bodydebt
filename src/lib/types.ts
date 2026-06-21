@@ -55,10 +55,10 @@ export type ConfidenceTier =
 // ─── Face analysis ────────────────────────────────────────────────────────────
 
 export interface FaceAnalysisResult {
-  periorbitalPuffiness: "none" | "mild" | "moderate" | "severe";
+  periorbitalPuffiness: "none" | "mild" | "moderate" | "severe" | "unmeasured";
   skinPerfusion: "good" | "low" | "very_low";
   eyeClarity: "clear" | "fatigued" | "very_fatigued";
-  inflammation: "none" | "mild" | "moderate" | "severe";
+  inflammation: "none" | "mild" | "moderate" | "severe" | "unmeasured";
   debtContribution: number;
   summary: string;
 }

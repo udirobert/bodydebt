@@ -40,6 +40,15 @@ const nextConfig: NextConfig = {
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
         ],
       },
+      {
+        source: "/mediapipe/:path*",
+        headers: [
+          // MediaPipe's JS wrapper loads .wasm via instantiateStreaming,
+          // which requires this exact MIME or it silently falls through.
+          { key: "Content-Type", value: "application/wasm" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
     ];
   },
   turbopack: {},

@@ -213,6 +213,10 @@ witness.json
 *.wasm
 *.bin
 *.weights
+# MediaPipe face_mesh assets are self-hosted from public/mediapipe so the
+# face scan has no runtime jsdelivr dependency. Keep them checked in.
+!public/mediapipe/*.wasm
+!public/mediapipe/*.data
 
 # Python virtual environment
 .venv/
