@@ -181,11 +181,6 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
                 `radial-gradient(circle at 35% 30%, #F59E0B, #EA580C 60%, #1a0800 100%)`,
                 `radial-gradient(circle at 40% 35%, ${orbColor}, #DC2626 60%, #0A0A0B 100%)`,
               ],
-              borderRadius: [
-                "52% 48% 52% 48% / 50% 50% 50% 50%",
-                "48% 52% 48% 52% / 52% 48% 52% 48%",
-                "52% 48% 52% 48% / 50% 50% 50% 50%",
-              ],
             }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             style={{ boxShadow: `0 0 40px 8px ${orbColor}30` }}

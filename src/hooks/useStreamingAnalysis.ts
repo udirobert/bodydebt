@@ -97,12 +97,22 @@ export function useStreamingAnalysis() {
             const data = JSON.parse(line.slice(6));
 
             if (eventType === "score") {
-              // Layer 1 arrived — immediately show score on dashboard
+              // Layer 1 arrived — store partial but keep loader visible
+              // so the user sees the QVAC agent pipeline streaming live.
+              // We navigate to dashboard only when agents finish (done event)
+              // or if no agents start within 5s (QVAC not running).
               partial = { ...partial, ...data };
               setAnalysis({ ...partial } as DebtAnalysis);
               if (data.confidenceTier) setConfidenceTier(data.confidenceTier);
-              setIsAnalyzing(false);  // stop the loading screen, show partial result
-              router.push("/dashboard");
+
+              // If no agent_start arrives within 5s, QVAC isn't running —
+              // fall back to immediate navigation with deterministic data.
+              setTimeout(() => {
+                if (agentSteps.length === 0 && !abortRef.current?.signal.aborted) {
+                  setIsAnalyzing(false);
+                  router.push("/dashboard");
+                }
+              }, 5000);
             }
 
             if (eventType === "agent_start") {
@@ -193,6 +203,8 @@ export function useStreamingAnalysis() {
             if (eventType === "done") {
               // Canonical final result — overwrite with authoritative merge
               setAnalysis(data as DebtAnalysis);
+              setIsAnalyzing(false);
+              router.push("/dashboard");
             }
 
             if (eventType === "error") {

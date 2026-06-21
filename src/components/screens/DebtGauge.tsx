@@ -42,7 +42,6 @@ export function DebtGauge({ score, animated = true }: { score: number; animated?
           initial={animated ? { pathLength: 0 } : undefined}
           animate={{ pathLength: 1 }}
           transition={{ duration: 1.2, ease: "easeOut" }}
-          style={{ filter: `drop-shadow(0 0 6px ${color}44)` }}
         />
         {/* Tick marks */}
         {[0, 25, 50, 75, 100].map((t) => {
