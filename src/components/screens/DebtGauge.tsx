@@ -6,25 +6,19 @@ import { bandLabel, bandMeta } from "@/lib/debt-band";
 export function DebtGauge({ score, animated = true }: { score: number; animated?: boolean }) {
   const { color } = bandMeta(score);
   const label = bandLabel(score);
-  // Map score (0-100) to angle (0-180 degrees)
-  const angle = (score / 100) * 180;
-  const radians = (angle * Math.PI) / 180;
 
-  // SVG arc params
+  // SVG arc params — semicircle from left to right
   const cx = 100, cy = 100, r = 72;
-  const startAngle = Math.PI; // left (180°)
-  const endAngle = Math.PI + radians; // sweep right by angle
-
-  const x1 = cx + r * Math.cos(startAngle);
-  const y1 = cy + r * Math.sin(startAngle);
-  const x2 = cx + r * Math.cos(endAngle);
-  const y2 = cy + r * Math.sin(endAngle);
-  const largeArc = angle > 90 ? 1 : 0;
+  // Arc length for a semicircle = π * r
+  const arcLength = Math.PI * r;
+  // How much of the arc to fill (0 = none, 1 = full semicircle)
+  const fillRatio = score / 100;
+  const dashOffset = animated ? arcLength * (1 - fillRatio) : 0;
 
   return (
     <div className="flex flex-col items-center">
       <svg width="200" height="130" viewBox="0 0 200 140" className="overflow-visible">
-        {/* Background arc */}
+        {/* Background arc — full semicircle */}
         <path
           d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
           fill="none"
@@ -32,20 +26,22 @@ export function DebtGauge({ score, animated = true }: { score: number; animated?
           strokeWidth="10"
           strokeLinecap="round"
         />
-        {/* Active arc */}
+        {/* Active arc — same path, revealed via stroke-dasharray */}
         <motion.path
-          d={`M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`}
+          d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
           fill="none"
           stroke={color}
           strokeWidth="10"
           strokeLinecap="round"
-          initial={animated ? { pathLength: 0 } : undefined}
-          animate={{ pathLength: 1 }}
+          strokeDasharray={arcLength}
+          initial={animated ? { strokeDashoffset: arcLength } : undefined}
+          animate={{ strokeDashoffset: dashOffset }}
           transition={{ duration: 1.2, ease: "easeOut" }}
+          style={{ strokeDashoffset: dashOffset }}
         />
         {/* Tick marks */}
         {[0, 25, 50, 75, 100].map((t) => {
-          const ta = Math.PI + ((t / 100) * 180 * Math.PI) / 180;
+          const ta = Math.PI + (t / 100) * Math.PI;
           const tx1 = cx + (r - 4) * Math.cos(ta);
           const ty1 = cy + (r - 4) * Math.sin(ta);
           const tx2 = cx + (r + 2) * Math.cos(ta);

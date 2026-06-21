@@ -133,22 +133,22 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
   const isLoadingModel = agentProgress && !hasLiveAgents;
 
   // Drive progress from real agent state when agents are live.
-  // Blend with simulated progress to avoid jarring resets.
   // Each completed agent = 25%. Active agent adds partial credit.
   const agentPct = hasLiveAgents && agentEvents
     ? Math.round(
         agentEvents.reduce((sum, a) => {
           if (a.status === "done") return sum + 1;
-          if (a.status === "active") return sum + 0.3; // partial credit for in-progress
+          if (a.status === "active") return sum + 0.3;
           return sum;
         }, 0) / agentEvents.length * 100
       )
     : null;
 
   const orbColor = bandMeta(orbScore).color;
-  // Use the higher of simulated or agent-based progress — no jarring resets
-  const simulatedPct = Math.round(elapsed * 100);
-  const percentLabel = agentPct != null ? Math.max(agentPct, simulatedPct) : simulatedPct;
+  // Only show a numeric percentage when agents are delivering inference.
+  // Before that, show a pulsing dot — no fake percentage.
+  const showPercent = hasLiveAgents;
+  const percentLabel = agentPct ?? 0;
 
   return (
     <div className="relative flex flex-col items-center justify-between min-h-svh px-5 py-12 overflow-hidden"
@@ -209,14 +209,35 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, agentEvents, agentProgress
             transition={{ opacity: { duration: 3, repeat: Infinity }, rotate: { duration: 10, repeat: Infinity, ease: "linear" } }} />
         </motion.div>
 
-        {/* Progress percentage */}
+        {/* Progress — pulsing indicator until agents start, then real percentage */}
         <div className="text-center">
-          <motion.div
-            className="font-normal leading-none"
-            style={{ fontFamily: "var(--font-heading)", fontSize: "3.5rem", color: orbColor, letterSpacing: "-0.03em" }}
-          >
-            {percentLabel}%
-          </motion.div>
+          {showPercent ? (
+            <motion.div
+              className="font-normal leading-none"
+              style={{ fontFamily: "var(--font-heading)", fontSize: "3.5rem", color: orbColor, letterSpacing: "-0.03em" }}
+              key={percentLabel}
+              initial={{ opacity: 0.5, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {percentLabel}%
+            </motion.div>
+          ) : (
+            <motion.div
+              className="flex items-center justify-center gap-1.5"
+              style={{ height: "3.5rem" }}
+            >
+              {[0, 1, 2].map((i) => (
+                <motion.span
+                  key={i}
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: orbColor }}
+                  animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.1, 0.8] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                />
+              ))}
+            </motion.div>
+          )}
           <p className="text-[10px] font-mono uppercase tracking-widest mt-1" style={{ color: "#524F4C" }}>
             {hasLiveAgents ? "edge AI agents working" : isLoadingModel ? "loading AI model" : "processing signals"}
           </p>
