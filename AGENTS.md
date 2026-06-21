@@ -161,6 +161,7 @@ QVAC_MODEL_PATH=
 
 ## Docs
 
+- Deployment & HTTPS: `docs/deployment.md`
 - Contract deployment: `contracts/README.md`
 - ZK pipeline details: `docs/zk-pipeline.md`
 - Demo notes: `docs/qvac-edge-ai-demo.md`, `docs/skale-privacy-demo.md`

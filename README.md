@@ -130,16 +130,15 @@ Requirements:
 
 ### Evidence page for judges
 
-A single-page summary of architecture, agent pipeline, measured performance, and graceful degradation lives at [bodydebt.thisyearnofear.com:8765/evidence](http://bodydebt.thisyearnofear.com:8765/evidence). It links back to this repo and is meant to be the first thing a hackathon judge screenshots.
+A single-page summary of architecture, agent pipeline, measured performance, and graceful degradation lives at [bodydebt.thisyearnofear.com/evidence](https://bodydebt.thisyearnofear.com/evidence). It links back to this repo and is meant to be the first thing a hackathon judge screenshots.
 
 ### Live deployment
 
-- **Live URL:** http://bodydebt.thisyearnofear.com:8765
-- **Evidence page:** http://bodydebt.thisyearnofear.com:8765/evidence
+- **Live URL:** https://bodydebt.thisyearnofear.com
+- **Evidence page:** https://bodydebt.thisyearnofear.com/evidence
 - **Hosted on:** Vultr (nuncio-vultr, Intel Broadwell 4-core, 7.7GB RAM, 150GB disk, 85GB free)
-- **Process manager:** pm2 (`bodydebt` process on port 3050, proxied via nginx on port 8765)
-- **Why port 8765:** the server also runs Coolify/Traefik which owns ports 80/443. Using a non-standard high port keeps the existing PaaS stack untouched.
-- **Why no HTTPS yet:** standard Let's Encrypt HTTP-01 challenge needs port 80 which Coolify owns. DNS-01 challenge is on the roadmap once a Cloudflare API token is provisioned.
+- **Process manager:** pm2 (`bodydebt` process on port 3050) → host nginx (`127.0.0.1:8765`) → Coolify/Traefik
+- **HTTPS:** terminated by the box's Coolify/Traefik proxy. A Traefik file-provider route (`/data/coolify/proxy/dynamic/bodydebt.yaml`) fronts host nginx and auto-issues/renews a Let's Encrypt cert via the HTTP-01 challenge (Traefik owns ports 80/443). No Cloudflare, no DNS API token, no nameserver change. The internal `:8765` nginx port is now just Traefik's upstream — don't hit it directly (it's plain HTTP, so the camera's secure-context check fails there).
 - **QVAC model:** Llama-3.2-1B-Instruct Q4_0 (738MB), cached at `~/.qvac/models/` after first inference
 - **Measured pipeline on nuncio-vultr:** 4 agents complete in ~95s end-to-end (Intel Broadwell is slower than the AMD EPYC we tested on snel-bot, which was 22s).
 
