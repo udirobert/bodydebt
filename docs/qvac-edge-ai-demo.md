@@ -1,35 +1,37 @@
 # QVAC Edge AI Hackathon — Demo Script (2 minutes)
 
+This script has two modes. The first 60-90 seconds lead with the **football
+("Match Fit")** context, which is the headline demo for the Tether Developers
+Cup QVAC track submission. The remaining seconds show the **personal**
+context to demonstrate the multi-context platform. See
+`docs/tether-cup-plan.md` for the strategy.
+
+If you're only demoing the personal context, skip the first half and start at
+"0:30 — Personal Mode".
+
 ## Setup (before recording)
 
 1. Open the live deployment at https://bodydebt.thisyearnofear.com in Chrome (Safari on iPhone for the mobile-camera demo)
-2. Ensure you have **no other tabs open** (judges see your screen)
-3. Open DevTools → Console so the QVAC progress logs are visible
-4. Have a webcam ready (or hold your phone camera to the laptop screen)
-5. **Open the DevTools Network tab** and filter to `/api/qvac/infer` — the judges will see the SSE events stream live, including `agent_start`, `agent_token`, and `agent_done` events
-6. **Have `/evidence` open in a second tab** at https://bodydebt.thisyearnofear.com/evidence — close with it as the summary page
+2. Set the mode toggle in the header to **Match Fit** (football) — the default
+3. Ensure you have **no other tabs open** (judges see your screen)
+4. Open DevTools → Console so the QVAC progress logs are visible
+5. Have a webcam ready (or hold your phone camera to the laptop screen)
+6. **Open the DevTools Network tab** and filter to `/api/qvac/infer` — the judges will see the SSE events stream live, including `agent_start`, `agent_token`, and `agent_done` events
+7. **Have `/evidence` open in a second tab** at https://bodydebt.thisyearnofear.com/evidence — close with it as the summary page
 
 ---
 
-## 0:00–0:15 — Opening
+## 0:00–0:30 — Football Opening (Match Fit)
 
-**Show:** The landing page (wake-time screen)
-
-**Say:**
-> *"This is Body Debt — a health intelligence system that measures your physiological load using four AI agents that run entirely on your device. No data ever leaves this machine."*
-
-**Click:** Log a quick stressor (alcohol, 3-4 drinks) → Continue
-
----
-
-## 0:15–0:30 — Edge AI Intake
-
-**Show:** The stressor intake flow, then the context-deepener screen
+**Show:** The Match Fit dashboard with the squad readiness board populated for 4–5 players.
 
 **Say:**
-> *"The intake takes 30 seconds. You log what you consumed, how you slept, and how you trained. All of this feeds into a deterministic physiological model on-device — no cloud call needed."*
+> *"This is Match Fit — the first context on a multi-context recovery platform powered entirely by on-device AI. No cloud, no API keys, works in the locker room with no signal. The manager scans each player; the on-device model scores their match-readiness across five body systems and streams a return-to-play protocol."*
 
-**Click:** Continue through intake → Arrive at dashboard
+**Show:** Tap "Scan" on a player. Open the intake screen with football-specific stressors: match minutes, card stress, travel fatigue, head impact.
+
+**Say:**
+> *"The intake takes 30 seconds. You log match minutes, training load, sleep, alcohol, and football-specific factors like timezone shift from travel or a yellow card. All of this feeds a deterministic physiological model on-device — no cloud call."*
 
 ---
 
@@ -58,7 +60,7 @@
 **Show:** The analysis loader transitions to show live agent activity
 
 **Say:**
-> *"Now the QVAC edge AI pipeline kicks in. Four agents run sequentially on your device using Llama-3.2-1B quantized to Q4 — no cloud calls."*
+> *"Now the QVAC edge AI pipeline kicks in. Four agents run sequentially on your device using Llama-3.2-1B quantized to Q4 — no cloud calls. The agent prompts are mode-aware — they speak match-readiness and return-to-play vocabulary in football mode, body debt and recovery vocabulary in personal mode."*
 
 **Show:** The loader now displays live agent cards:
 1. **Triage Agent** (active, token streaming) — analyzes the 5-system breakdown
@@ -67,13 +69,13 @@
 4. **Reflection Agent** (pending) — rewrites the Coach's prescription in the user's chosen voice
 
 **Say:**
-> *"Watch the green QVAC badge — 'Llama-3.2-1B · on-device'. The Triage Agent identifies which body system needs priority attention. Its output feeds the Coach Agent, which writes your prescription. The Schedule Agent turns that into a time-blocked recovery plan. Then the Reflection Agent rewrites everything in your selected voice — honest, gentle, scientific, or sarcastic — without losing the specific actions. Each agent streams tokens live, and you can see exactly how long each one took."*
+> *"Watch the green QVAC badge — 'Llama-3.2-1B · on-device'. The Triage Agent identifies which body system needs priority attention. Its output feeds the Coach Agent, which writes the player's protocol. The Schedule Agent turns that into a match-day plan. Then the Reflection Agent rewrites everything in your selected voice — honest, gentle, scientific, or sarcastic — without losing the specific actions. Each agent streams tokens live, and you can see exactly how long each one took."*
 
 **Show:** The agents complete one by one, each showing a green checkmark and duration. The dashboard appears with:
-- The Edge AI badge next to "BODY DEBT"
+- The Edge AI badge next to "MATCH FIT"
 - The "Last verified on SKALE" pill if the face scan was completed (links to the SKALE Europa explorer)
 - The Agent Trace panel (collapsible, showing all 4 agents, their durations, and QVAC source)
-- The Recovery Schedule from the Schedule Agent
+- The Match-Day Schedule from the Schedule Agent
 - The Edge vs Cloud performance comparison bars (real measured timings)
 - The Counterfactual callout — "What would change this"
 
@@ -84,7 +86,7 @@
 **Show:** Scroll to the prescription screen
 
 **Say:**
-> *"This prescription was generated by 4 QVAC agents running on your device. Tap the 'Multi-Agent Pipeline' panel to see exactly what happened: the Triage Agent identified Brain as the priority system, the Coach Agent wrote specific recovery actions, the Schedule Agent blocked out your day, and the Reflection Agent put it all in your voice. All on-device, all verifiable."*
+> *"This match-day protocol was generated by 4 QVAC agents running on your device. Tap the 'Multi-Agent Pipeline' panel to see exactly what happened: the Triage Agent identified Brain as the priority system, the Coach Agent wrote specific recovery actions, the Schedule Agent blocked out the player's day, and the Reflection Agent put it all in your voice. All on-device, all verifiable."*
 
 **Show:** Expand the Agent Trace panel — judges see:
 - Each agent's name, description, duration, and "QVAC local" source badge
@@ -93,26 +95,35 @@
 - **Edge vs Cloud performance bars** — a green bar showing the total on-device pipeline time next to a red bar showing the parallel cloud verdict time. Judges see the exact "Nx faster" multiplier live.
 
 **Say:**
-> *"This bar is real — the cloud verdict runs in parallel with the QVAC pipeline, and we record both durations. On this run, edge finished in Nx the time of the cloud call. That's not a marketing claim; it's a measured comparison you can see on screen."*
+> *"This bar is real — the cloud verdict runs in parallel with the QVAC pipeline, and we record both durations. On this run, edge finished in Nx the time of the cloud call. That's not a marketing claim; it's a measured comparison you can see on screen. The cloud call is labeled 'benchmark only' — it's there to prove the on-device path is faster, not to power the product."*
 
 **Show:** Scroll to the counterfactual callout below the system panels
 
 **Say:**
-> *"Here's the counterfactual — a deterministic engine re-run with one variable flipped. 'If you had slept 7+ hours, Brain debt would drop from 67 to 22.' This isn't an LLM. It's three minutes of math that converts a score into a lever. Users screenshot this line."*
+> *"Here's the counterfactual — a deterministic engine re-run with one variable flipped. 'If the player had slept 7+ hours, Brain debt would drop from 67 to 22.' This isn't an LLM. It's three minutes of math that converts a score into a lever. Managers screenshot this line."*
 
 **Show:** Open the share card screen on a phone or second window
 
 **Say:**
-> *"The share card embeds the user's actual recovery arc — a 3-segment timeline showing Danger, Recovering, and Cleared states with the real time-to-cleared. Anyone who sees the share image sees a personalized recovery plan, not a generic score."*
+> *"The share card embeds the player's actual recovery arc — a 3-segment timeline showing Danger, Recovering, and Cleared states with the real time-to-cleared. Anyone who sees the share image sees a personalized protocol, not a generic score."*
 
 ---
 
-## 1:40–2:00 — Close
+## 1:40–1:55 — Personal Mode Switch
 
-**Show:** The dashboard with Edge AI badge, on-chain SKALE pill, agent trace, and recovery schedule
+**Show:** Click the mode toggle in the header → switch to "Body Debt" (personal)
 
 **Say:**
-> *"Body Debt proves that sophisticated health AI — face analysis, zero-knowledge proofs, and multi-agent LLM orchestration — can run entirely on consumer hardware. Four agents, one local model, zero cloud calls. Your body, your data, your intelligence."*
+> *"Same engine, different context. The mode toggle swaps the stressor catalog, scoring weights, agent vocabulary, and UI copy. Personal mode adds alcohol, sleep, training, and stress. The same QVAC pipeline now speaks body debt and recovery language."*
+
+---
+
+## 1:55–2:00 — Close
+
+**Show:** The Match Fit dashboard with Edge AI badge, on-chain SKALE pill, agent trace, match-day schedule, and squad readiness board
+
+**Say:**
+> *"Match Fit is the first context on a multi-context recovery platform powered entirely by on-device AI. Four agents, one local model, zero cloud calls. The locker room, the player's home, anywhere — your body, your data, your intelligence."*
 
 **Show:** Open `/evidence` in a new tab — judges see the single-page summary with architecture diagram, agent pipeline timings, Edge vs Cloud benchmark, counterfactual, and fallback chain.
 

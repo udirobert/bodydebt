@@ -1,4 +1,4 @@
-import type { Stressor, StressorType } from "@/lib/types";
+import type { Stressor, StressorType, RecoveryMode } from "@/lib/types";
 
 // ─── Stressor config types ──────────────────────────────────────────────────
 
@@ -13,6 +13,8 @@ export interface StressorDef {
   sublabel: string;
   icon: string;
   basePoints: number;
+  /** Modes this stressor is shown in. Defaults to all modes when omitted. */
+  modes?: RecoveryMode[];
   expansions?: {
     field: keyof Stressor;
     question: string;
@@ -92,7 +94,80 @@ export const STRESSORS: StressorDef[] = [
   {
     type: "care", label: "Took care of myself", sublabel: "Good sleep, no drinks, low stress", icon: "✦", basePoints: -10,
   },
+
+  // ─── Football-only stressors ────────────────────────────────────────────────
+
+  {
+    type: "match_minutes",
+    label: "Match minutes",
+    sublabel: "Last 90 — full game or sub appearance",
+    icon: "⚽",
+    basePoints: 22,
+    modes: ["football"],
+    expansions: [
+      { field: "matchMinutesPlayed", question: "How many minutes?", options: [
+        { key: "under_30",  label: "Under 30" },
+        { key: "30-60",     label: "30–60" },
+        { key: "60-90",     label: "60–90" },
+        { key: "extra_time",label: "Extra time" },
+      ]},
+    ],
+  },
+  {
+    type: "card_stress",
+    label: "Card / foul stress",
+    sublabel: "Yellow, red, or heavy foul from last match",
+    icon: "🟨",
+    basePoints: 12,
+    modes: ["football"],
+    expansions: [
+      { field: "cardType", question: "What happened?", options: [
+        { key: "yellow",     label: "Yellow card" },
+        { key: "heavy_foul", label: "Heavy foul" },
+        { key: "red",        label: "Red card" },
+      ]},
+    ],
+  },
+  {
+    type: "travel_timezone",
+    label: "Travel fatigue",
+    sublabel: "Timezone shift from away fixture",
+    icon: "✈️",
+    basePoints: 15,
+    modes: ["football"],
+    expansions: [
+      { field: "timezoneDelta", question: "Time difference?", options: [
+        { key: "1-2", label: "1–2 hours" },
+        { key: "3-5", label: "3–5 hours" },
+        { key: "6+",  label: "6+ hours" },
+      ]},
+    ],
+  },
+  {
+    type: "concussion_check",
+    label: "Head impact",
+    sublabel: "Knock to the head — protocol check",
+    icon: "🤕",
+    basePoints: 38,
+    modes: ["football"],
+    expansions: [
+      { field: "concussionSeverity", question: "Severity?", options: [
+        { key: "minor",    label: "Minor knock" },
+        { key: "moderate", label: "Moderate impact" },
+        { key: "protocol", label: "Concussion protocol" },
+      ]},
+    ],
+  },
 ];
+
+// ─── Mode-scoped stressor lookup ──────────────────────────────────────────────
+
+export function filterStressorsByMode(
+  mode: RecoveryMode,
+  stressors: StressorDef[] = STRESSORS,
+): StressorDef[] {
+  return stressors.filter((s) => !s.modes || s.modes.includes(mode));
+}
 
 // ─── Acknowledgement copy ────────────────────────────────────────────────────
 
@@ -130,6 +205,25 @@ export const ACK_COPY: Record<string, string> = {
   stress:      "High stress registered. Brain load adjusted.",
   ill:         "Illness logged. Immune debt added.",
   care:        "Self-care logged. Reducing your total debt.",
+
+  // Football stressors
+  match_minutes:    "Match load logged. Muscular and cardiovascular debt weighted.",
+  card_stress:      "Card / foul stress recorded. Cortisol and mental load elevated.",
+  travel_timezone:  "Timezone shift noted. Circadian disruption active.",
+  concussion_check: "Head impact registered. Concussion protocol applies — brain is priority.",
+  under_30:         "Sub appearance. Lower match-load recovery needed.",
+  "30-60":          "Mid-match load. Muscular and CNS debt moderate.",
+  "60-90":          "Full match. High muscular and cardiovascular debt applied.",
+  extra_time:       "Extra time logged. Severe match-load debt across all systems.",
+  yellow:           "Yellow card noted. Mental load and cortisol elevated.",
+  heavy_foul:       "Heavy foul logged. Recovery window extended.",
+  red:              "Red card — significant psychological and cardiovascular load.",
+  // "1-2" / "3-5" / "6+" already cover alcohol count, so we reuse them
+  // for the football timezone delta. ACK_COPY is keyed by the literal
+  // option string, so context-specific entries would collide.
+  minor:            "Minor head impact. Monitoring, no protocol yet.",
+  concussion_moderate: "Moderate impact — medical review required before return-to-play.",
+  protocol:         "Concussion protocol activated. Medical clearance required to return.",
 };
 
 // ─── Confidence tiers ────────────────────────────────────────────────────────

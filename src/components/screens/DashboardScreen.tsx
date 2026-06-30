@@ -21,6 +21,9 @@ import { AgentTracePanel } from "@/components/AgentTracePanel";
 import { getOrbCopy, getPersonality } from "@/lib/orbPersonality";
 import { getStrings } from "@/lib/i18n";
 import { bandMeta } from "@/lib/debt-band";
+import { getContextConfig } from "@/lib/contexts";
+import { ModeToggle } from "@/components/ModeToggle";
+import { SquadPanel } from "./SquadScreen";
 import { GuestAuthCard } from "@/components/GuestAuthCard";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SecondaryButton } from "@/components/SecondaryButton";
@@ -160,7 +163,7 @@ export function DashboardScreen() {
     hrvData, faceAnalysis, zkProof,
     streakDays, confidenceTier,
     orbPersonality, agentEvents, agentProgress,
-    locale,
+    locale, mode,
   } = useBodyDebtStore();
 
   const user = useEazo((s) => s.auth.user);
@@ -343,8 +346,17 @@ export function DashboardScreen() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="app-name text-sm font-bold tracking-widest uppercase" style={{ color: "#F5F5F4" }}>
-              BODY DEBT
+              {getContextConfig(mode).vocabulary.appName}
             </span>
+            {mode === "football" && (
+              <button
+                onClick={() => window.location.href = "/squad"}
+                className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 hover:text-emerald-300"
+              >
+                Squad
+              </button>
+            )}
+            <ModeToggle />
             {data.agentTrace && data.agentTrace.source === "qvac-local" && (
               <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
                 style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
@@ -502,6 +514,13 @@ export function DashboardScreen() {
         <div ref={systemsRef} className="relative z-10 mb-8">
           <SystemPanels systems={data.systemScores} />
           <SystemClearanceNotifier systems={data.systemScores} analysisId={data.sessionId} />
+        </div>
+      )}
+
+      {/* ── Football mode: Squad readiness board ──────────────────────── */}
+      {mode === "football" && (
+        <div className="relative z-10 mb-8">
+          <SquadPanel onSelect={() => router.push("/squad")} />
         </div>
       )}
 

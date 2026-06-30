@@ -6,6 +6,7 @@ import type {
   Prescription,
   ScheduleBlock,
   SystemScore,
+  RecoveryMode,
 } from "@/lib/types";
 
 // ─── Input types ─────────────────────────────────────────────────────────────
@@ -18,6 +19,7 @@ export interface MultiAgentInput {
   currentTime?: string;
   recoveryTime?: string;
   personality?: "honest" | "gentle" | "scientific" | "sarcastic";
+  mode?: RecoveryMode;
 }
 
 export interface MultiAgentResult {

@@ -42,6 +42,27 @@ function send(event, data) {
   }
 }
 
+// ─── Context-aware prompt fragments ──────────────────────────────────────────
+
+const CONTEXT_PROMPTS = {
+  personal: {
+    domainContext: "A person's body has physiological stress from poor sleep, alcohol, training, or illness. This is NOT financial debt — it is body health debt.",
+    domainNoun: "body debt",
+    playerNoun: "person",
+    recoveryNoun: "recovery",
+  },
+  football: {
+    domainContext: "A football player has physiological stress from match minutes, training load, travel, poor sleep, alcohol, or head impact. This is about match-readiness and return-to-play, NOT financial debt. The score represents how much recovery the player needs before they are match-fit.",
+    domainNoun: "match-readiness debt",
+    playerNoun: "player",
+    recoveryNoun: "return-to-play",
+  },
+};
+
+function getCtx(input) {
+  return CONTEXT_PROMPTS[input.mode ?? "personal"] ?? CONTEXT_PROMPTS.personal;
+}
+
 // ─── Tool definitions (simulated tool-calling for small models) ──────────────
 //
 // Llama-3.2-1B doesn't have native function-calling, so we simulate it
@@ -55,41 +76,49 @@ const AGENTS = {
     name: "triage",
     role: "Triage Agent",
     description: "Analyzes the 5-system breakdown and identifies the priority system, secondary concern, and what to avoid.",
-    systemPrompt: (input) => `You are a health triage assistant. A person's body has physiological stress from poor sleep, alcohol, training, or illness. This is NOT financial debt — it is body health debt.
+    systemPrompt: (input) => {
+      const ctx = getCtx(input);
+      return `${ctx.domainContext}
 
-Their body debt score: ${input.debtScore}/100 (higher = more recovery needed)
+Their ${ctx.domainNoun} score: ${input.debtScore}/100 (higher = more ${ctx.recoveryNoun} needed)
 Body systems affected:
 ${JSON.stringify(input.systemScores?.map(s => ({ system: s.system, label: s.label, score: s.score, clearedAt: s.clearedAt })) ?? [])}
 
 Output EXACTLY three lines, no other text:
 PRIORITY: <body system name> <score> — <health reason in 8 words>
 SECONDARY: <body system name> <score> — <health reason in 8 words>
-AVOID: <one health thing to avoid + biological reason, 12 words max>`,
+AVOID: <one health thing to avoid + biological reason, 12 words max>`;
+    },
   },
   coach: {
     name: "coach",
     role: "Recovery Coach Agent",
     description: "Generates a personalized 4-part recovery prescription using the triage assessment as context.",
-    systemPrompt: (input, triageResult) => `You are a health recovery coach. A person has body debt from poor sleep, alcohol, training, or stress. This is about physical health, NOT money or finances.
+    systemPrompt: (input, triageResult) => {
+      const ctx = getCtx(input);
+      return `${ctx.domainContext}
 
 Triage:
 ${triageResult || "No triage available — use the system scores directly."}
 
-Body debt score: ${input.debtScore}/100 (higher = more tired, more recovery needed)
+${ctx.domainNoun === "match-readiness debt" ? "Match-readiness" : "Body debt"} score: ${input.debtScore}/100 (higher = more ${ctx.recoveryNoun} needed)
 Stressors: ${(input.stressors ?? []).join(", ") || "None reported"}
 ${input.faceStress !== null && input.faceStress !== undefined ? `Face scan stress: ${input.faceStress}/100` : ""}
 
-Write a health recovery prescription. Output EXACTLY four lines:
+Write a ${ctx.recoveryNoun} prescription for this ${ctx.playerNoun}. Output EXACTLY four lines:
 RIGHT NOW: <one specific health action with quantity, 12-18 words>
 THIS MORNING: <one specific health action for next 2-3 hours, 12-18 words>
 TODAY: <one key insight about physical capacity today, 12-18 words>
-AVOID: <one thing to avoid + biological reason, 12-18 words>`,
+AVOID: <one thing to avoid + biological reason, 12-18 words>`;
+    },
   },
   schedule: {
     name: "schedule",
     role: "Schedule Agent",
     description: "Produces a time-blocked recovery schedule for the next 12 hours.",
-    systemPrompt: (input, triageResult, coachResult) => `You are a health schedule planner. Create a recovery schedule for a person with body debt from sleep loss, alcohol, or training. This is about physical health, NOT finances.
+    systemPrompt: (input, triageResult, coachResult) => {
+      const ctx = getCtx(input);
+      return `${ctx.domainContext}
 
 Triage:
 ${triageResult || "N/A"}
@@ -98,7 +127,7 @@ Prescription:
 ${coachResult || "N/A"}
 
 Current time: ${input.currentTime ?? "morning"}
-Recovery window: ${input.recoveryTime ?? "later today"}
+${ctx.recoveryNoun === "return-to-play" ? "Return-to-play" : "Recovery"} window: ${input.recoveryTime ?? "later today"}
 
 Output EXACTLY 4 schedule blocks, one per line. Format:
 <time range> | <health action> | <body system>
@@ -106,13 +135,15 @@ Output EXACTLY 4 schedule blocks, one per line. Format:
 NOW-10AM | 500ml water + electrolytes, no caffeine | Liver
 10AM-12PM | Light walk outside, natural light | Brain
 12PM-3PM | Protein-rich lunch, gentle movement | Muscular
-3PM-6PM | No intense activity, hydrate | Cardiovascular`,
+3PM-6PM | No intense activity, hydrate | Cardiovascular`;
+    },
   },
   reflection: {
     name: "reflection",
     role: "Reflection Agent",
     description: "Rewrites the Coach's prescription in the user's chosen voice — direct, gentle, scientific, or sarcastic.",
     systemPrompt: (input, _triageResult, coachResult) => {
+      const ctx = getCtx(input);
       const personality = input.personality ?? "honest";
       const voiceGuide = {
         honest:     "Direct. Knowledgeable. No fluff. Same meaning, tighter language.",
@@ -120,7 +151,7 @@ NOW-10AM | 500ml water + electrolytes, no caffeine | Liver
         scientific: "Data-driven. Cite the mechanism in one phrase (cortisol, HRV, glycogen, hepatic).",
         sarcastic:  "Dry wit. Call out the obvious choice that caused this. Still useful.",
       }[personality] ?? "Direct. No fluff.";
-      return `You are the Reflection Agent in a multi-agent health recovery system. The Recovery Coach has produced a prescription. Your job is to rewrite each line in the user's chosen voice, keeping all specific actions, quantities, and biology intact. Never invent new advice. Never soften the avoid line.
+      return `You are the Reflection Agent in a multi-agent ${ctx.recoveryNoun} system. The Recovery Coach has produced a prescription. Your job is to rewrite each line in the ${ctx.playerNoun}'s chosen voice, keeping all specific actions, quantities, and biology intact. Never invent new advice. Never soften the avoid line.
 
 User's voice: ${personality}
 Voice guide: ${voiceGuide}

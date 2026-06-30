@@ -1,12 +1,23 @@
 // Types shared between client and server for the BODY DEBT app
 
+// ─── Recovery mode ────────────────────────────────────────────────────────────
+
+export type RecoveryMode = "personal" | "football";
+
+// ─── Stressors ────────────────────────────────────────────────────────────────
+
 export type StressorType =
   | "alcohol"
   | "sleep"
   | "training"
   | "stress"
   | "ill"
-  | "care";
+  | "care"
+  // Football-specific
+  | "match_minutes"
+  | "card_stress"
+  | "travel_timezone"
+  | "concussion_check";
 
 export interface Stressor {
   type: StressorType;
@@ -18,8 +29,24 @@ export interface Stressor {
   sleepHours?:     "under_4" | "4-6" | "6-7";
   stressCarried?:  "yes" | "mostly_gone";
   illSeverity?:    "mild" | "moderate" | "floored";
+  // Football-specific context
+  matchMinutesPlayed?: "under_30" | "30-60" | "60-90" | "extra_time";
+  cardType?:           "yellow" | "red" | "heavy_foul";
+  timezoneDelta?:      "1-2" | "3-5" | "6+";
+  concussionSeverity?: "minor" | "moderate" | "protocol";
   // Legacy flat context string — kept for backward compatibility
   context?: string;
+}
+
+// ─── Squad (football mode) ────────────────────────────────────────────────────
+
+export interface SquadPlayer {
+  id: string;
+  name: string;
+  position: "GK" | "DEF" | "MID" | "FWD";
+  stressors: Stressor[];
+  faceAnalysis?: FaceAnalysisResult | null;
+  analysis?: DebtAnalysis | null;
 }
 
 // ─── Five recovery systems ────────────────────────────────────────────────────
@@ -173,6 +200,7 @@ export interface AnalyzeBodyRequest {
   bedTime?: string;
   personality?: "honest" | "gentle" | "scientific" | "sarcastic";
   locale?: "en" | "es" | "fr";
+  mode?: RecoveryMode;
 }
 
 // ─── ZK Proof ─────────────────────────────────────────────────────────────────

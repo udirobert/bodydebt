@@ -10,7 +10,7 @@ import { MiniOrb } from "@/components/MiniOrb";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { StressorCard } from "./stressor-card";
-import { STRESSORS, ACK_COPY, CONFIDENCE_CONFIG, computeLiveScore } from "@/lib/stressor-scoring";
+import { ACK_COPY, CONFIDENCE_CONFIG, computeLiveScore, filterStressorsByMode } from "@/lib/stressor-scoring";
 import { bandMeta } from "@/lib/debt-band";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -24,6 +24,7 @@ export function DebtIntakeScreen() {
     toggleStressor,
     updateStressor,
     confidenceTier,
+    mode,
   } = useBodyDebtStore();
 
   // Acknowledgement line state — { key, text }
@@ -160,7 +161,7 @@ export function DebtIntakeScreen() {
 
       {/* Stressor cards */}
       <div className="relative z-10 flex flex-col gap-2.5 flex-1">
-        {STRESSORS.map((def, i) => {
+        {filterStressorsByMode(mode).map((def, i) => {
           const stressor = selectedStressors.find((s) => s.type === def.type);
           return (
             <motion.div

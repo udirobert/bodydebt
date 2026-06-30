@@ -67,6 +67,40 @@ const SLEEP_BRAIN: Record<string, number> = {
   "6-7":   0.40,
 };
 
+// ─── Football-specific modifiers ─────────────────────────────────────────────
+
+const MATCH_MINUTES_CNS: Record<string, number> = {
+  under_30:  0.3,
+  "30-60":   0.6,
+  "60-90":   0.9,
+  extra_time: 1.2,
+};
+
+const MATCH_MINUTES_CARDIO: Record<string, number> = {
+  under_30:  0.4,
+  "30-60":   0.7,
+  "60-90":   1.0,
+  extra_time: 1.3,
+};
+
+const CARD_STRESS_BRAIN: Record<string, number> = {
+  yellow:      0.4,
+  red:         1.0,
+  heavy_foul:  0.7,
+};
+
+const TIMEZONE_DELTA: Record<string, { brain: number; cardio: number; gut: number }> = {
+  "1-2": { brain: 8,  cardio: 5,  gut: 3 },
+  "3-5": { brain: 18, cardio: 10, gut: 8 },
+  "6+":  { brain: 30, cardio: 18, gut: 15 },
+};
+
+const CONCUSSION_BRAIN: Record<string, number> = {
+  minor:     0.8,
+  moderate:  1.0,
+  protocol:  1.5,
+};
+
 // ─── Main engine ──────────────────────────────────────────────────────────────
 
 export function computeSystemScores(
@@ -134,6 +168,35 @@ export function computeSystemScores(
       raw.muscular       -= 5;
       raw.gut            -= 5;
     }
+
+    // ── Football-specific stressors ────────────────────────────────────────
+
+    if (s.type === "match_minutes") {
+      const mins = s.matchMinutesPlayed ?? "60-90";
+      const cns    = MATCH_MINUTES_CNS[mins]    ?? 0.9;
+      const cardio = MATCH_MINUTES_CARDIO[mins] ?? 1.0;
+
+      raw.muscular       += 35 * cns;
+      raw.cardiovascular += 30 * cardio;
+    }
+
+    if (s.type === "card_stress") {
+      const brainHit = CARD_STRESS_BRAIN[s.cardType ?? "yellow"] ?? 0.4;
+      raw.brain          += 20 * brainHit;
+      raw.cardiovascular += 10 * brainHit; // cortisol elevation
+    }
+
+    if (s.type === "travel_timezone") {
+      const tz = TIMEZONE_DELTA[s.timezoneDelta ?? "3-5"] ?? TIMEZONE_DELTA["3-5"];
+      raw.brain          += tz.brain;
+      raw.cardiovascular += tz.cardio;
+      raw.gut            += tz.gut;
+    }
+
+    if (s.type === "concussion_check") {
+      const brainHit = CONCUSSION_BRAIN[s.concussionSeverity ?? "minor"] ?? 0.8;
+      raw.brain += 50 * brainHit; // always critical — brain system dominates
+    }
   }
 
   // Circadian alignment penalty from bedTime → brain + cardiovascular
@@ -195,6 +258,10 @@ function buildCauseText(system: RecoverySystem, stressors: Stressor[]): string {
   const sleep    = stressors.find((s) => s.type === "sleep");
   const stress   = stressors.find((s) => s.type === "stress");
   const ill      = stressors.find((s) => s.type === "ill");
+  const match    = stressors.find((s) => s.type === "match_minutes");
+  const card     = stressors.find((s) => s.type === "card_stress");
+  const travel   = stressors.find((s) => s.type === "travel_timezone");
+  const concussion = stressors.find((s) => s.type === "concussion_check");
 
   switch (system) {
     case "liver":
@@ -206,19 +273,28 @@ function buildCauseText(system: RecoverySystem, stressors: Stressor[]): string {
       return "No significant liver load";
 
     case "brain":
+      if (concussion) return `Head impact — ${concussion.concussionSeverity ?? "minor"} severity. Concussion protocol applies.`;
       if (alcohol?.alcoholType === "spirits" || alcohol?.alcoholType === "cocktails")
         return "Spirits/cocktails hit cognition hardest. Decision quality reduced.";
+      if (card) return `${card.cardType ?? "Yellow"} card stress — cortisol and mental load elevated`;
+      if (travel) return `${travel.timezoneDelta ?? "3-5"}h timezone shift — circadian disruption active`;
       if (sleep) return `${sleep.sleepHours?.replace("_", " ") ?? "Poor sleep"} — cognitive recovery in progress`;
       if (stress?.stressCarried !== "mostly_gone") return "Stress hormones still elevated. Focus window reduced.";
       return "Mild cognitive load from last night";
 
     case "cardiovascular":
+      if (match) return `${match.matchMinutesPlayed ?? "60-90"} match minutes — cardiovascular load from match`;
       if (training?.trainingArea === "hiit" || training?.trainingArea === "cardio")
         return `${capitalize(training.trainingArea)} session — heart rate recovery active`;
+      if (travel) return `${travel.timezoneDelta ?? "3-5"}h timezone shift — autonomic rhythm disrupted`;
       if (alcohol) return "Alcohol elevates resting HR for 12–18hrs";
       return "Mild cardiovascular load";
 
     case "muscular":
+      if (match) {
+        const mins = match.matchMinutesPlayed ?? "60-90";
+        return `${mins} match minutes — muscular and CNS load from sprinting, tackling, and changes of direction`;
+      }
       if (training) {
         const area      = training.trainingArea      ? capitalize(training.trainingArea.replace("_", " ")) : "Training";
         const intensity = training.trainingIntensity ?? "hard";
@@ -240,6 +316,9 @@ function buildCauseText(system: RecoverySystem, stressors: Stressor[]): string {
 function buildActionText(system: RecoverySystem, stressors: Stressor[]): string {
   const alcohol  = stressors.find((s) => s.type === "alcohol");
   const training = stressors.find((s) => s.type === "training");
+  const match    = stressors.find((s) => s.type === "match_minutes");
+  const concussion = stressors.find((s) => s.type === "concussion_check");
+  const travel   = stressors.find((s) => s.type === "travel_timezone");
 
   switch (system) {
     case "liver":
@@ -247,12 +326,17 @@ function buildActionText(system: RecoverySystem, stressors: Stressor[]): string 
         ? "Avoid further alcohol. 500ml water + electrolytes now."
         : "Liver clear — no action needed.";
     case "brain":
+      if (concussion) return "Concussion protocol. No training, no screens. Medical clearance required.";
+      if (travel) return "Natural light exposure to reset circadian rhythm. No screens after 10pm.";
       return "No decisions requiring deep focus until your window opens.";
     case "cardiovascular":
+      if (match?.matchMinutesPlayed === "extra_time" || match?.matchMinutesPlayed === "60-90")
+        return "No cardio today. Walk only. Heart rate recovery still active.";
       return training?.trainingIntensity === "destroyed"
         ? "No cardio today. Walk only."
         : "Keep activity light until cleared.";
     case "muscular":
+      if (match) return "Protein within 2 hrs. No re-training. Match load recovery ongoing.";
       return training
         ? "Protein within 2 hrs. No re-training the same group today."
         : "No significant muscular debt.";
@@ -370,11 +454,15 @@ export function circadianPenaltyBrain(
 // Finds the highest-leverage single change the user could have made.
 
 const COUNTERFACTUAL_FLIPS: Record<string, { field: keyof Stressor; fromTo: Record<string, string>; label: string }> = {
-  sleep:    { field: "sleepHours",         fromTo: { under_4: "6-7", "4-6": "6-7", "6-7": "6-7" }, label: "slept 7+ hours" },
-  training: { field: "trainingIntensity",   fromTo: { destroyed: "easy", hard: "easy", easy: "easy" }, label: "trained easy instead of hard" },
-  alcohol:  { field: "alcoholCount",        fromTo: { lost_count: "1-2", "5+": "1-2", "3-4": "1-2", "1-2": "1-2" }, label: "kept it to 1-2 drinks" },
-  stress:   { field: "stressCarried",       fromTo: { yes: "mostly_gone", mostly_gone: "mostly_gone" }, label: "let the stress clear" },
-  ill:      { field: "illSeverity",         fromTo: { floored: "mild", moderate: "mild", mild: "mild" }, label: "caught the illness earlier" },
+  sleep:             { field: "sleepHours",          fromTo: { under_4: "6-7", "4-6": "6-7", "6-7": "6-7" }, label: "slept 7+ hours" },
+  training:          { field: "trainingIntensity",    fromTo: { destroyed: "easy", hard: "easy", easy: "easy" }, label: "trained easy instead of hard" },
+  alcohol:           { field: "alcoholCount",         fromTo: { lost_count: "1-2", "5+": "1-2", "3-4": "1-2", "1-2": "1-2" }, label: "kept it to 1-2 drinks" },
+  stress:            { field: "stressCarried",        fromTo: { yes: "mostly_gone", mostly_gone: "mostly_gone" }, label: "let the stress clear" },
+  ill:               { field: "illSeverity",          fromTo: { floored: "mild", moderate: "mild", mild: "mild" }, label: "caught the illness earlier" },
+  match_minutes:     { field: "matchMinutesPlayed",   fromTo: { extra_time: "under_30", "60-90": "under_30", "30-60": "under_30", under_30: "under_30" }, label: "played fewer match minutes" },
+  card_stress:       { field: "cardType",             fromTo: { red: "yellow", heavy_foul: "yellow", yellow: "yellow" }, label: "avoided the card or heavy foul" },
+  travel_timezone:   { field: "timezoneDelta",        fromTo: { "6+": "1-2", "3-5": "1-2", "1-2": "1-2" }, label: "arrived earlier to adjust to the timezone" },
+  concussion_check:  { field: "concussionSeverity",   fromTo: { protocol: "minor", moderate: "minor", minor: "minor" }, label: "avoided the head impact" },
 };
 
 const SYSTEM_LABEL_NICE: Record<RecoverySystem, string> = {

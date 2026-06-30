@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { AnalyzeBodyRequest, HRVData, FaceAnalysisResult, StressorType, ConfidenceTier, SystemScore } from "@/lib/types";
+import type { AnalyzeBodyRequest, HRVData, FaceAnalysisResult, StressorType, ConfidenceTier, SystemScore, RecoveryMode } from "@/lib/types";
 import { computeSystemScores } from "@/lib/systemScoring";
 import { computeCounterfactual } from "@/lib/systemScoring";
 import { getStrings, type Locale } from "@/lib/i18n";
+import { getContextConfig } from "@/lib/contexts";
 
 /**
  * POST /api/analyze/score
@@ -29,12 +30,16 @@ export async function POST(request: NextRequest) {
 // ─── Stressor weight table ────────────────────────────────────────────────────
 
 const BASE_WEIGHTS: Record<StressorType, { min: number; max: number; label: string }> = {
-  alcohol:  { min: 25, max: 35, label: "Alcohol" },
-  sleep:    { min: 18, max: 28, label: "Poor sleep" },
-  training: { min: 12, max: 22, label: "Hard training" },
-  stress:   { min: 10, max: 18, label: "High stress" },
-  ill:      { min: 20, max: 30, label: "Illness" },
-  care:     { min: -12, max: -6, label: "Self-care" },    // negative — reduces debt
+  alcohol:           { min: 25, max: 35, label: "Alcohol" },
+  sleep:             { min: 18, max: 28, label: "Poor sleep" },
+  training:          { min: 12, max: 22, label: "Hard training" },
+  stress:            { min: 10, max: 18, label: "High stress" },
+  ill:               { min: 20, max: 30, label: "Illness" },
+  care:              { min: -12, max: -6, label: "Self-care" },
+  match_minutes:     { min: 15, max: 30, label: "Match load" },
+  card_stress:       { min: 8,  max: 16, label: "Card / foul stress" },
+  travel_timezone:   { min: 10, max: 20, label: "Travel fatigue" },
+  concussion_check:  { min: 30, max: 45, label: "Head impact" },
 };
 
 // Context modifiers — context string → multiplier
@@ -97,7 +102,10 @@ function faceModifier(face: FaceAnalysisResult): { points: number; label: string
   };
 }
 
-const STRESSOR_ICONS = { alcohol: "🍺", sleep: "😴", training: "💪", stress: "😤", ill: "🤒", care: "✦" };
+const STRESSOR_ICONS: Record<StressorType, string> = {
+  alcohol: "🍺", sleep: "😴", training: "💪", stress: "😤", ill: "🤒", care: "✦",
+  match_minutes: "⚽", card_stress: "🟨", travel_timezone: "✈️", concussion_check: "🤕",
+};
 
 // ─── Recovery arc from score ───────────────────────────────────────────────────
 
@@ -116,7 +124,15 @@ function seedRecoveryArc(score: number, now: Date) {
 
 // ─── Score bands ──────────────────────────────────────────────────────────────
 
-function verdictFromScore(score: number, locale: Locale = "en"): string {
+function verdictFromScore(score: number, locale: Locale = "en", mode: RecoveryMode = "personal"): string {
+  if (mode === "football") {
+    if (score >= 81) return "Not match-fit. The player is in damage control. Listen to the medical team.";
+    if (score >= 61) return "Significant fatigue debt. The player is telling you something — rotate or rest.";
+    if (score >= 41) return "The player's body is working overtime. 60 minutes max or impact sub.";
+    if (score >= 21) return "Mild load. Available for selection with a modified warm-up.";
+    return "Match-fit. Cleared for full participation.";
+  }
+
   const s = getStrings(locale);
   if (score >= 81) {
     return locale === "es" ? "Tu cuerpo está en control de daños. Escúchalo."
@@ -156,14 +172,19 @@ function recoveryTimeFromArc(clearedAt: string): string {
 
 export function computeScore(body: AnalyzeBodyRequest) {
   const { stressors, faceAnalysis, hrvData, wakeTime, bedTime } = body;
+  const mode: RecoveryMode = body.mode ?? "personal";
   const now = new Date();
+
+  // Merge context-specific weight overrides
+  const ctxConfig = getContextConfig(mode);
+  const weights = { ...BASE_WEIGHTS, ...ctxConfig.scoringWeights.baseWeights };
 
   const breakdown: { stressor: string; points: number; insight: string; icon: string }[] = [];
   let rawScore = 0;
 
   // Stressor contributions
   for (const s of stressors) {
-    const w = BASE_WEIGHTS[s.type];
+    const w = weights[s.type];
     if (!w) continue;
     const mult = contextMultiplier(s.context);
     const pts  = Math.round((w.min + (w.max - w.min) * 0.6) * mult);
@@ -203,7 +224,7 @@ export function computeScore(body: AnalyzeBodyRequest) {
 
   const debtScore = Math.min(100, Math.max(0, rawScore));
   const recoveryArc = seedRecoveryArc(debtScore, now);
-  const verdict = verdictFromScore(debtScore, body.locale ?? "en");
+  const verdict = verdictFromScore(debtScore, body.locale ?? "en", mode);
   const recoveryTime = recoveryTimeFromArc(recoveryArc.clearedAt);
 
   const confidenceLevel: "high" | "medium" | "low" =
@@ -242,7 +263,7 @@ export function computeScore(body: AnalyzeBodyRequest) {
       toScore: cf.toScore,
       leverLabel: cf.leverLabel,
     } : undefined,
-    prescription: deterministicPrescription(stressors.map(s => s.type), debtScore, body.locale ?? "en"),
+    prescription: deterministicPrescription(stressors.map(s => s.type), debtScore, body.locale ?? "en", mode),
     _layer: "deterministic" as const,
   };
 }
@@ -251,6 +272,17 @@ export function computeScore(body: AnalyzeBodyRequest) {
 
 function deterministicInsight(type: StressorType, locale: Locale = "en", _context?: string): string {
     void _context;
+  // Football-specific deterministic insights
+  const footballInsights: Partial<Record<StressorType, string>> = {
+    match_minutes:    "Match load accumulates muscular and cardiovascular debt from sprinting and tackling.",
+    card_stress:      "Card or heavy foul stress elevates cortisol and mental fatigue.",
+    travel_timezone:  "Timezone shifts disrupt circadian rhythm, impairing recovery and cognitive sharpness.",
+    concussion_check: "Head impact requires concussion protocol — brain recovery is the priority.",
+  };
+
+  // Mode is not passed here, but football stressors are unambiguous
+  if (footballInsights[type]) return footballInsights[type]!;
+
   const s = getStrings(locale).prescription.insights;
   const insights: Partial<Record<StressorType, string>> = {
     alcohol:  s.alcohol,
@@ -322,8 +354,13 @@ function circadianPenalty(
 export function deterministicPrescription(
   types: StressorType[],
   score: number,
-  locale: Locale = "en"
+  locale: Locale = "en",
+  mode: RecoveryMode = "personal"
 ): { rightNow: string; thisMorning: string; today: string; avoid: string } {
+  if (mode === "football") {
+    return deterministicFootballPrescription(types, score);
+  }
+
   const hasAlcohol  = types.includes("alcohol");
   const hasSleep    = types.includes("sleep");
   const hasTraining = types.includes("training");
@@ -363,12 +400,58 @@ export function deterministicPrescription(
   };
 }
 
+// ─── Football-specific deterministic prescription ────────────────────────────
+
+function deterministicFootballPrescription(
+  types: StressorType[],
+  score: number,
+): { rightNow: string; thisMorning: string; today: string; avoid: string } {
+  const hasMatch       = types.includes("match_minutes");
+  const hasConcussion  = types.includes("concussion_check");
+  const hasTravel      = types.includes("travel_timezone");
+  const hasAlcohol     = types.includes("alcohol");
+  const hasSleep       = types.includes("sleep");
+
+  return {
+    rightNow: hasConcussion
+      ? "Concussion protocol activated. No training. Medical assessment required before return-to-play."
+      : hasAlcohol
+      ? "500ml water with electrolytes. The player is dehydrated from last night."
+      : hasMatch
+      ? "Protein shake within 30 minutes. The player's muscles need recovery fuel now."
+      : "400ml water and 5 minutes of deep breathing to reset the autonomic system.",
+
+    thisMorning: hasConcussion
+      ? "Cognitive rest. No screens, no tactics board, no team meetings for the player."
+      : hasTravel
+      ? "Light walk and natural light exposure to reset circadian rhythm after travel."
+      : hasSleep
+      ? "Protein-rich breakfast within 90 minutes. No caffeine until 10am."
+      : "Light activation drills. 15 minutes mobility work to prime the system.",
+
+    today: score >= 60
+      ? "Not available for full training. Pool session or active recovery only. 60 minutes max in tomorrow's session."
+      : score >= 40
+      ? "Modified training. No high-intensity drills. Available for the matchday squad as an impact sub."
+      : "Full training available. Monitor load but no restrictions. Start XI candidate.",
+
+    avoid: hasConcussion
+      ? "Any heading drills or contact training until medically cleared. This is non-negotiable."
+      : score >= 60
+      ? "Full-intensity training. The player will create more debt, not match sharpness."
+      : hasAlcohol
+      ? "Any further alcohol. The player's liver is still processing and it will impair recovery."
+      : "Late-night screen time. Protect sleep — it's the single biggest recovery lever.",
+  };
+}
+
 // ─── Deterministic schedule fallback ─────────────────────────────────────────
 
 export function deterministicSchedule(
   systemScores: SystemScore[],
   debtScore: number,
   locale: Locale = "en",
+  mode: RecoveryMode = "personal",
 ): { time: string; action: string; system: string }[] {
   const ranked = [...systemScores].sort((a, b) => b.score - a.score);
   const top = ranked[0];
@@ -379,28 +462,40 @@ export function deterministicSchedule(
 
   // Block 1: immediate (worst system)
   if (top && top.score > 20) {
+    const isFootball = mode === "football";
     blocks.push({
       time: t.nowTo10,
       action: debtScore >= 60
-        ? "500ml water + electrolytes. No caffeine."
-        : "Light hydration. Gentle start.",
+        ? (isFootball
+          ? "500ml water + electrolytes. Pool session or rest. No caffeine."
+          : "500ml water + electrolytes. No caffeine.")
+        : (isFootball
+          ? "Light hydration. Gentle activation drills only."
+          : "Light hydration. Gentle start."),
       system: top.system,
     });
   }
 
   // Block 2: mid-morning (second worst system)
   if (second && second.score > 15) {
+    const isFootball = mode === "football";
     blocks.push({
       time: t.tenToNoon,
       action: debtScore >= 40
-        ? "Light walk outside. Natural light. No intense activity."
-        : "Protein-rich meal. Normal routine.",
+        ? (isFootball
+          ? "Light walk. Natural light. Tactical review only — no intensity."
+          : "Light walk outside. Natural light. No intense activity.")
+        : (isFootball
+          ? "Protein-rich meal. Modified training block available."
+          : "Protein-rich meal. Normal routine."),
       system: second.system,
     });
   } else {
     blocks.push({
       time: t.tenToNoon,
-      action: "Protein-rich meal. Protect your focus window.",
+      action: mode === "football"
+        ? "Protein-rich meal. Match-squad tactics — full participation available."
+        : "Protein-rich meal. Protect your focus window.",
       system: "brain",
     });
   }
@@ -409,8 +504,12 @@ export function deterministicSchedule(
   blocks.push({
     time: t.noonTo3,
     action: debtScore >= 60
-      ? "No training. Hydrate. Light tasks only."
-      : "Light movement OK. Front-load harder work.",
+      ? (mode === "football"
+        ? "No training session. Recovery only. Hydrate. Medical assessment if needed."
+        : "No training. Hydrate. Light tasks only.")
+      : (mode === "football"
+        ? "Light tactical session OK. No full-pitch intensity."
+        : "Light movement OK. Front-load harder work."),
     system: "muscular",
   });
 
@@ -418,8 +517,12 @@ export function deterministicSchedule(
   blocks.push({
     time: t.threeTo6,
     action: debtScore >= 60
-      ? "No alcohol, no stimulants. Prepare for early sleep."
-      : "Wind down. No caffeine after 2pm.",
+      ? (mode === "football"
+        ? "No alcohol. Cold water immersion or active recovery. Prepare for early sleep before next match."
+        : "No alcohol, no stimulants. Prepare for early sleep.")
+      : (mode === "football"
+        ? "Wind down. No caffeine after 2pm. Light tactical review only."
+        : "Wind down. No caffeine after 2pm."),
     system: "cardiovascular",
   });
 

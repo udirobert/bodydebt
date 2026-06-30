@@ -1,8 +1,22 @@
 # Agent Guide: Body Debt
 
-Body Debt is a health and recovery tracking app on the Eazo platform. It logs lifestyle stressors, computes deterministic physiological debt across five body systems, and streams AI-backed recovery prescriptions.
+Body Debt is a multi-context recovery platform on the Eazo platform. It logs
+lifestyle stressors, computes deterministic physiological debt across five body
+systems, and streams AI-backed recovery prescriptions via a QVAC multi-agent
+pipeline that runs entirely on-device.
 
-This file is intentionally compact. Put longer architecture notes in `docs/` instead of expanding this guide.
+The platform supports two recovery contexts:
+
+- **Personal** — single-user body debt, the original app.
+- **Football ("Match Fit")** — squad-level match-readiness, used for the
+  Tether Developers Cup submission. See `docs/tether-cup-plan.md`.
+
+Context-specific behavior (stressor catalog, scoring weights, agent prompt
+vocabulary, UI vocabulary) lives in `src/lib/contexts/`. Each context exposes a
+`RecoveryContextConfig`; the rest of the pipeline is context-agnostic.
+
+This file is intentionally compact. Put longer architecture notes in `docs/`
+instead of expanding this guide.
 
 ## Stack
 
@@ -45,11 +59,14 @@ Known local build caveats: production build may fail until Google font fetching 
 |---|---|
 | State | `src/stores/useBodyDebtStore.ts` |
 | Types | `src/lib/types.ts` |
+| Recovery contexts | `src/lib/contexts/` (registry: `index.ts`, configs: `personal.ts`, `football.ts`) |
+| Stressor catalog | `src/lib/stressor-scoring.ts` |
 | Scoring | `src/lib/systemScoring.ts` |
 | AI analysis | `src/app/api/analyze/` |
 | Streaming analysis hook | `src/hooks/useStreamingAnalysis.ts` |
 | Face scan UI | `src/components/screens/FaceScanScreen.tsx`, `src/components/face-scan/` |
 | Face feature extraction | `src/lib/ai/face-mesh.ts` |
+| Mode toggle / squad UI | `src/components/ModeToggle.tsx`, `src/components/screens/SquadScreen.tsx`, `src/app/squad/page.tsx` |
 | EZKL prover worker | `src/workers/ezkl-prover.worker.ts` |
 | Blockchain client | `src/lib/blockchain/skale-client.ts` |
 | Wagmi config | `src/lib/providers/wagmi-config.ts`, `src/components/providers/WagmiProviderWrapper.tsx` |
@@ -165,3 +182,4 @@ QVAC_MODEL_PATH=
 - Contract deployment: `contracts/README.md`
 - ZK pipeline details: `docs/zk-pipeline.md`
 - Demo notes: `docs/qvac-edge-ai-demo.md`, `docs/skale-privacy-demo.md`
+- Tether Developers Cup plan: `docs/tether-cup-plan.md`

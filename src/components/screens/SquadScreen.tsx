@@ -1,0 +1,289 @@
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
+import type { SquadPlayer, DebtAnalysis } from "@/lib/types";
+import { PrimaryButton } from "@/components/PrimaryButton";
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const POSITIONS = ["GK", "DEF", "MID", "FWD"] as const;
+
+function playerStatus(analysis: DebtAnalysis | null | undefined): {
+  label: string;
+  color: string;
+  emoji: string;
+} {
+  if (!analysis) return { label: "Not scanned", color: "#524F4C", emoji: "○" };
+  const score = analysis.debtScore;
+  if (score >= 61) return { label: "Out — rest", color: "#EF4444", emoji: "🔴" };
+  if (score >= 41) return { label: "Impact sub", color: "#F59E0B", emoji: "🟡" };
+  if (score >= 21) return { label: "Modified", color: "#10B981", emoji: "🟢" };
+  return { label: "Fit to start", color: "#22D3EE", emoji: "⚽" };
+}
+
+// ─── Shared scan action — copies a player's state into the global session ─────
+
+function useScanPlayer() {
+  const router = useRouter();
+  const { setActivePlayerId, setSelectedStressors, setFaceAnalysis } = useBodyDebtStore();
+  return (player: SquadPlayer) => {
+    setActivePlayerId(player.id);
+    setSelectedStressors(player.stressors);
+    setFaceAnalysis(player.faceAnalysis ?? null);
+    router.push("/intake");
+  };
+}
+
+// ─── Squad panel — compact view embedded in DashboardScreen ──────────────────
+
+export function SquadPanel({ onSelect }: { onSelect: (id: string) => void }) {
+  const { squad, mode } = useBodyDebtStore();
+  const scanPlayer = useScanPlayer();
+
+  if (mode !== "football") return null;
+
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-widest">
+          Squad Readiness
+        </h3>
+        <span className="text-xs font-mono text-slate-500">
+          {squad.length} {squad.length === 1 ? "player" : "players"}
+        </span>
+      </div>
+
+      {squad.length === 0 ? (
+        <p className="text-xs text-slate-500">
+          Add players from the manager&apos;s medical room to see team readiness.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {squad.map((p) => {
+            const status = playerStatus(p.analysis);
+            return (
+              <div
+                key={p.id}
+                className="flex items-center justify-between p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-emerald-700 transition-colors"
+              >
+                <button
+                  onClick={() => onSelect(p.id)}
+                  className="flex items-center gap-3 flex-1 text-left"
+                >
+                  <span className="text-lg">{status.emoji}</span>
+                  <div>
+                    <p className="text-sm font-medium text-slate-100">{p.name}</p>
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                      {p.position}
+                    </p>
+                  </div>
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-xs font-mono font-bold" style={{ color: status.color }}>
+                      {status.label}
+                    </p>
+                    {p.analysis && (
+                      <p className="text-[10px] font-mono text-slate-500 tabular-nums">
+                        {p.analysis.debtScore}/100
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => scanPlayer(p)}
+                    className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded bg-emerald-600/20 border border-emerald-600/40 text-emerald-300 hover:bg-emerald-600/30"
+                  >
+                    {p.analysis ? "Re-scan" : "Scan"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Squad screen — full CRUD view ───────────────────────────────────────────
+
+export function SquadScreen() {
+  const router = useRouter();
+  const { squad, addPlayer, removePlayer, mode, setMode } = useBodyDebtStore();
+  const scanPlayer = useScanPlayer();
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [position, setPosition] = useState<SquadPlayer["position"]>("MID");
+
+  if (mode !== "football") {
+    return (
+      <div className="min-h-svh flex flex-col items-center justify-center px-6 bg-slate-950">
+        <p className="text-sm text-slate-400 mb-4 text-center">
+          Squad view is part of the Match Fit (football) mode.
+        </p>
+        <PrimaryButton onClick={() => setMode("football")}>
+          Switch to Match Fit
+        </PrimaryButton>
+      </div>
+    );
+  }
+
+  const handleAdd = () => {
+    if (!name.trim()) return;
+    addPlayer({ name: name.trim(), position, stressors: [] });
+    setName("");
+    setPosition("MID");
+    setAdding(false);
+  };
+
+  const readyCount = squad.filter((p) => p.analysis && p.analysis.debtScore < 41).length;
+  const subCount   = squad.filter((p) => p.analysis && p.analysis.debtScore >= 41 && p.analysis.debtScore < 61).length;
+  const outCount   = squad.filter((p) => p.analysis && p.analysis.debtScore >= 61).length;
+
+  return (
+    <div className="min-h-svh px-5 py-8 bg-gradient-to-b from-slate-950 via-slate-900 to-emerald-950">
+      <div className="max-w-xl mx-auto">
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-6"
+        >
+          ← Back to dashboard
+        </button>
+
+        <h1 className="text-2xl font-semibold text-slate-100 mb-1">
+          Squad Medical Room
+        </h1>
+        <p className="text-sm text-slate-400 mb-6">
+          Scan each player to build the match-readiness board.
+        </p>
+
+        {/* Team summary */}
+        {squad.length > 0 && (
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <SummaryStat label="Ready" value={readyCount} color="#22D3EE" />
+            <SummaryStat label="Impact" value={subCount}   color="#F59E0B" />
+            <SummaryStat label="Out"    value={outCount}   color="#EF4444" />
+          </div>
+        )}
+
+        {/* Player list */}
+        <div className="flex flex-col gap-2 mb-6">
+          {squad.map((p) => {
+            const status = playerStatus(p.analysis);
+            return (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-base font-medium text-slate-100">{p.name}</p>
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                      {p.position}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => scanPlayer(p)}
+                      className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded bg-emerald-600/20 border border-emerald-600/40 text-emerald-300 hover:bg-emerald-600/30"
+                    >
+                      {p.analysis ? "Re-scan" : "Scan"}
+                    </button>
+                    <button
+                      onClick={() => removePlayer(p.id)}
+                      className="text-[10px] font-mono uppercase tracking-widest text-slate-600 hover:text-red-400"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-mono" style={{ color: status.color }}>
+                    {status.emoji} {status.label}
+                  </p>
+                  {p.analysis && (
+                    <p className="text-xs font-mono font-bold text-slate-300 tabular-nums">
+                      {p.analysis.debtScore}/100
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Add player form */}
+        <AnimatePresence mode="wait">
+          {adding ? (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="p-4 rounded-2xl bg-slate-900 border border-emerald-800 mb-4"
+            >
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Player name"
+                className="w-full px-3 py-2 mb-3 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-emerald-500"
+                autoFocus
+              />
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {POSITIONS.map((pos) => (
+                  <button
+                    key={pos}
+                    onClick={() => setPosition(pos)}
+                    className={`py-2 rounded-lg text-xs font-mono uppercase ${
+                      position === pos
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-950 border border-slate-800 text-slate-400"
+                    }`}
+                  >
+                    {pos}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <PrimaryButton onClick={handleAdd} disabled={!name.trim()}>
+                  Add Player
+                </PrimaryButton>
+                <button
+                  onClick={() => setAdding(false)}
+                  className="px-4 py-2 text-xs font-mono uppercase text-slate-500"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.button
+              key="add"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setAdding(true)}
+              className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-700 text-slate-400 text-sm font-mono uppercase tracking-widest hover:border-emerald-600 hover:text-emerald-400 transition-colors"
+            >
+              + Add Player
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function SummaryStat({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800 text-center">
+      <p className="text-2xl font-bold tabular-nums" style={{ color }}>{value}</p>
+      <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mt-1">{label}</p>
+    </div>
+  );
+}

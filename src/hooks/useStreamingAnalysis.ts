@@ -69,6 +69,7 @@ export function useStreamingAnalysis() {
       bedTime:  useBodyDebtStore.getState().bedTime  ?? undefined,
       personality: useBodyDebtStore.getState().orbPersonality,
       locale:     useBodyDebtStore.getState().locale,
+      mode:       useBodyDebtStore.getState().mode,
     };
 
     try {
@@ -220,6 +221,22 @@ export function useStreamingAnalysis() {
             if (eventType === "done") {
               // Canonical final result — overwrite with authoritative merge
               setAnalysis(data as DebtAnalysis);
+              // If a squad player is active, also store the result on them
+              const state = useBodyDebtStore.getState();
+              const { activePlayerId } = state;
+              if (activePlayerId) {
+                state.setPlayerAnalysis(activePlayerId, data as DebtAnalysis);
+                // Persist the player's stressors + face scan so a re-scan
+                // can pre-fill the intake from their last assessment.
+                const player = state.squad.find((p) => p.id === activePlayerId);
+                if (player) {
+                  state.updatePlayer(activePlayerId, {
+                    stressors: state.selectedStressors,
+                    faceAnalysis: state.faceAnalysis,
+                  });
+                }
+                state.setActivePlayerId(null);
+              }
               if (!navigatedRef.current) {
                 navigatedRef.current = true;
                 setIsAnalyzing(false);
