@@ -19,11 +19,13 @@ export function StressorCard({
   stressor,
   onToggle,
   onSubOption,
+  compact = false,
 }: {
   def: StressorDef;
   stressor: Stressor | undefined;
   onToggle: () => void;
   onSubOption: (field: keyof Stressor, key: string) => void;
+  compact?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isSelected = !!stressor;
@@ -41,6 +43,7 @@ export function StressorCard({
       onToggle={onToggle}
       onToggleExpansion={() => setExpanded((v) => !v)}
       isCare={isCare}
+      compact={compact}
     >
       {def.expansions?.map((exp) => {
         const current = stressor?.[exp.field as keyof Stressor] as string | undefined;

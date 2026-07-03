@@ -267,7 +267,7 @@ export function DashboardScreen() {
       style={{ backgroundColor: "var(--color-bg-base)" }}>
 
       {/* Scrollable content */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden px-5">
 
       {/* Header — diet version: two compact rows */}
       <header className="relative z-10 mt-8 mb-4" role="banner" aria-label="Dashboard controls">
@@ -316,11 +316,11 @@ export function DashboardScreen() {
           </motion.button>
         </div>
 
-        {/* Row 2: mode toggle + controls + streak */}
-        <div className="flex items-center justify-between mt-2.5">
-          <div className="flex items-center gap-2.5">
+        {/* Row 2: mode toggle + nav controls (wraps on narrow screens) */}
+        <div className="flex items-center flex-wrap gap-y-2 justify-between mt-2.5">
+          <div className="flex items-center gap-2 min-w-0">
             <ModeToggle />
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               {ctx.supportsSquad && (
                 <button
                   onClick={() => window.location.href = "/squad"}
@@ -338,37 +338,42 @@ export function DashboardScreen() {
               >
                 Evidence
               </button>
-              <span className="w-px h-3.5" style={{ backgroundColor: "rgba(168,162,158,0.12)" }} />
-              <motion.button whileTap={{ scale: 0.9 }}
-                onClick={() => setPersonalityOpen(true)}
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-emerald-900/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
-                style={{ backgroundColor: "rgba(168,162,158,0.06)" }}
-                aria-label={`Voice: ${personalityCfg.label}`}
-              >
-                {personalityCfg.emoji}
-              </motion.button>
-              <button onClick={() => {
-                const order = ["en", "es", "fr"] as const;
-                const idx = order.indexOf(locale);
-                const next = order[(idx + 1) % order.length];
-                useBodyDebtStore.getState().setLocale(next);
-              }}
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono hover:bg-emerald-900/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
-                style={{ backgroundColor: "rgba(168,162,158,0.06)", color: "var(--color-text-secondary)" }}
-                aria-label={`Switch language from ${locale.toUpperCase()}`}
-              >
-                {locale.toUpperCase()}
-              </button>
             </div>
           </div>
-          {streakDays > 0 && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-mono tabular-nums" style={{ color: "var(--color-states-success)" }}>
-                {streakDays}d streak
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <span className="w-px h-3.5" style={{ backgroundColor: "rgba(168,162,158,0.12)" }} />
+            <motion.button whileTap={{ scale: 0.9 }}
+              onClick={() => setPersonalityOpen(true)}
+              className="w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-emerald-900/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+              style={{ backgroundColor: "rgba(168,162,158,0.06)" }}
+              aria-label={`Voice: ${personalityCfg.label}`}
+            >
+              {personalityCfg.emoji}
+            </motion.button>
+            <button onClick={() => {
+              const order = ["en", "es", "fr"] as const;
+              const idx = order.indexOf(locale);
+              const next = order[(idx + 1) % order.length];
+              useBodyDebtStore.getState().setLocale(next);
+            }}
+              className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono hover:bg-emerald-900/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+              style={{ backgroundColor: "rgba(168,162,158,0.06)", color: "var(--color-text-secondary)" }}
+              aria-label={`Switch language from ${locale.toUpperCase()}`}
+            >
+              {locale.toUpperCase()}
+            </button>
+            {streakDays > 0 && (
+              <>
+                <span className="w-px h-3.5" style={{ backgroundColor: "rgba(168,162,158,0.12)" }} />
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono tabular-nums" style={{ color: "var(--color-states-success)" }}>
+                    {streakDays}d streak
+                  </span>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div className="h-px w-full mt-3" style={{ backgroundColor: "rgba(168,162,158,0.1)" }} />
       </header>

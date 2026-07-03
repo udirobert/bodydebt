@@ -33,6 +33,8 @@ export interface StressorLedgerRowProps {
   onToggleExpansion?: () => void;
   /** When true, render in a "recovered" tone (used for "care" stressor). */
   isCare?: boolean;
+  /** Compact mode for two-column layouts: smaller icon, no sublabel, tighter padding. */
+  compact?: boolean;
   children?: React.ReactNode;
 }
 
@@ -53,6 +55,7 @@ export function StressorLedgerRow({
   onToggle,
   onToggleExpansion,
   isCare = false,
+  compact = false,
   children,
 }: StressorLedgerRowProps) {
   const accent = isCare ? "var(--color-states-success)" : "var(--color-brand-primary)";
@@ -72,7 +75,7 @@ export function StressorLedgerRow({
         transition: "border-color 0.2s, background-color 0.2s",
       }}
     >
-      <div className="flex items-center" style={{ minHeight: 64 }}>
+      <div className="flex items-center" style={{ minHeight: compact ? 52 : 64 }}>
         {isSelected && (
           <div
             className="w-[3px] self-stretch flex-shrink-0 rounded-l-2xl"
@@ -83,20 +86,28 @@ export function StressorLedgerRow({
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={onToggle}
-          className="flex items-center gap-3 flex-1 text-left px-4 py-3.5"
-          style={{ WebkitTapHighlightColor: "transparent" }}
+          className="flex items-center gap-2.5 flex-1 text-left"
+          style={{
+            WebkitTapHighlightColor: "transparent",
+            padding: compact ? "10px 12px" : "14px 16px",
+          }}
         >
-          <span className="text-2xl flex-shrink-0">{icon}</span>
+          <span className="flex-shrink-0" style={{ fontSize: compact ? "1.25rem" : "1.5rem" }}>{icon}</span>
           <div className="flex-1 min-w-0">
             <span
-              className="text-sm font-semibold block"
-              style={{ color: isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)" }}
+              className="font-semibold block"
+              style={{
+                color: isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)",
+                fontSize: compact ? "0.8125rem" : "0.875rem",
+              }}
             >
               {label}
             </span>
-            <span className="text-[10px] block mt-0.5" style={{ color: "var(--color-text-disabled)" }}>
-              {isSelected ? "Tap to remove" : sublabel}
-            </span>
+            {!compact && (
+              <span className="text-[10px] block mt-0.5" style={{ color: "var(--color-text-disabled)" }}>
+                {isSelected ? "Tap to remove" : sublabel}
+              </span>
+            )}
           </div>
 
           {/* Live contribution readout */}
@@ -106,8 +117,12 @@ export function StressorLedgerRow({
               initial={{ opacity: 0, x: 4 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.2 }}
-              className="font-mono text-xs font-bold flex-shrink-0 mr-1"
-              style={{ color: accent }}
+              className="font-mono font-bold flex-shrink-0"
+              style={{
+                color: accent,
+                fontSize: compact ? "0.625rem" : "0.75rem",
+                marginRight: compact ? "2px" : "4px",
+              }}
             >
               {formatContribution(contribution)}
             </motion.span>
@@ -122,8 +137,11 @@ export function StressorLedgerRow({
               if (!isSelected) onToggle();
               onToggleExpansion?.();
             }}
-            className="pr-4 pl-2 py-4 flex-shrink-0"
-            style={{ color: isSelected ? accent : "var(--color-text-faint)" }}
+            className="flex-shrink-0"
+            style={{
+              color: isSelected ? accent : "var(--color-text-faint)",
+              padding: compact ? "10px 10px" : "16px 16px",
+            }}
             aria-label={expanded ? "Collapse" : "Add detail"}
           >
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

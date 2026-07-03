@@ -11,6 +11,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { StressorCard } from "./stressor-card";
 import { ACK_COPY, CONFIDENCE_CONFIG, computeLiveScore, byMode } from "@/stressors";
+import type { StressorDef } from "@/stressors/types";
 import { bandMeta } from "@/lib/debt-band";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -160,26 +161,34 @@ export function DebtIntakeScreen() {
       </div>
 
       {/* Stressor cards */}
-      <div className="relative z-10 flex flex-col gap-2.5 flex-1">
-        {byMode(mode).map((def, i) => {
-          const stressor = selectedStressors.find((s) => s.type === def.type);
-          return (
-            <motion.div
-              key={def.type}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <StressorCard
-                def={def}
-                stressor={stressor}
-                onToggle={() => handleToggle(def.type)}
-                onSubOption={(field, key) => handleSubOption(def.type, field, key)}
-              />
-            </motion.div>
-          );
-        })}
-      </div>
+      {mode === "football" ? (
+        <FootballStressorGrid
+          selectedStressors={selectedStressors}
+          onToggle={handleToggle}
+          onSubOption={handleSubOption}
+        />
+      ) : (
+        <div className="relative z-10 flex flex-col gap-2.5 flex-1">
+          {byMode(mode).map((def, i) => {
+            const stressor = selectedStressors.find((s) => s.type === def.type);
+            return (
+              <motion.div
+                key={def.type}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+              >
+                <StressorCard
+                  def={def}
+                  stressor={stressor}
+                  onToggle={() => handleToggle(def.type)}
+                  onSubOption={(field, key) => handleSubOption(def.type, field, key)}
+                />
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Confidence signal */}
       <div className="relative z-10 pt-4 pb-2 flex items-center justify-center gap-2">
@@ -205,6 +214,87 @@ export function DebtIntakeScreen() {
         >
           Skip — view dashboard
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Football two-column stressor grid ───────────────────────────────────────
+
+function FootballStressorGrid({
+  selectedStressors,
+  onToggle,
+  onSubOption,
+}: {
+  selectedStressors: Stressor[];
+  onToggle: (type: StressorType) => void;
+  onSubOption: (type: StressorType, field: keyof Stressor, key: string) => void;
+}) {
+  const all = byMode("football");
+  const general = all.filter((s) => !s.modes);
+  const matchLoad = all.filter((s) => s.modes?.includes("football"));
+
+  return (
+    <div className="relative z-10 flex flex-col gap-4 flex-1">
+      <StressorSection
+        label="General"
+        stressors={general}
+        selectedStressors={selectedStressors}
+        onToggle={onToggle}
+        onSubOption={onSubOption}
+      />
+      <StressorSection
+        label="Match Load"
+        stressors={matchLoad}
+        selectedStressors={selectedStressors}
+        onToggle={onToggle}
+        onSubOption={onSubOption}
+      />
+    </div>
+  );
+}
+
+function StressorSection({
+  label,
+  stressors,
+  selectedStressors,
+  onToggle,
+  onSubOption,
+}: {
+  label: string;
+  stressors: StressorDef[];
+  selectedStressors: Stressor[];
+  onToggle: (type: StressorType) => void;
+  onSubOption: (type: StressorType, field: keyof Stressor, key: string) => void;
+}) {
+  return (
+    <div>
+      <p
+        className="text-[9px] uppercase tracking-widest font-semibold mb-2"
+        style={{ color: "var(--color-text-faint)" }}
+      >
+        {label}
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {stressors.map((def, i) => {
+          const stressor = selectedStressors.find((s) => s.type === def.type);
+          return (
+            <motion.div
+              key={def.type}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04 }}
+            >
+              <StressorCard
+                def={def}
+                stressor={stressor}
+                onToggle={() => onToggle(def.type)}
+                onSubOption={(field, key) => onSubOption(def.type, field, key)}
+                compact
+              />
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
