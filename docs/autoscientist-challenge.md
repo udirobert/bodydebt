@@ -664,6 +664,9 @@ own ground truth.
 
 - **Original dataset**: https://huggingface.co/datasets/Papajams/body-debt-finetune-dataset
 - **Augmented dataset**: https://huggingface.co/datasets/Papajams/body-debt-augmented-v2
-- **Model**: `adaption_mistral_7b_instruct_body_debt_triage_prescri_c6cf1230` (Together AI)
+- **Model weights (HF)**: https://huggingface.co/Papajams/body-debt-mistral-7b-autoscientist
+- **Model weights (Kaggle)**: https://www.kaggle.com/datasets/udingethe/body-debt-mistral-7b-autoscientist
+- **Dataset (Kaggle)**: https://www.kaggle.com/datasets/udingethe/body-debt-finetune-dataset
+- **Augmented (Kaggle)**: https://www.kaggle.com/datasets/udingethe/body-debt-autoscientist-v2
 - **Live app**: https://bodydebt.thisyearnofear.com
 - **Source code**: https://github.com/udirobert/bodydebt
