@@ -41,12 +41,20 @@ vi.mock("@/lib/sdk/eazo-react", () => ({
   useEazo: vi.fn(() => ({ auth: { user: null } })),
 }));
 
-// Recovery context
+// Recovery context — mockUseRecoveryContext is a vi.fn() so individual tests
+// can override the return value (e.g. to simulate football/fan mode's
+// agentPrompts.verdictPrefix). Prefixed with "mock" so Vitest's hoisting
+// allows the factory below to reference it.
+const mockUseRecoveryContext = vi.fn((): {
+  vocabulary: { appName: string; scheduleLabel: string };
+  supportsSquad: boolean;
+  agentPrompts?: { verdictPrefix?: string };
+} => ({
+  vocabulary: { appName: "BODY DEBT", scheduleLabel: "Recovery Schedule" },
+  supportsSquad: false,
+}));
 vi.mock("@/lib/contexts/RecoveryContext", () => ({
-  useRecoveryContext: () => ({
-    vocabulary: { appName: "BODY DEBT", scheduleLabel: "Recovery Schedule" },
-    supportsSquad: false,
-  }),
+  useRecoveryContext: () => mockUseRecoveryContext(),
 }));
 
 // orbPersonality
@@ -293,6 +301,21 @@ describe("DashboardScreen — main dashboard", () => {
     const { DashboardScreen } = await import("@/components/screens/DashboardScreen");
     render(<DashboardScreen />);
     expect(screen.getByText(/Your body is recovering/)).toBeDefined();
+  });
+
+  it("prepends the mode's agentPrompts.verdictPrefix when the context defines one", async () => {
+    // Regression test: agentPrompts.verdictPrefix ("Manager's call:",
+    // "Full-time:") was defined on every context config but never actually
+    // rendered — the verdict prefix came only from orbPersonality. Found by
+    // dogfooding the Fan Recovery dashboard end-to-end.
+    mockUseRecoveryContext.mockReturnValueOnce({
+      vocabulary: { appName: "MATCH FIT", scheduleLabel: "Match-Day Schedule" },
+      supportsSquad: true,
+      agentPrompts: { verdictPrefix: "Manager's call:" },
+    });
+    const { DashboardScreen } = await import("@/components/screens/DashboardScreen");
+    render(<DashboardScreen />);
+    expect(screen.getByText(/Manager's call: Your body is recovering/)).toBeDefined();
   });
 
   it("renders sub-components", async () => {

@@ -127,7 +127,15 @@ export function DashboardScreen() {
   const personalityCfg = getPersonality(orbPersonality);
   const orbCopy = getOrbCopy(orbPersonality);
   const t = getStrings(locale);
-  const verdictPrefix = personalityCfg.verdictPrefix || t.verdictPrefix[orbPersonality];
+  // A mode's own verdict framing ("Manager's call:", "Full-time:") takes
+  // priority over the personality-voice prefix — it identifies who's
+  // speaking (the manager, the full-time whistle), which matters more than
+  // tone once you're in a specialized mode. Personal mode has no context
+  // prefix, so it keeps the existing personality-driven behavior untouched.
+  const contextVerdictPrefix = ctx.agentPrompts?.verdictPrefix;
+  const verdictPrefix = contextVerdictPrefix
+    ? `${contextVerdictPrefix} `
+    : personalityCfg.verdictPrefix || t.verdictPrefix[orbPersonality];
   const personalityTagline = data.debtScore > 40 ? orbCopy.highDebt : orbCopy.lowDebt;
 
   // Memory report
