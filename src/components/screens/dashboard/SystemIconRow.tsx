@@ -2,15 +2,13 @@
 
 import { motion } from "framer-motion";
 import type { RecoverySystem, DebtAnalysis } from "@/lib/types";
+import { SYSTEM_META } from "@/lib/science";
 
 const SYSTEM_ORDER: RecoverySystem[] = ["cardiovascular", "brain", "liver", "muscular", "gut"];
-const SYSTEM_ICONS: Record<RecoverySystem, string> = {
-  cardiovascular: "🪀",
-  brain: "🧠",
-  liver: "🫁",
-  muscular: "💪",
-  gut: "🦠",
-};
+// Icons single-sourced from the canonical science module (@/lib/science).
+const SYSTEM_ICONS: Record<RecoverySystem, string> = Object.fromEntries(
+  SYSTEM_ORDER.map((s) => [s, SYSTEM_META[s].icon]),
+) as Record<RecoverySystem, string>;
 
 interface SystemIconRowProps {
   systems: DebtAnalysis["systemScores"];

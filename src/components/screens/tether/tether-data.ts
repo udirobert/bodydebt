@@ -14,6 +14,8 @@
  * All AI runs on-device via the QVAC SDK. No cloud, no API keys, no account.
  */
 
+import { scienceFor } from "@/lib/science";
+
 // ─── Tournament timeline ─────────────────────────────────────────────────────
 
 export const TOURNAMENT_DATES = [
@@ -75,7 +77,8 @@ export const FAN_SCIENCE = {
   stat: "2×",
   claim:
     "Cardiac emergencies more than doubled on days the German team played at the 2006 World Cup. The trigger was the emotional stress of watching — not physical exertion. 'Your team losing is physiological debt' is a documented finding, not a metaphor.",
-  cite: "Wilbert-Lampen et al., New England Journal of Medicine, 2008",
+  // Citation single-sourced from the canonical science module.
+  cite: scienceFor("cardiovascular", "fan").cite,
 };
 
 export const FAN_STRESSORS = [

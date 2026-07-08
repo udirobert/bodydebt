@@ -1,19 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { SYSTEM_META } from "@/lib/science";
 
-const SYSTEM_EMOJIS: Record<string, string> = {
-  cardiovascular: "🪀",
-  brain: "🧠",
-  liver: "🫁",
-  muscular: "💪",
-  gut: "🦠",
-  Cardiovascular: "🪀",
-  Brain: "🧠",
-  Liver: "🫁",
-  Muscular: "💪",
-  Gut: "🦠",
-};
+// Icons single-sourced from the canonical science module (@/lib/science).
+// Schedule blocks reference systems by lowercase key or capitalized name, so
+// we key on both.
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const SYSTEM_EMOJIS: Record<string, string> = Object.fromEntries(
+  Object.entries(SYSTEM_META).flatMap(([s, m]) => [
+    [s, m.icon],
+    [cap(s), m.icon],
+  ]),
+);
 
 interface ScheduleBlock {
   time: string;

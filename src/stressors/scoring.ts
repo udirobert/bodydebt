@@ -9,17 +9,12 @@
 
 import type { Stressor, SystemScore, RecoverySystem, RecoveryMode } from "@/lib/types";
 import { STRESSORS } from "./catalog";
+import { SYSTEM_META, scienceFor } from "@/lib/science";
 import type { CounterfactualResult } from "./types";
 
-// ─── System metadata ──────────────────────────────────────────────────────────
-
-const SYSTEM_META: Record<RecoverySystem, { label: string; icon: string; baseWindowHrs: number }> = {
-  cardiovascular: { label: "Cardiovascular",  icon: "🫀", baseWindowHrs: 18 },
-  brain:          { label: "Brain / Cognition", icon: "🧠", baseWindowHrs: 24 },
-  liver:          { label: "Liver",            icon: "🫁", baseWindowHrs: 30 },
-  muscular:       { label: "Muscular / CNS",   icon: "💪", baseWindowHrs: 48 },
-  gut:            { label: "Gut",              icon: "🦠", baseWindowHrs: 36 },
-};
+// System metadata (label, icon, recovery window) and per-system science live in
+// the shared canonical module `@/lib/science` — single source of truth across
+// the engine, the evidence page, and the Tether judge page.
 
 // ─── Drink type modifiers ────────────────────────────────────────────────────
 
@@ -286,7 +281,7 @@ export function computeSystemScores(
 
     // Fan mode surfaces the emotional-stress science (e.g. the NEJM World Cup
     // cardiac-event finding) where it exists, falling back to the base cite.
-    const sci = (mode === "fan" && FAN_SCIENCE[system]) ? FAN_SCIENCE[system] : SCIENCE[system];
+    const sci = scienceFor(system, mode);
 
     return {
       system,
@@ -297,49 +292,14 @@ export function computeSystemScores(
       hasData:      touched[system],
       causeText:    buildCauseText(system, stressors, touched[system]),
       actionText:   buildActionText(system, stressors, touched[system]),
-      scienceFact:  sci?.fact,
-      scienceCite:  sci?.cite,
+      scienceFact:  sci.fact,
+      scienceCite:  sci.cite,
     };
   });
 }
 
-// ─── Science citations ────────────────────────────────────────────────────────
-
-const SCIENCE: Partial<Record<RecoverySystem, { fact: string; cite: string }>> = {
-  liver: {
-    fact: "The liver metabolises approximately one standard drink per hour. Processing speed cannot be accelerated by sleep, coffee, or exercise.",
-    cite: "Lieber, Physiological Reviews, 1997",
-  },
-  muscular: {
-    fact: "Alcohol consumed within 24 hours of resistance training reduces muscle protein synthesis by up to 37%, even when protein intake is maintained.",
-    cite: "Parr et al., PLOS ONE, 2014",
-  },
-  gut: {
-    fact: "A single episode of heavy drinking alters gut microbiome composition within 24 hours, increasing intestinal permeability and systemic inflammation.",
-    cite: "Bishehsari et al., Alcohol Research, 2017",
-  },
-  brain: {
-    fact: "Sleep deprivation of even one night impairs prefrontal cortex function equivalently to 0.08% blood alcohol concentration.",
-    cite: "Harrison & Horne, Journal of Sleep Research, 2000",
-  },
-  cardiovascular: {
-    fact: "Resting heart rate remains elevated for 12–24 hours after alcohol consumption as the autonomic nervous system works to restore balance.",
-    cite: "Spaak et al., Journal of the American College of Cardiology, 2008",
-  },
-};
-
-// Fan-mode science — the emotional load of watching is a documented
-// physiological event, not a metaphor.
-const FAN_SCIENCE: Partial<Record<RecoverySystem, { fact: string; cite: string }>> = {
-  cardiovascular: {
-    fact: "During the 2006 World Cup, cardiac emergencies more than doubled on days the German team played. The trigger was acute emotional stress from watching — not physical exertion.",
-    cite: "Wilbert-Lampen et al., New England Journal of Medicine, 2008",
-  },
-  brain: {
-    fact: "A stressful or disappointing match keeps cortisol and adrenaline elevated for hours, delaying sleep onset and prolonging rumination well past the final whistle.",
-    cite: "Åkerstedt, Sleep Medicine Reviews, 2006",
-  },
-};
+// Per-system science (base + fan overrides) now lives in `@/lib/science` and is
+// read via `scienceFor(system, mode)` above.
 
 function buildCauseText(system: RecoverySystem, stressors: Stressor[], hasData: boolean): string {
   if (!hasData) return "Not assessed — no data for this system";
