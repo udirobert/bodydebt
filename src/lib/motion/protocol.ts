@@ -15,6 +15,15 @@ import type { Variants } from "framer-motion";
 /** Out-expo-ish — feels deliberate, not bouncy. */
 export const EASE_PROTOCOL = [0.22, 1, 0.36, 1] as const;
 
+/** Drawer / sheet curve — snaps on open, settles cleanly. */
+export const EASE_DRAWER = [0.32, 0.72, 0, 1] as const;
+
+/** Shared durations (seconds for Framer; mirror as CSS vars in globals). */
+export const DURATION_PAGE = 0.22;
+export const DURATION_COLLAPSE = 0.22;
+export const DURATION_DRAWER_OPEN = 0.25;
+export const DURATION_DRAWER_CLOSE = 0.15;
+
 const containerBase: Variants = {
   hidden: { opacity: 1 },
   show: {

@@ -65,6 +65,9 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 | State | `src/stores/useBodyDebtStore.ts` (4 slices: `profile-slice`, `session-slice`, `stream-slice`, `wallet-slice`) |
 | Types | `src/lib/types.ts` |
 | Design tokens | `src/lib/design-tokens.ts` (CSS vars in `globals.css`) |
+| Motion tokens | `src/lib/motion/protocol.ts`, CSS `--duration-*` / `--ease-*` in `globals.css` |
+| Collapse (accordion) | `src/components/ui/collapse.tsx` |
+| Motion provider | `src/components/providers/MotionProvider.tsx` |
 | Recovery contexts | `src/lib/contexts/` (registry: `index.ts`, configs: `personal.ts`, `football.ts`) |
 | Context provider | `src/lib/contexts/RecoveryContext.tsx` (`useRecoveryContext()` hook) |
 | Stressor catalog + scoring | `src/stressors/` (single source: `catalog.ts`, `scoring.ts`, `types.ts`, `index.ts`) |
@@ -92,10 +95,12 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 
 ## Hard Rules
 
-- Never import or call `ai` from `@eazo/sdk` in client components, hooks, browser helpers, or `src/lib/api/`. AI calls belong in `src/app/api/` route handlers only.
+- **Auth is NextAuth.js (Auth.js v5)** — self-hosted, no vendor lock-in. Config in `src/lib/auth.ts`. The Eazo SDK stubs in `src/lib/sdk/eazo-client.ts` and `eazo-react.tsx` delegate to NextAuth. Do not re-introduce `@eazo/sdk` as a real dependency.
+- `requireAuth` is async — always `await requireAuth(request)` in API routes. It returns `{ ok: true, user }` or `{ ok: false, response }`. Guest-first: callers fall through when `ok: false`.
+- Use `auth.login()` from `@/lib/sdk/eazo-client` (delegates to `signIn()` from `next-auth/react`) for login UI. The sign-in page is at `/auth/signin`.
+- In render, read auth state through `useEazo(selector)` — it bridges to NextAuth's `useSession()`. In event handlers/effects, use `auth.login()` / `auth.logout()` from `@/lib/sdk/eazo-client`.
+- Never import or call `ai` from the SDK in client components, hooks, browser helpers, or `src/lib/api/`. AI calls belong in `src/app/api/` route handlers only.
 - Guard server-side AI routes with `requireAuth` before calling `ai.chat()`.
-- Use `auth.login()` from `@eazo/sdk` for login UI. Do not build a custom login form unless explicitly required.
-- In render, read Eazo auth/device state through `useEazo(selector)`. In event handlers/effects, use SDK singletons directly.
 - Fire-and-forget `memory.reportAction(...).catch(() => {})` after significant user actions. Never let memory failures block core flow.
 - All Supermemory calls go through `src/lib/supermemory/` — no direct `supermemory` SDK imports in components, hooks, or client code. The client-side `memory.reportAction()` POSTs to `/api/memory` which calls the server-only module. Forget operations (single + mass) go through `DELETE /api/memory`.
 - Never store face scan images, raw pixels, or full MediaPipe landmark arrays.
@@ -174,9 +179,16 @@ Large artifacts such as `public/ezkl/*.key` are gitignored and must be regenerat
 Required for core app:
 
 ```bash
+DATABASE_URL=
+AUTH_SECRET=          # openssl rand -base64 32
+AUTH_URL=             # public URL (auto-detected on Vercel)
+```
+
+Optional (Eazo legacy, no longer required):
+
+```bash
 EAZO_APP_ID=
 EAZO_PRIVATE_KEY=
-DATABASE_URL=
 ```
 
 Optional by feature:
@@ -197,6 +209,14 @@ ETH_RPC_URL=https://sepolia.drpc.org
 NEXT_PUBLIC_USDT_CONTRACT=0xd077A400968890Eacc75cdc901F0356c943e4fDb
 SUPERMEMORY_API_KEY=
 SUPERMEMORY_BASE_URL=https://api.supermemory.ai
+# Auth.js — email magic links (SMTP) + GitHub OAuth
+EMAIL_SERVER_HOST=
+EMAIL_SERVER_PORT=587
+EMAIL_SERVER_USER=
+EMAIL_SERVER_PASSWORD=
+EMAIL_FROM=Body Debt <noreply@bodydebt.ai>
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
 ```
 
 ## Implementation Preferences
@@ -207,6 +227,10 @@ SUPERMEMORY_BASE_URL=https://api.supermemory.ai
 - Keep API fetch wrappers in `src/lib/api/` and route logic in `src/app/api/`.
 - Keep comments short and only where they clarify non-obvious behavior.
 - Do not touch generated or large artifacts unless the task explicitly needs it.
+- **Motion/UX:** polish existing metaphors (orbs, gauges, systems) — do not
+  introduce decorative chart kits or a second motion system. Use
+  `src/lib/motion/protocol.ts`, CSS `--duration-*` / `--ease-*` tokens, and
+  `Collapse` for disclosures. See `docs/motion-ux.md`.
 
 ## Docs
 
@@ -215,5 +239,8 @@ SUPERMEMORY_BASE_URL=https://api.supermemory.ai
 - ZK pipeline details: `docs/zk-pipeline.md`
 - Demo notes: `docs/skale-privacy-demo.md`
 - Tether Developers Cup plan: `docs/tether-cup-plan.md`
+- Motion & UX craft: `docs/motion-ux.md`
+- Face scan reliability: `docs/face-scan.md`
+- Recent progress: `docs/progress.md`
 - Archived legacy notes: `docs/legacy/`
 - Historical HF-space experiments: `hf-space/archive/`

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { CalendarDays, ChevronDown, ChevronUp } from "lucide-react";
+import { motion } from "framer-motion";
+import { CalendarDays, ChevronDown } from "lucide-react";
 import { fetchScoreHeatmap } from "@/lib/api";
 import type { HeatmapDay } from "@/lib/api";
 import { bandBackground, bandLegend, bandMeta, BAND_BG_NONE } from "@/lib/debt-band";
+import { Collapse } from "@/components/ui/collapse";
 
 // ─── Build last-N-days grid ────────────────────────────────────────────────
 
@@ -79,20 +80,17 @@ export function ScoreHeatmap() {
         >
           Heatmap
         </span>
-        <span className="text-[9px] ml-auto" style={{ color: "var(--color-text-faint)" }}>
-          {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        </span>
+        <ChevronDown
+          className="w-3 h-3 ml-auto transition-transform ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{
+            color: "var(--color-text-faint)",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transitionDuration: "var(--duration-collapse)",
+          }}
+        />
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            className="overflow-hidden"
-          >
+      <Collapse open={open}>
             {loading ? (
               <div className="rounded-2xl px-4 py-5 space-y-2"
                 style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.08)" }}>
@@ -200,9 +198,7 @@ export function ScoreHeatmap() {
                 </div>
               </div>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </Collapse>
     </div>
   );
 }

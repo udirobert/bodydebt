@@ -1,9 +1,11 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Bookmark } from "lucide-react";
 import { ActionButtons } from "./ActionButtons";
 import type { Prescription } from "@/lib/types";
+import { Collapse } from "@/components/ui/collapse";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -23,7 +25,7 @@ const item = {
   show: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.4, ease: "easeOut" as const },
+    transition: { duration: 0.35, ease: EASE_PROTOCOL },
   },
 };
 
@@ -165,25 +167,15 @@ export function TimelineBand({
         </p>
 
         {/* Action buttons — slide-in on selection */}
-        <AnimatePresence>
-          {isSelected && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <ActionButtons
-                onCopy={onCopy}
-                onBookmark={onBookmark}
-                isCopied={isCopied}
-                isBookmarked={isBookmarked}
-                accentColor={band.accentColor}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <Collapse open={isSelected}>
+          <ActionButtons
+            onCopy={onCopy}
+            onBookmark={onBookmark}
+            isCopied={isCopied}
+            isBookmarked={isBookmarked}
+            accentColor={band.accentColor}
+          />
+        </Collapse>
       </div>
 
       {/* Left accent bar — shows on selection */}

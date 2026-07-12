@@ -110,3 +110,25 @@ export function initializeFaceMesh(onResults: (results: { multiFaceLandmarks: Me
   faceMesh.onResults(onResults);
   return faceMesh;
 }
+
+/**
+ * Async init with WASM warm-up. Falls back to sync construct if
+ * `initialize()` is unavailable. Times out so callers can show fallback.
+ */
+export async function initializeFaceMeshAsync(
+  onResults: (results: { multiFaceLandmarks: MediaPipeLandmark[][] }) => void,
+  timeoutMs = 12_000,
+  // MediaPipe's FaceMesh type is not exported as a proper ESM type.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> {
+  const faceMesh = initializeFaceMesh(onResults);
+  if (typeof faceMesh.initialize === "function") {
+    await Promise.race([
+      faceMesh.initialize(),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("MediaPipe initialize timed out")), timeoutMs);
+      }),
+    ]);
+  }
+  return faceMesh;
+}

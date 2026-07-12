@@ -86,3 +86,129 @@ export async function getDailyScoresByUser(
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
+
+// ─── Historical patterns for agent prompt enrichment ───────────────────────
+
+export interface UserPatterns {
+  totalSessions: number;
+  avgScore: number;
+  trendDirection: "improving" | "worsening" | "stable";
+  trendDelta: number;          // avg of last 3 minus avg of previous 3
+  bestSystem: string | null;   // system with lowest avg debt
+  worstSystem: string | null;  // system with highest avg debt
+  dayOfWeekPattern: string | null;  // e.g. "scores tend to be higher on Monday"
+  lastSessionDate: string | null;
+  streakDays: number;          // consecutive days with score <= 20
+}
+
+/**
+ * Analyzes a user's debt session history to derive patterns that can
+ * enrich the AI agent prompt. Returns null if there's not enough data.
+ */
+export async function getUserPatterns(userId: string): Promise<UserPatterns | null> {
+  const sessions = await getDebtSessionsByUser(userId, 30);
+  if (sessions.length < 2) return null;
+
+  const scores = sessions.map(s => s.debtScore);
+  const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+
+  // Trend: compare last 3 vs previous 3
+  const recent = scores.slice(0, 3);
+  const older = scores.slice(3, 6);
+  const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  const olderAvg = older.length > 0
+    ? older.reduce((a, b) => a + b, 0) / older.length
+    : recentAvg;
+  const trendDelta = Math.round(recentAvg - olderAvg);
+  const trendDirection: UserPatterns["trendDirection"] =
+    trendDelta < -3 ? "improving" : trendDelta > 3 ? "worsening" : "stable";
+
+  // System-level analysis from stressorBreakdown
+  const systemTotals = new Map<string, { sum: number; count: number }>();
+  for (const s of sessions) {
+    const breakdown = s.stressorBreakdown as Record<string, number> | null;
+    if (breakdown) {
+      for (const [system, debt] of Object.entries(breakdown)) {
+        const entry = systemTotals.get(system);
+        if (entry) {
+          entry.sum += debt;
+          entry.count++;
+        } else {
+          systemTotals.set(system, { sum: debt, count: 1 });
+        }
+      }
+    }
+  }
+  let bestSystem: string | null = null;
+  let worstSystem: string | null = null;
+  let bestAvg = Infinity;
+  let worstAvg = -Infinity;
+  for (const [system, { sum, count }] of systemTotals) {
+    const avg = sum / count;
+    if (avg < bestAvg) { bestAvg = avg; bestSystem = system; }
+    if (avg > worstAvg) { worstAvg = avg; worstSystem = system; }
+  }
+
+  // Day-of-week pattern
+  const dayScores = new Map<number, { sum: number; count: number }>();
+  for (const s of sessions) {
+    const dow = new Date(s.createdAt).getDay();
+    const entry = dayScores.get(dow);
+    if (entry) { entry.sum += s.debtScore; entry.count++; }
+    else dayScores.set(dow, { sum: s.debtScore, count: 1 });
+  }
+  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  let worstDay: { name: string; avg: number } | null = null;
+  for (const [dow, { sum, count }] of dayScores) {
+    if (count < 2) continue;  // need at least 2 sessions on that day
+    const avg = sum / count;
+    if (!worstDay || avg > worstDay.avg) {
+      worstDay = { name: dayNames[dow], avg: Math.round(avg) };
+    }
+  }
+  const dayOfWeekPattern = worstDay
+    ? `scores tend to be higher on ${worstDay.name} (avg ${worstDay.avg})`
+    : null;
+
+  // Streak: consecutive days with score <= 20, counting back from today
+  const dailyBest = new Map<string, number>();
+  for (const s of sessions) {
+    const day = new Date(s.createdAt).toDateString();
+    const prev = dailyBest.get(day);
+    if (prev === undefined || s.debtScore < prev) dailyBest.set(day, s.debtScore);
+  }
+  let streakDays = 0;
+  const cursor = new Date();
+  while (dailyBest.get(cursor.toDateString()) !== undefined && dailyBest.get(cursor.toDateString())! <= 20) {
+    streakDays++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return {
+    totalSessions: sessions.length,
+    avgScore,
+    trendDirection,
+    trendDelta,
+    bestSystem,
+    worstSystem,
+    dayOfWeekPattern,
+    lastSessionDate: sessions[0]?.createdAt.toISOString() ?? null,
+    streakDays,
+  };
+}
+
+/**
+ * Formats user patterns into a string suitable for inclusion in the
+ * AI agent prompt. Returns null if patterns are not available.
+ */
+export function formatPatternsForPrompt(p: UserPatterns): string {
+  const lines: string[] = [
+    `Historical patterns (${p.totalSessions} sessions, avg score ${p.avgScore}):`,
+    `  Trend: ${p.trendDirection} (${p.trendDelta > 0 ? "+" : ""}${p.trendDelta} vs previous)`,
+  ];
+  if (p.bestSystem) lines.push(`  Best system: ${p.bestSystem}`);
+  if (p.worstSystem) lines.push(`  Worst system: ${p.worstSystem}`);
+  if (p.dayOfWeekPattern) lines.push(`  Pattern: ${p.dayOfWeekPattern}`);
+  if (p.streakDays > 0) lines.push(`  Current streak: ${p.streakDays} days with low debt`);
+  return lines.join("\n");
+}

@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { bandLabel, bandMeta } from "@/lib/debt-band";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
 /**
  * Debt Meter — an inverted semicircular gauge.
@@ -13,10 +14,11 @@ import { bandLabel, bandMeta } from "@/lib/debt-band";
  * low fill = good.
  *
  * Accessibility: text labels (not color alone) communicate the band.
- * Animations respect prefers-reduced-motion via Framer's
- * useReducedMotion (applied by parent MotionConfig).
+ * Animations respect prefers-reduced-motion via MotionProvider.
  */
 export function DebtGauge({ score, animated = true }: { score: number; animated?: boolean }) {
+  const reduced = useReducedMotion();
+  const shouldAnimate = animated && !reduced;
   const meta = bandMeta(score);
   const label = bandLabel(score);
 
@@ -27,7 +29,7 @@ export function DebtGauge({ score, animated = true }: { score: number; animated?
   // Inverted: the fill represents debt remaining. Full arc = all debt.
   // As score drops, the fill shrinks. dashOffset = arcLength * (1 - debtRatio)
   // means at score=100 the whole arc is filled, at score=0 nothing is filled.
-  const dashOffset = animated ? arcLength * (1 - debtRatio) : 0;
+  const dashOffset = arcLength * (1 - debtRatio);
 
   // Pointer position on the arc
   const pointerAngle = Math.PI + debtRatio * Math.PI;
@@ -85,9 +87,9 @@ export function DebtGauge({ score, animated = true }: { score: number; animated?
           strokeWidth="12"
           strokeLinecap="round"
           strokeDasharray={arcLength}
-          initial={animated ? { strokeDashoffset: arcLength } : undefined}
+          initial={shouldAnimate ? { strokeDashoffset: arcLength } : undefined}
           animate={{ strokeDashoffset: dashOffset }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
+          transition={{ duration: 1.2, ease: EASE_PROTOCOL }}
           style={{ strokeDashoffset: dashOffset, filter: "url(#gauge-glow)" }}
         />
 
@@ -99,9 +101,9 @@ export function DebtGauge({ score, animated = true }: { score: number; animated?
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={arcLength}
-          initial={animated ? { strokeDashoffset: arcLength } : undefined}
+          initial={shouldAnimate ? { strokeDashoffset: arcLength } : undefined}
           animate={{ strokeDashoffset: dashOffset }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
+          transition={{ duration: 1.2, ease: EASE_PROTOCOL }}
           style={{ strokeDashoffset: dashOffset }}
         />
 
@@ -142,9 +144,9 @@ export function DebtGauge({ score, animated = true }: { score: number; animated?
           <motion.polygon
             points={`${px - 5},${py - 10} ${px + 5},${py - 10} ${px},${py + 2}`}
             fill={fillColor}
-            initial={animated ? { opacity: 0, scale: 0 } : undefined}
+            initial={shouldAnimate ? { opacity: 0, scale: 0.95 } : undefined}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 1.3, duration: 0.3, ease: "backOut" }}
+            transition={{ delay: shouldAnimate ? 1.0 : 0, duration: 0.3, ease: EASE_PROTOCOL }}
             style={{ filter: `drop-shadow(0 0 4px ${fillColor}66)` }}
           />
         )}
@@ -153,9 +155,9 @@ export function DebtGauge({ score, animated = true }: { score: number; animated?
       {/* Score number + band label (with text label, not color alone) */}
       <motion.div
         className="text-center -mt-6"
-        initial={animated ? { opacity: 0, scale: 0.5 } : undefined}
+        initial={shouldAnimate ? { opacity: 0, scale: 0.95 } : undefined}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5, type: "spring", stiffness: 150 }}
+        transition={{ delay: shouldAnimate ? 0.35 : 0, duration: 0.35, ease: EASE_PROTOCOL }}
       >
         <span className="font-black leading-none" style={{ fontSize: "clamp(2.5rem, 8vw, 3.5rem)", color: fillColor }}>
           {score}

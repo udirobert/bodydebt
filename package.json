@@ -33,6 +33,7 @@
     ]
   },
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.11.2",
     "@base-ui/react": "^1.4.0",
     "@ezkljs/engine": "^22.0.1",
     "@mediapipe/camera_utils": "^0.3.1632432234",
@@ -53,7 +54,9 @@
     "jiti": "^2.7.0",
     "lucide-react": "^1.8.0",
     "next": "^16.2.4",
+    "next-auth": "^5.0.0-beta.31",
     "next-themes": "^0.4.6",
+    "nodemailer": "^9.0.3",
     "onnxruntime-web": "^1.18.0",
     "postgres": "^3.4.9",
     "react": "19.2.4",

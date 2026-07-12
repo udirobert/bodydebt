@@ -106,8 +106,8 @@ export function DashboardScreen() {
   useEffect(() => {
     if (!analysis) return;
     const target = analysis.debtScore;
-    const duration = 1500;
-    const steps = 40;
+    const duration = 800;
+    const steps = 32;
     const increment = target / steps;
     let current = 0;
     countRef.current = setInterval(() => {
@@ -361,9 +361,9 @@ export function DashboardScreen() {
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="w-px h-3.5" style={{ backgroundColor: "rgba(168,162,158,0.12)" }} />
-            <motion.button whileTap={{ scale: 0.9 }}
+            <motion.button whileTap={{ scale: 0.97 }}
               onClick={() => setPersonalityOpen(true)}
-              className="w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-emerald-900/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+              className="w-6 h-6 rounded-full flex items-center justify-center text-xs [@media(hover:hover)]:hover:bg-emerald-900/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
               style={{ backgroundColor: "rgba(168,162,158,0.06)" }}
               aria-label={`Voice: ${personalityCfg.label}`}
             >

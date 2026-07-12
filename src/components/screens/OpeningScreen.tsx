@@ -7,7 +7,9 @@ import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { getAllContexts } from "@/lib/contexts";
 import { memory } from "@/lib/sdk/eazo-client";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
+import { UserBadge } from "@/components/user-profile/user-badge";
 import type { RecoveryMode } from "@/lib/types";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
 // Per-mode picker icon
 const MODE_ICON: Record<RecoveryMode, string> = {
@@ -88,6 +90,11 @@ export function OpeningScreen() {
         }}
       />
 
+      {/* Sign-in / user badge — top right */}
+      <div className="absolute top-4 right-4 z-20">
+        <UserBadge />
+      </div>
+
       {/* Brand */}
       <div className="relative z-10 w-full flex justify-center pt-14">
         <AnimatePresence>
@@ -95,7 +102,7 @@ export function OpeningScreen() {
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.4, ease: EASE_PROTOCOL }}
             >
               <span
                 className="tracking-[0.25em] text-xs font-semibold uppercase"
@@ -113,9 +120,9 @@ export function OpeningScreen() {
         <AnimatePresence>
           {orbVisible && (
             <motion.div
-              initial={{ scale: 0.6, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 1.1, ease: [0.34, 1.56, 0.64, 1] }}
+              transition={{ duration: 0.5, ease: EASE_PROTOCOL }}
               className="relative flex items-center justify-center"
               style={{ width: "48vw", maxWidth: 200, height: "48vw", maxHeight: 200 }}
             >
@@ -170,7 +177,7 @@ export function OpeningScreen() {
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1 }}
+              transition={{ duration: 0.4, delay: 0.08, ease: EASE_PROTOCOL }}
               className="text-center px-8"
             >
               <p
@@ -209,7 +216,7 @@ export function OpeningScreen() {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: "easeOut" }}
+              transition={{ duration: 0.4, ease: EASE_PROTOCOL }}
               className="flex flex-col gap-3"
             >
               {allContexts.map((c) => {

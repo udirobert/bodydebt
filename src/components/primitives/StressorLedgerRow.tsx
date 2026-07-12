@@ -14,10 +14,11 @@
  * this primitive yet — Pass 2 will introduce it.
  */
 
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import type { Stressor } from "@/lib/types";
-import { fadeUp, EASE_PROTOCOL } from "@/lib/motion/protocol";
+import { fadeUp } from "@/lib/motion/protocol";
+import { Collapse } from "@/components/ui/collapse";
 
 export interface StressorLedgerRowProps {
   icon: string;
@@ -137,37 +138,28 @@ export function StressorLedgerRow({
               if (!isSelected) onToggle();
               onToggleExpansion?.();
             }}
-            className="flex-shrink-0"
+            className="flex-shrink-0 transition-transform ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
               color: isSelected ? accent : "var(--color-text-faint)",
               padding: compact ? "10px 10px" : "16px 16px",
+              transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+              transitionDuration: "var(--duration-collapse)",
             }}
             aria-label={expanded ? "Collapse" : "Add detail"}
           >
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            <ChevronDown className="w-4 h-4" />
           </motion.button>
         )}
       </div>
 
-      <AnimatePresence initial={false}>
-        {expanded && children && (
-          <motion.div
-            key="expansion"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: EASE_PROTOCOL }}
-            className="overflow-hidden"
-          >
-            <div
-              className="px-4 pb-4"
-              style={{ borderTop: "1px solid rgba(168,162,158,0.08)" }}
-            >
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Collapse open={!!(expanded && children)}>
+        <div
+          className="px-4 pb-4"
+          style={{ borderTop: "1px solid rgba(168,162,158,0.08)" }}
+        >
+          {children}
+        </div>
+      </Collapse>
     </motion.div>
   );
 }

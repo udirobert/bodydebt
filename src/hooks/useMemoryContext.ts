@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
+import { useEazo } from "@/lib/sdk/eazo-react";
 
 export interface MemoryFacts {
   enabled: boolean;
@@ -14,6 +15,9 @@ export interface MemoryFacts {
  * Shared by the dashboard memory card, opening screen, and
  * prescription "why this" callout.
  *
+ * When authenticated, the server uses userId as containerTag (stable
+ * across devices). For guests, falls back to anonymousId.
+ *
  * Returns { enabled: false, ... } when Supermemory is not running
  * so callers can gracefully hide memory UI.
  *
@@ -25,6 +29,7 @@ export function useMemoryContext(query?: string): {
   refetch: () => void;
 } {
   const anonymousId = useBodyDebtStore((s) => s.anonymousId);
+  const authenticated = useEazo((s) => s.auth.authenticated);
   const [data, setData] = useState<MemoryFacts | null>(null);
   const [loading, setLoading] = useState(true);
   const [nonce, setNonce] = useState(0);
@@ -35,10 +40,17 @@ export function useMemoryContext(query?: string): {
   }, []);
 
   useEffect(() => {
-    if (!anonymousId) return;
+    // Need either anonymousId (guest) or authentication (user)
+    if (!anonymousId && !authenticated) return;
     let cancelled = false;
     const q = query ?? "body debt recovery patterns";
-    fetch(`/api/memory/context?containerTag=${encodeURIComponent(anonymousId)}&q=${encodeURIComponent(q)}`)
+    // When authenticated, the server ignores containerTag and uses userId.
+    // For guests, send anonymousId as fallback.
+    const params = new URLSearchParams({ q });
+    if (!authenticated && anonymousId) {
+      params.set("containerTag", anonymousId);
+    }
+    fetch(`/api/memory/context?${params}`)
       .then((r) => r.json())
       .then((json: MemoryFacts) => {
         if (!cancelled) setData(json);
@@ -50,7 +62,7 @@ export function useMemoryContext(query?: string): {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [anonymousId, query, nonce]);
+  }, [anonymousId, authenticated, query, nonce]);
 
   return { data, loading, refetch };
 }

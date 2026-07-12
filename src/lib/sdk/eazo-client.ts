@@ -1,9 +1,12 @@
-// Stub @eazo/sdk client. Body-debt originally ran as a template on the Eazo
-// platform. We've removed the Eazo dependency for the QVAC hackathon
-// submission so the live URL renders as a standalone web app instead of
-// getting wrapped in the Eazo mobile shell.
+// Auth.js v5 client bridge.
 //
-// All functions here are no-ops or throw to fall through to web alternatives.
+// Body-debt originally ran on the Eazo platform with a custom SDK.
+// We've replaced it with NextAuth.js (Auth.js v5) — self-hosted,
+// open source, no vendor lock-in. This module preserves the same
+// interface (`auth`, `memory`, `share`, `notifications`, `ai`) that
+// the rest of the app imports, but delegates auth to NextAuth.
+
+import { signIn, signOut } from "next-auth/react";
 
 export type User = {
   id: string;
@@ -13,14 +16,29 @@ export type User = {
 };
 
 export const auth = {
-  async getSessionHeader(): Promise<string | null> {
+  /**
+   * Redirects to the NextAuth sign-in page.
+   * After successful sign-in, the user is redirected back to the
+   * current page (or callbackUrl if provided).
+   */
+  async login(callbackUrl?: string): Promise<void> {
+    await signIn(undefined, { callbackUrl: callbackUrl ?? "/" });
+  },
+
+  async logout(): Promise<void> {
+    await signOut({ callbackUrl: "/" });
+  },
+
+  /**
+   * Returns null — the session is read via the `useSession()` hook
+   * from `next-auth/react` in client components, not synchronously.
+   * Kept for interface compatibility.
+   */
+  get user(): User | null {
     return null;
   },
-  async login(): Promise<never> {
-    throw new Error("Eazo auth removed in standalone build");
-  },
-  async logout(): Promise<void> {},
-  get user(): User | null {
+
+  async getSessionHeader(): Promise<string | null> {
     return null;
   },
 };
@@ -28,8 +46,9 @@ export const auth = {
 export const memory = {
   /**
    * Reports a user action to Supermemory Local via /api/memory.
-   * Reads the anonymous user ID from the persisted Zustand store
-   * in localStorage to use as the Supermemory containerTag.
+   * The server route prefers the authenticated userId as containerTag
+   * (stable across devices) and falls back to the anonymousId from
+   * the Zustand store for guests.
    * Fire-and-forget — never blocks on memory failures.
    */
   async reportAction(payload: {
@@ -38,15 +57,16 @@ export const memory = {
   }): Promise<void> {
     try {
       if (typeof window === "undefined") return;
+      // The server route checks auth() first, so we don't need to
+      // send containerTag for authenticated users. We still send it
+      // as fallback for guests.
       const raw = localStorage.getItem("body-debt-session");
-      if (!raw) return;
-      const state = JSON.parse(raw)?.state;
+      const state = raw ? JSON.parse(raw)?.state : null;
       const containerTag = state?.anonymousId;
-      if (!containerTag) return;
       await fetch("/api/memory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, containerTag }),
+        body: JSON.stringify({ ...payload, ...(containerTag ? { containerTag } : {}) }),
       });
     } catch {
       // Never let memory failures block core flow

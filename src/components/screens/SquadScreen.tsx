@@ -8,6 +8,7 @@ import { useRecoveryContext } from "@/lib/contexts/RecoveryContext";
 import { getContextConfig } from "@/lib/contexts";
 import type { SquadPlayer, DebtAnalysis } from "@/lib/types";
 import type { PaymentType, SquadPayment } from "@/lib/wdk/types";
+import { Collapse } from "@/components/ui/collapse";
 import { PrimaryButton } from "@/components/PrimaryButton";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -367,16 +368,9 @@ export function SquadScreen() {
             </button>
 
             {/* Shared link display */}
-            <AnimatePresence>
-              {shareLink && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden mt-2"
-                >
+            <Collapse open={!!shareLink}>
                   <div
-                    className="p-3 rounded-xl"
+                    className="p-3 rounded-xl mt-2"
                     style={{
                       backgroundColor: "rgba(74,222,128,0.06)",
                       border: "1px solid rgba(74,222,128,0.15)",
@@ -387,14 +381,12 @@ export function SquadScreen() {
                     </p>
                     <input
                       readOnly
-                      value={shareLink}
+                      value={shareLink ?? ""}
                       onClick={(e) => (e.target as HTMLInputElement).select()}
                       className="w-full px-2 py-1.5 rounded text-[10px] font-mono bg-slate-950 border border-slate-800 text-slate-300"
                     />
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            </Collapse>
           </div>
         )}
 
@@ -478,22 +470,13 @@ export function SquadScreen() {
                 </button>
               )}
 
-              <AnimatePresence>
-                {showPayments && payments.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden"
-                  >
+              <Collapse open={showPayments && payments.length > 0}>
                     <div className="space-y-1.5">
                       {payments.slice(0, 10).map((p) => (
                         <PaymentRow key={p.id} payment={p} />
                       ))}
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              </Collapse>
             </div>
           )}
         </div>

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import type { AgentTrace } from "@/lib/types";
+import { Collapse } from "@/components/ui/collapse";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
 const AGENT_ICONS: Record<string, string> = {
   triage: "🔬",
@@ -74,28 +76,25 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
               </span>
             </div>
           </div>
-          <motion.span animate={{ rotate: expanded ? 180 : 0 }} className="text-[10px]" style={{ color: "var(--color-text-faint)" }}>
+          <motion.span
+            animate={{ rotate: expanded ? 180 : 0 }}
+            transition={{ duration: 0.22, ease: EASE_PROTOCOL }}
+            className="text-[10px]"
+            style={{ color: "var(--color-text-faint)" }}
+          >
             ▼
           </motion.span>
         </div>
 
         {/* Expanded trace */}
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden"
-            >
+        <Collapse open={expanded}>
               <div className="px-4 pb-4 space-y-2">
                 {trace.steps.map((step, i) => (
                   <motion.div
                     key={`${step.agent}-${i}`}
                     initial={{ opacity: 0, x: -6 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.06 }}
+                    transition={{ delay: i * 0.06, ease: EASE_PROTOCOL }}
                     className="flex items-start gap-3 py-2"
                     style={{
                       borderBottom: i < trace.steps.length - 1 ? "1px solid rgba(168,162,158,0.06)" : "none",
@@ -271,9 +270,7 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </Collapse>
       </motion.div>
     </div>
   );
@@ -289,13 +286,19 @@ function RawOutput({ raw }: { raw: string }) {
         className="flex items-center gap-1 text-[8px] font-mono uppercase tracking-wider"
         style={{ color: "var(--color-text-faint)" }}
       >
-        <span>{open ? "▾" : "▸"}</span>
+        <span
+          className="inline-block transition-transform ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{
+            transform: open ? "rotate(90deg)" : "rotate(0deg)",
+            transitionDuration: "var(--duration-collapse)",
+          }}
+        >
+          ▸
+        </span>
         <span>raw output</span>
       </button>
-      {open && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
+      <Collapse open={open}>
+        <div
           className="mt-1.5 rounded-lg p-2 overflow-y-auto"
           style={{
             backgroundColor: "rgba(0,0,0,0.3)",
@@ -306,8 +309,8 @@ function RawOutput({ raw }: { raw: string }) {
           <pre className="text-[10px] leading-relaxed whitespace-pre-wrap font-mono" style={{ color: "var(--color-text-secondary)", margin: 0 }}>
             {raw.trim()}
           </pre>
-        </motion.div>
-      )}
+        </div>
+      </Collapse>
       {!open && preview && (
         <p className="text-[9px] mt-0.5 truncate font-mono" style={{ color: "var(--color-text-disabled)" }}>
           {preview}...

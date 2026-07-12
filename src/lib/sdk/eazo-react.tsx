@@ -1,44 +1,59 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { SessionProvider } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 /**
- * Stub EazoProvider. Body-debt removed the Eazo mobile shell so judges
- * can hit the live URL from a regular browser without seeing the
- * "Get the full Eazo experience" interstitial. The provider now just
- * renders its children.
+ * Wraps the app in NextAuth's SessionProvider so `useSession()`
+ * works in any client component. Replaces the old EazoProvider stub.
  */
 export function EazoProvider({ children }: { children: ReactNode }) {
-  return <>{children}</>;
-}
-
-/**
- * Stub useEazo. Components that read auth state get null/false values,
- * which triggers the guest-mode branches (e.g. "Sign in" button hidden
- * or replaced with the share / share-card path).
- */
-export function useEazo<T>(selector: (state: EazoState) => T): T {
-  return selector(STUB_STATE);
+  return <SessionProvider>{children}</SessionProvider>;
 }
 
 type EazoState = {
   auth: {
-    user: null;
-    authenticated: false;
-    loading: false;
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      avatarUrl?: string | null;
+    } | null;
+    authenticated: boolean;
+    loading: boolean;
   };
   device: {
     platform: string;
   };
 };
 
-const STUB_STATE: EazoState = {
-  auth: {
-    user: null,
-    authenticated: false,
-    loading: false,
-  },
-  device: {
-    platform: "web",
-  },
-};
+/**
+ * Bridge hook that maps NextAuth's `useSession()` to the old Eazo
+ * selector shape. Existing components that call `useEazo(s => s.auth.user)`
+ * keep working without changes. NextAuth's `image` is mapped to
+ * `avatarUrl` for interface compatibility.
+ */
+export function useEazo<T>(selector: (state: EazoState) => T): T {
+  const { data: session, status } = useSession();
+
+  const state: EazoState = {
+    auth: {
+      user: session?.user
+        ? {
+            id: (session.user as { id?: string }).id ?? session.user.email ?? "",
+            name: session.user.name,
+            email: session.user.email,
+            avatarUrl: session.user.image,
+          }
+        : null,
+      authenticated: status === "authenticated",
+      loading: status === "loading",
+    },
+    device: {
+      platform: typeof window !== "undefined" && /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "web",
+    },
+  };
+
+  return selector(state);
+}

@@ -6,7 +6,9 @@ import { RecoveryContextProvider } from "@/lib/contexts/RecoveryContext";
 import { cn } from "@/utils/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { UserSyncEffect } from "@/components/user-profile/user-sync-effect";
+import { PreferencesSyncEffect } from "@/components/PreferencesSyncEffect";
 import { PageTransition } from "@/components/PageTransition";
+import { MotionProvider } from "@/components/providers/MotionProvider";
 import { WagmiProviderWrapper } from "@/components/providers/WagmiProviderWrapper";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { DemoModeInit } from "@/components/DemoModeInit";
@@ -88,15 +90,18 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col" style={{ fontFamily: "var(--font-sans)" }}>
         <EazoProvider>
           <WagmiProviderWrapper>
-            <RecoveryContextProvider>
-              <UserSyncEffect />
-              <ServiceWorkerRegister />
-              <DemoModeInit />
-              <PageTransition>
-                {children}
-              </PageTransition>
-              <Toaster />
-            </RecoveryContextProvider>
+            <MotionProvider>
+              <RecoveryContextProvider>
+                <UserSyncEffect />
+                <PreferencesSyncEffect />
+                <ServiceWorkerRegister />
+                <DemoModeInit />
+                <PageTransition>
+                  {children}
+                </PageTransition>
+                <Toaster />
+              </RecoveryContextProvider>
+            </MotionProvider>
           </WagmiProviderWrapper>
         </EazoProvider>
       </body>

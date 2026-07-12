@@ -1,3 +1,6 @@
 export * from "./users";
+export * from "./auth";
 export * from "./debt-sessions";
 export * from "./terra-connections";
+export * from "./user-preferences";
+export * from "./squad-players";

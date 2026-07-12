@@ -12,11 +12,17 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
   return rows[0];
 }
 
+export async function getUserByAnonymousId(anonymousId: string): Promise<User | undefined> {
+  const rows = await db.select().from(users).where(eq(users.anonymousId, anonymousId)).limit(1);
+  return rows[0];
+}
+
 export async function upsertUser(data: {
   id: string;
   email?: string | null;
   name?: string | null;
   avatarUrl?: string | null;
+  anonymousId?: string | null;
 }): Promise<User> {
   const rows = await db
     .insert(users)
@@ -27,11 +33,19 @@ export async function upsertUser(data: {
         email: data.email ?? null,
         name: data.name ?? null,
         avatarUrl: data.avatarUrl ?? null,
+        anonymousId: data.anonymousId ?? undefined,
         updatedAt: new Date(),
       },
     })
     .returning();
   return rows[0];
+}
+
+export async function linkAnonymousId(userId: string, anonymousId: string): Promise<void> {
+  await db
+    .update(users)
+    .set({ anonymousId, updatedAt: new Date() })
+    .where(eq(users.id, userId));
 }
 
 export async function updateUser(

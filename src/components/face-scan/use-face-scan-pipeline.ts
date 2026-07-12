@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { initializeFaceMesh, extractStressFeatures } from "@/lib/ai";
+import { initializeFaceMesh, initializeFaceMeshAsync, extractStressFeatures } from "@/lib/ai";
 import {
   healthCredentialVerifierABI,
   VERIFIER_CONTRACT_ADDRESS,
@@ -74,8 +74,9 @@ function analyzeLighting(video: HTMLVideoElement): "dark" | "ok" | "bright" {
       total += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
     }
     const mean = total / (60 * 60);
-    if (mean < 45) return "dark";
-    if (mean > 200) return "bright";
+    // Softened from 45/200 — phone cameras often underexpose indoors.
+    if (mean < 35) return "dark";
+    if (mean > 210) return "bright";
     return "ok";
   } catch {
     return "ok";
@@ -123,7 +124,8 @@ function analyzeBlur(video: HTMLVideoElement): "blurry" | "sharp" {
     }
     const mean = sum / count;
     const variance = sumSq / count - mean * mean;
-    return variance < 30 ? "blurry" : "sharp";
+    // Softened from 30 — soft phone sensors / mild motion were failing too often.
+    return variance < 18 ? "blurry" : "sharp";
   } catch {
     return "sharp";
   }
@@ -155,8 +157,8 @@ function analyzeDistance(
   const w = maxX - minX;
   const h = maxY - minY;
   const fillRatio = Math.max(w, h);
-  if (fillRatio < 0.15) return "too_far";
-  if (fillRatio > 0.65) return "too_close";
+  if (fillRatio < 0.12) return "too_far";
+  if (fillRatio > 0.72) return "too_close";
   return "ok";
 }
 
@@ -275,6 +277,8 @@ export function useFaceScanPipeline() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  /** Offscreen canvas of the accepted capture — used for MediaPipe extract (not the live video). */
+  const capturedFrameRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const faceMeshRef = useRef<ReturnType<typeof initializeFaceMesh> | null>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -291,6 +295,53 @@ export function useFaceScanPipeline() {
   // reassignment race that previously depended on send serialisation.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const resultsListenerRef = useRef<((results: any) => void) | null>(null);
+  /** Timestamp when face first stayed detected — unlocks relaxed capture after ~6s. */
+  const faceLockStartedRef = useRef<number | null>(null);
+  const [gatesRelaxed, setGatesRelaxed] = useState(false);
+
+  const startDetectionLoop = useCallback(() => {
+    detectionCleanupRef.current?.();
+    let cancelled = false;
+    const runContinuousDetection = async () => {
+      const check = async () => {
+        if (cancelled) return;
+        const v = videoRef.current;
+        if (v && v.readyState >= 2 && faceMeshRef.current) {
+          setLightingStatus(analyzeLighting(v));
+          setBlurStatus(analyzeBlur(v));
+          await new Promise<void>((resolve) => {
+            resultsListenerRef.current = (results: { multiFaceLandmarks?: { x: number; y: number; z: number }[][] }) => {
+              const landmarks = results.multiFaceLandmarks?.[0];
+              if (landmarks && landmarks.length >= 468) {
+                setFaceStatus("detected");
+                setDistanceStatus(analyzeDistance(landmarks));
+                if (faceLockStartedRef.current == null) {
+                  faceLockStartedRef.current = Date.now();
+                } else if (Date.now() - faceLockStartedRef.current >= 6000) {
+                  setGatesRelaxed(true);
+                }
+              } else {
+                setFaceStatus("not_detected");
+                setDistanceStatus("too_far");
+                faceLockStartedRef.current = null;
+                setGatesRelaxed(false);
+              }
+              resultsListenerRef.current = null;
+              resolve();
+            };
+            faceMeshRef.current!.send({ image: v }).catch(() => {
+              resultsListenerRef.current = null;
+              resolve();
+            });
+          });
+        }
+        if (!cancelled) setTimeout(check, 500);
+      };
+      await check();
+    };
+    runContinuousDetection();
+    detectionCleanupRef.current = () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !workerRef.current) {
@@ -306,26 +357,36 @@ export function useFaceScanPipeline() {
     return () => clearInterval(iv);
   }, [phase]);
 
+  // Attach stream to <video> and (re)start detection whenever we enter camera.
+  // Retake remounts the video after setPhase("camera") — this effect waits
+  // for the element, then resumes the guidance loop.
   useEffect(() => {
-    if (phase !== "camera" || !streamRef.current) return;
+    if (phase !== "camera" || !streamRef.current || !faceMeshRef.current) return;
     let cancelled = false;
     const attach = (attempt = 0) => {
       if (cancelled) return;
       if (videoRef.current) {
         videoRef.current.srcObject = streamRef.current;
         videoRef.current.play().catch(() => {});
-      } else if (attempt < 30) setTimeout(() => attach(attempt + 1), 50);
-    }
+        startDetectionLoop();
+      } else if (attempt < 40) {
+        setTimeout(() => attach(attempt + 1), 50);
+      }
+    };
     attach();
     const raf = requestAnimationFrame(() => attach());
-    return () => { cancelled = true; cancelAnimationFrame(raf); };
-  }, [phase]);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [phase, startDetectionLoop]);
 
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       detectionCleanupRef.current?.();
       detectionCleanupRef.current = null;
+      capturedFrameRef.current = null;
     };
   }, []);
 
@@ -398,8 +459,8 @@ export function useFaceScanPipeline() {
       // We catch that here and transition to the manual fallback flow
       // instead of showing a generic camera error.
       try {
-        faceMeshRef.current = initializeFaceMesh(() => {});
-      } catch (meshErr) {
+        faceMeshRef.current = await initializeFaceMeshAsync(() => {});
+      } catch {
         setCameraError("mediapipe_loading");
         setPhase("mediapipe_error");
         streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -416,49 +477,9 @@ export function useFaceScanPipeline() {
       setBlurStatus("pending");
       setDistanceStatus("pending");
       setCaptureCountdown(null);
-
-      // Continuous face detection at ~2 FPS — enough for live guidance,
-      // light enough to not bog down the camera preview on mobile.
-      // Resolves into faceStatus, which gates the Capture button.
-      // Also samples a 60×60 patch of the frame to estimate lighting
-      // so the user can be told if their environment is too dark or
-      // blown out — a leading cause of unreliable face detection.
-      // Plus a 100×100 Laplacian-variance check for blur and a
-      // face-bbox fill ratio for distance. The three signals together
-      // gate the Capture button via the derived `captureReady` flag.
-      let cancelled = false;
-      const runContinuousDetection = async () => {
-        const check = async () => {
-          if (cancelled) return;
-          const v = videoRef.current;
-          if (v && v.readyState >= 2 && faceMeshRef.current) {
-            setLightingStatus(analyzeLighting(v));
-            setBlurStatus(analyzeBlur(v));
-            await new Promise<void>((resolve) => {
-              resultsListenerRef.current = (results: { multiFaceLandmarks?: { x: number; y: number; z: number }[][] }) => {
-                const landmarks = results.multiFaceLandmarks?.[0];
-                if (landmarks && landmarks.length >= 468) {
-                  setFaceStatus("detected");
-                  setDistanceStatus(analyzeDistance(landmarks));
-                } else {
-                  setFaceStatus("not_detected");
-                  setDistanceStatus("too_far");
-                }
-                resultsListenerRef.current = null;
-                resolve();
-              };
-              faceMeshRef.current!.send({ image: v }).catch(() => {
-                resultsListenerRef.current = null;
-                resolve();
-              });
-            });
-          }
-          if (!cancelled) setTimeout(check, 500);
-        };
-        await check();
-      };
-      runContinuousDetection();
-      detectionCleanupRef.current = () => { cancelled = true; };
+      faceLockStartedRef.current = null;
+      setGatesRelaxed(false);
+      // Detection loop starts in the phase==="camera" effect once <video> mounts.
     } catch (err) {
       setCameraError(classifyError(err));
       setPhase("error");
@@ -502,69 +523,37 @@ export function useFaceScanPipeline() {
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, w, h);
 
-    // Capture the frame as a data URL for the review preview.
-    // The stream is kept alive so the user can retake without
-    // re-initialising the camera.
+    // Keep a still-frame canvas for MediaPipe on confirm — <video> unmounts in review.
     const imageUrl = canvas.toDataURL("image/jpeg", 0.85);
     setCapturedImageUrl(imageUrl);
+    const frame = document.createElement("canvas");
+    frame.width = w;
+    frame.height = h;
+    const frameCtx = frame.getContext("2d");
+    if (frameCtx) {
+      frameCtx.drawImage(canvas, 0, 0);
+      capturedFrameRef.current = frame;
+    }
 
-    // Pause the detection loop — we don't need it during review.
-    // The stream stays open so retake can resume the preview.
+    // Pause detection; keep stream alive for retake.
     detectionCleanupRef.current?.();
     detectionCleanupRef.current = null;
 
-    // Go to review phase — user decides whether to use or retake.
     setPhase("review");
   }, []);
 
-  // Retake: discard the captured frame and go back to camera phase.
-  // Restarts the detection loop so the live guidance works again.
+  // Retake: discard the captured frame and return to camera.
+  // The phase==="camera" effect reattaches the stream and restarts detection.
   const retakeCapture = useCallback(() => {
     setCapturedImageUrl(null);
+    capturedFrameRef.current = null;
     setFaceStatus("pending");
     setLightingStatus("pending");
     setBlurStatus("pending");
     setDistanceStatus("pending");
+    faceLockStartedRef.current = null;
+    setGatesRelaxed(false);
     setPhase("camera");
-
-    // Restart the detection loop if the stream is still alive.
-    if (streamRef.current && videoRef.current && faceMeshRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-      videoRef.current.play().catch(() => {});
-      let cancelled = false;
-      const runContinuousDetection = async () => {
-        const check = async () => {
-          if (cancelled) return;
-          const v = videoRef.current;
-          if (v && v.readyState >= 2 && faceMeshRef.current) {
-            setLightingStatus(analyzeLighting(v));
-            setBlurStatus(analyzeBlur(v));
-            await new Promise<void>((resolve) => {
-              resultsListenerRef.current = (results: { multiFaceLandmarks?: { x: number; y: number; z: number }[][] }) => {
-                const landmarks = results.multiFaceLandmarks?.[0];
-                if (landmarks && landmarks.length >= 468) {
-                  setFaceStatus("detected");
-                  setDistanceStatus(analyzeDistance(landmarks));
-                } else {
-                  setFaceStatus("not_detected");
-                  setDistanceStatus("too_far");
-                }
-                resultsListenerRef.current = null;
-                resolve();
-              };
-              faceMeshRef.current!.send({ image: v }).catch(() => {
-                resultsListenerRef.current = null;
-                resolve();
-              });
-            });
-          }
-          if (!cancelled) setTimeout(check, 500);
-        };
-        await check();
-      };
-      runContinuousDetection();
-      detectionCleanupRef.current = () => { cancelled = true; };
-    }
   }, []);
 
   // Delete: user wants to discard the photo AND exit the face scan
@@ -573,6 +562,7 @@ export function useFaceScanPipeline() {
   // stream, clears all captured data, and navigates to the next step.
   const deletePhoto = useCallback(() => {
     setCapturedImageUrl(null);
+    capturedFrameRef.current = null;
     setExtractedFeatures(null);
     detectionCleanupRef.current?.();
     detectionCleanupRef.current = null;
@@ -588,32 +578,25 @@ export function useFaceScanPipeline() {
     router.push("/hrv-pull");
   }, [router, setFaceAnalysis, setFaceSkipped]);
 
-  // Confirm: user accepted the captured frame. Now stop the stream
-  // and proceed to feature extraction + ZK proof generation.
+  // Confirm: extract from the captured still frame (not live video), then prove.
   const confirmCapture = useCallback(async () => {
-    if (!videoRef.current || !faceMeshRef.current) return;
-    const video = videoRef.current;
+    if (!capturedFrameRef.current || !faceMeshRef.current) {
+      setAnalysisError("Captured frame is missing. Please retake the photo.");
+      setPhase("error");
+      return;
+    }
+    const frame = capturedFrameRef.current;
 
-    // Stop the stream and detection loop — we're committed now.
     detectionCleanupRef.current?.();
     detectionCleanupRef.current = null;
-    streamRef.current?.getTracks().forEach((t) => t.stop());
     setPhase("extracting");
 
     try {
-      // Take up to 3 frames over ~1.2s, pick the first one with valid
-      // landmarks. This dramatically improves reliability vs. a single
-      // frame — the most common cause of "no face detected" is a brief
-      // detection glitch on a frame where the face was mid-pose or the
-      // model was warming up.
       const MAX_FACE_ATTEMPTS = 3;
       let features: ReturnType<typeof extractStressFeatures> = null;
       for (let attempt = 1; attempt <= MAX_FACE_ATTEMPTS && !features; attempt++) {
         const results = await new Promise<{ multiFaceLandmarks: { x: number; y: number; z: number }[][] }>((resolve) => {
           let settled = false;
-          // Safety timeout — if MediaPipe never calls back (CDN miss,
-          // wasm error), fall through so we can retry or surface a
-          // failure instead of hanging forever.
           const timer = setTimeout(() => {
             if (settled) return;
             settled = true;
@@ -627,7 +610,7 @@ export function useFaceScanPipeline() {
             resultsListenerRef.current = null;
             resolve(r);
           };
-          faceMeshRef.current!.send({ image: video }).catch(() => {
+          faceMeshRef.current!.send({ image: frame }).catch(() => {
             if (settled) return;
             settled = true;
             clearTimeout(timer);
@@ -641,10 +624,15 @@ export function useFaceScanPipeline() {
         }
       }
       if (!features) {
-        throw new Error("No face detected across 3 attempts. Check the lighting note above and try again, or skip face scan.");
+        throw new Error("No face detected in the captured photo. Retake in better light, or continue with a manual check.");
       }
 
-      // Store features for the visual breakdown on the result screen.
+      // Extraction succeeded — release camera.
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      setCapturedImageUrl(null);
+      capturedFrameRef.current = null;
+
       setExtractedFeatures({
         leftEyeAspect: features.leftEyeAspect,
         rightEyeAspect: features.rightEyeAspect,
@@ -657,9 +645,23 @@ export function useFaceScanPipeline() {
       setPhase("proving");
       const proofResult = await new Promise<ProofResultShape>((resolve, reject) => {
         if (!workerRef.current) return reject(new Error("Worker not initialized"));
+        const PROVE_TIMEOUT_MS = 90_000;
+        const timer = setTimeout(() => {
+          reject(new Error("Proof generation timed out. You can continue without on-device proof."));
+        }, PROVE_TIMEOUT_MS);
         workerRef.current.onmessage = (event: MessageEvent) => {
-          if (event.data.success) resolve(event.data);
-          else reject(new Error(event.data.error || "Proof generation failed"));
+          const data = event.data;
+          if (data?.type === "prefetch-result") return;
+          clearTimeout(timer);
+          if (data?.success && (data.proof != null || data.proofHex != null)) {
+            resolve(data as ProofResultShape);
+          } else {
+            reject(new Error(data?.error || "Proof generation failed"));
+          }
+        };
+        workerRef.current.onerror = () => {
+          clearTimeout(timer);
+          reject(new Error("Proof worker crashed"));
         };
         workerRef.current.postMessage({ features, threshold: 0.5, modelId: "bodydebt-stress-v1" });
       });
@@ -766,6 +768,7 @@ export function useFaceScanPipeline() {
     setDistanceStatus("pending");
     setCaptureCountdown(null);
     setCapturedImageUrl(null);
+    capturedFrameRef.current = null;
     setExtractedFeatures(null);
     router.push("/hrv-pull");
   }, [router, setFaceAnalysis, setFaceSkipped]);
@@ -782,18 +785,31 @@ export function useFaceScanPipeline() {
     setDistanceStatus("pending");
     setCaptureCountdown(null);
     setCapturedImageUrl(null);
+    capturedFrameRef.current = null;
     setExtractedFeatures(null);
+    setFaceSkipped(false);
+    faceLockStartedRef.current = null;
+    setGatesRelaxed(false);
     setPhase("prompt");
     startCamera();
-  }, [startCamera]);
+  }, [startCamera, setFaceSkipped]);
+
+  const openManualFallback = useCallback(() => {
+    detectionCleanupRef.current?.();
+    detectionCleanupRef.current = null;
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setPhase("mediapipe_error");
+  }, []);
 
   return {
     phase: effectivePhase, setPhase, scanMessageIdx, cameraError, analysisError,
     txHash, lastProof, isConfirmed,
     onChainStatus,
     faceStatus, lightingStatus, blurStatus, distanceStatus, captureCountdown,
-    capturedImageUrl, extractedFeatures,
+    capturedImageUrl, extractedFeatures, gatesRelaxed,
     videoRef, canvasRef, streamRef,
     startCamera, captureAndProve, confirmCapture, retakeCapture, deletePhoto, handleSkip, retry,
+    openManualFallback,
   };
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/client";
 import { terraConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { logAction, isMemoryEnabled } from "@/lib/supermemory";
 
 export const maxDuration = 30;
 
@@ -11,6 +12,9 @@ export const maxDuration = 30;
  * Receives Terra push payloads. We handle SLEEP events — extracting HRV,
  * resting HR, and sleep stages — then store them against the terra_user_id
  * for retrieval by /api/terra/data.
+ *
+ * Also logs structured wearable data to Supermemory so the AI coach can
+ * reference it in prescriptions ("your HRV dropped 8ms this week").
  *
  * Terra signs payloads with a signature header — we verify it when the
  * TERRA_SIGNING_SECRET env var is present.
@@ -61,17 +65,44 @@ export async function POST(request: NextRequest) {
 
       if (avgHrvRmssd !== undefined || avgRestingHr !== undefined) {
         try {
+          // Look up the Body Debt user ID for this Terra connection
+          const [conn] = await db
+            .select()
+            .from(terraConnections)
+            .where(eq(terraConnections.terraUserId, terraUserId))
+            .limit(1);
+
           // Store on the connection record so /api/terra/data can serve it
           await db
             .update(terraConnections)
             .set({
               lastSyncAt: new Date(),
-              // We piggyback sleep cache on the connection row as JSON
-              // (kept simple — a real production app would have a separate sleep_data table)
             })
             .where(eq(terraConnections.terraUserId, terraUserId));
 
-          // Log for debugging — remove in production
+          // Log structured wearable data to Supermemory so the AI coach
+          // can reference it in future prescriptions
+          if (isMemoryEnabled && conn?.userId) {
+            const deepMins = deepSecs ? Math.round(deepSecs / 60) : null;
+            const remMins = remSecs ? Math.round(remSecs / 60) : null;
+            const lightMins = lightSecs ? Math.round(lightSecs / 60) : null;
+
+            const summary = [
+              `Wearable sleep data synced from Terra.`,
+              avgHrvRmssd !== undefined && `Average HRV (RMSSD): ${avgHrvRmssd}ms`,
+              avgRestingHr !== undefined && `Average resting heart rate: ${avgRestingHr}bpm`,
+              deepMins && `Deep sleep: ${deepMins}min`,
+              remMins && `REM sleep: ${remMins}min`,
+              lightMins && `Light sleep: ${lightMins}min`,
+            ].filter(Boolean).join("\n");
+
+            logAction(conn.userId, summary, {
+              type: "wearable_sleep_data",
+              hrvRmssd: avgHrvRmssd ?? "",
+              restingHr: avgRestingHr ?? "",
+            }).catch(() => {});
+          }
+
           console.log("[terra/webhook] SLEEP data received:", {
             terraUserId,
             avgHrvRmssd,

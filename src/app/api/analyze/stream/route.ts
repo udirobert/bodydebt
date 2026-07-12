@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { createDebtSession } from "@/lib/db/queries";
+import { createDebtSession, getUserPatterns, formatPatternsForPrompt } from "@/lib/db/queries";
 import type { AnalyzeBodyRequest, DebtAnalysis } from "@/lib/types";
 import { computeScore, deterministicPrescription, deterministicSchedule } from "../score/route";
 import { ai } from "@/lib/sdk/eazo-client";
@@ -39,7 +39,7 @@ export const maxDuration = 120;
  * Cloud AI (Eazo/deepseek) is fallback only when QVAC is unavailable.
  */
 export async function POST(request: NextRequest) {
-  const authResult = requireAuth(request);
+  const authResult = await requireAuth(request);
   const userId = authResult.ok ? authResult.user.id : null;
 
   let body: AnalyzeBodyRequest;
@@ -83,12 +83,19 @@ export async function POST(request: NextRequest) {
       });
 
       // ── Memory context (parallel with Layer 2/3) ────────────────────────
-      // Fetch user history from Supermemory Local to enrich agent prompts.
-      // Falls back to null silently if memory is disabled or unavailable.
-      const containerTag = body.anonymousId ?? null;
+      // When authenticated, use userId as containerTag (stable across devices).
+      // Fall back to anonymousId for guests.
+      const containerTag = userId ?? body.anonymousId ?? null;
       const memoryQuery = `body debt recovery: ${body.stressors.map(s => s.type).join(", ")}`;
       const memoryPromise = containerTag
         ? getMemoryContext(containerTag, memoryQuery)
+        : Promise.resolve(null);
+
+      // ── DB historical patterns (parallel, authed users only) ────────────
+      // Enriches the agent prompt with trends, streaks, and day-of-week
+      // patterns derived from persisted debt sessions.
+      const patternsPromise = userId
+        ? getUserPatterns(userId).then(p => p ? formatPatternsForPrompt(p) : null)
         : Promise.resolve(null);
 
       // ── Layer 2: AI verdict (runs in parallel with agents) ──────────────
@@ -115,15 +122,15 @@ export async function POST(request: NextRequest) {
           });
 
       // ── Layer 3: QVAC multi-agent pipeline (primary AI path) ─────────────
-      // Resolve memory context before building the QVAC input — the agents
-      // need it in their prompts. This runs in parallel with Layer 1 + 2.
+      // Resolve memory context + DB patterns before building the QVAC input.
+      // The agents need both in their prompts. Runs in parallel with Layer 1 + 2.
       const memoryCtx = await memoryPromise;
-      const memoryContext = memoryCtx
-        ? [
-            memoryCtx.profile && `User profile:\n${memoryCtx.profile}`,
-            memoryCtx.memories && `Relevant past memories:\n${memoryCtx.memories}`,
-          ].filter(Boolean).join("\n\n") || null
-        : null;
+      const dbPatterns = await patternsPromise;
+      const memoryContext = [
+        memoryCtx?.profile && `User profile:\n${memoryCtx.profile}`,
+        memoryCtx?.memories && `Relevant past memories:\n${memoryCtx.memories}`,
+        dbPatterns && `Historical analysis:\n${dbPatterns}`,
+      ].filter(Boolean).join("\n\n") || null;
 
       const qvacInput: MultiAgentInput = {
         debtScore:    layer1.debtScore,
@@ -247,7 +254,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Store to Supermemory Local (non-blocking) — gives agents memory
-      // of past sessions for personalized recovery advice.
+      // of past sessions for personalized recovery advice. Uses userId
+      // as containerTag when authenticated (stable across devices).
       if (containerTag && isMemoryEnabled) {
         logSession(containerTag, {
           debtScore:    final.debtScore,

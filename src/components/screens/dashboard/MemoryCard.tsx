@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEazo } from "@/lib/sdk/eazo-react";
+import { useUserPatterns } from "@/hooks/useUserPatterns";
+import { Collapse } from "@/components/ui/collapse";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
 interface MemoryCardProps {
   profile: string;
@@ -30,6 +34,20 @@ export function MemoryCard({ profile, memories, containerTag, onForget }: Memory
   const [showForgetConfirm, setShowForgetConfirm] = useState(false);
   const [forgetting, setForgetting] = useState(false);
   const [forgottenFacts, setForgottenFacts] = useState<Set<string>>(new Set());
+
+  // Personalized greeting for authenticated users
+  const user = useEazo((s) => s.auth.user);
+  const { patterns } = useUserPatterns();
+
+  const greeting = user
+    ? patterns?.streakDays > 0
+      ? `Welcome back, ${user.name ?? user.email?.split("@")[0]}. You're on a ${patterns.streakDays}-day low-debt streak.`
+      : patterns?.trendDirection === "improving"
+      ? `Welcome back, ${user.name ?? user.email?.split("@")[0]}. Your debt is trending down.`
+      : patterns?.trendDirection === "worsening"
+      ? `Welcome back, ${user.name ?? user.email?.split("@")[0]}. Let's turn this trend around.`
+      : `Welcome back, ${user.name ?? user.email?.split("@")[0]}.`
+    : null;
 
   // Split profile into individual fact lines
   const profileFacts = profile
@@ -95,7 +113,7 @@ export function MemoryCard({ profile, memories, containerTag, onForget }: Memory
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3, duration: 0.4 }}
+      transition={{ delay: 0.08, duration: 0.25, ease: EASE_PROTOCOL }}
       className="rounded-2xl overflow-hidden cursor-pointer"
       style={{
         backgroundColor: "var(--color-bg-surface)",
@@ -123,7 +141,12 @@ export function MemoryCard({ profile, memories, containerTag, onForget }: Memory
             </span>
           </div>
         </div>
-        <motion.span animate={{ rotate: expanded ? 180 : 0 }} className="text-[10px]" style={{ color: "var(--color-text-faint)" }}>
+        <motion.span
+          animate={{ rotate: expanded ? 180 : 0 }}
+          transition={{ duration: 0.22, ease: EASE_PROTOCOL }}
+          className="text-[10px]"
+          style={{ color: "var(--color-text-faint)" }}
+        >
           ▼
         </motion.span>
       </div>
@@ -131,6 +154,11 @@ export function MemoryCard({ profile, memories, containerTag, onForget }: Memory
       {/* Collapsed preview — first 2 facts */}
       {!expanded && (
         <div className="px-4 pb-3 space-y-1">
+          {greeting && (
+            <p className="text-[11px] font-medium leading-relaxed" style={{ color: "var(--color-text-primary)" }}>
+              {greeting}
+            </p>
+          )}
           {previewFacts.map((fact, i) => (
             <p key={i} className="text-[11px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
               <span style={{ color: "#a855f7" }}>•</span> {fact.length > 80 ? fact.slice(0, 80) + "…" : fact}
@@ -140,16 +168,39 @@ export function MemoryCard({ profile, memories, containerTag, onForget }: Memory
       )}
 
       {/* Expanded — all facts */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden"
-          >
+      <Collapse open={expanded}>
             <div className="px-4 pb-4 space-y-3">
+              {/* Personalized greeting */}
+              {greeting && (
+                <div>
+                  <p className="text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                    {greeting}
+                  </p>
+                  {patterns && (
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {patterns.totalSessions > 0 && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: "rgba(168,85,247,0.1)", color: "#a855f7" }}>
+                          {patterns.totalSessions} sessions
+                        </span>
+                      )}
+                      {patterns.trendDirection !== "stable" && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{
+                          backgroundColor: patterns.trendDirection === "improving" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                          color: patterns.trendDirection === "improving" ? "#22c55e" : "#ef4444",
+                        }}>
+                          {patterns.trendDirection === "improving" ? "↓" : "↑"} {Math.abs(patterns.trendDelta)}
+                        </span>
+                      )}
+                      {patterns.streakDays > 0 && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
+                          🔥 {patterns.streakDays}d streak
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Profile facts */}
               {profileFacts.length > 0 && (
                 <div>
@@ -228,9 +279,7 @@ export function MemoryCard({ profile, memories, containerTag, onForget }: Memory
                 )}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </Collapse>
 
       {/* Forget all confirmation dialog */}
       <AnimatePresence>

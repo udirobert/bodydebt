@@ -20,7 +20,7 @@ export function ModeToggle() {
             key={m}
             onClick={() => setMode(m)}
             className={`relative px-4 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest transition-colors ${
-              isActive ? "text-white" : "text-slate-500 hover:text-slate-300"
+              isActive ? "text-white" : "text-slate-500 [@media(hover:hover)]:hover:text-slate-300"
             }`}
           >
             {isActive && (

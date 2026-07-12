@@ -24,11 +24,12 @@ export function FaceScanScreen() {
   const {
     phase, setPhase, scanMessageIdx, cameraError, analysisError,
     faceStatus, lightingStatus, blurStatus, distanceStatus, captureCountdown,
-    capturedImageUrl, extractedFeatures,
+    capturedImageUrl, extractedFeatures, gatesRelaxed,
     txHash, isConfirmed,
     onChainStatus,
     videoRef, canvasRef, streamRef,
     startCamera, captureAndProve, confirmCapture, retakeCapture, deletePhoto, handleSkip, retry,
+    openManualFallback,
   } = useFaceScanPipeline();
   const router = useRouter();
   const { setFaceAnalysis } = useBodyDebtStore();
@@ -243,6 +244,7 @@ export function FaceScanScreen() {
                 disabled={(() => {
                   if (captureCountdown !== null) return true;
                   if (faceStatus !== "detected") return true;
+                  if (gatesRelaxed) return false;
                   if (distanceStatus !== "ok") return true;
                   if (lightingStatus !== "ok") return true;
                   if (blurStatus === "blurry") return true;
@@ -253,16 +255,26 @@ export function FaceScanScreen() {
                   <ShieldCheck className="w-4 h-4" />
                   {captureCountdown !== null
                     ? `Hold still… ${captureCountdown}`
-                    : (faceStatus === "detected" &&
-                       distanceStatus === "ok" &&
-                       lightingStatus === "ok" &&
-                       blurStatus !== "blurry")
-                      ? "Capture & Prove"
-                      : faceStatus !== "detected"
-                        ? "Looking for face…"
+                    : faceStatus !== "detected"
+                      ? "Looking for face…"
+                      : (gatesRelaxed ||
+                         (distanceStatus === "ok" &&
+                          lightingStatus === "ok" &&
+                          blurStatus !== "blurry"))
+                        ? gatesRelaxed &&
+                          (distanceStatus !== "ok" ||
+                            lightingStatus !== "ok" ||
+                            blurStatus === "blurry")
+                          ? "Capture anyway"
+                          : "Capture & Prove"
                         : "Adjust to continue"}
                 </span>
               </PrimaryButton>
+              {gatesRelaxed && faceStatus === "detected" && (
+                <p className="text-[9px] text-center font-mono" style={{ color: "var(--color-text-faint)" }}>
+                  Face locked — you can capture even if lighting is imperfect
+                </p>
+              )}
               <button
                 onClick={handleSkip}
                 className="w-full text-center text-[13px] py-2.5 font-medium"
@@ -385,17 +397,28 @@ export function FaceScanScreen() {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "var(--color-states-error)" }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: "#fca5a5" }}>{errorCopy?.title ?? analysisError ?? "Something went wrong"}</p>
-                  <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>{errorCopy?.body ?? "An unexpected error occurred."}</p>
+                  <p className="text-sm font-semibold" style={{ color: "#fca5a5" }}>
+                    {errorCopy?.title ?? (analysisError ? "Face analysis failed" : "Something went wrong")}
+                  </p>
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+                    {errorCopy?.body ?? analysisError ?? "An unexpected error occurred."}
+                  </p>
                 </div>
               </div>
             </div>
             <div className="mt-auto flex flex-col gap-3">
               {!isFinalError && (
-                <motion.button whileTap={{ scale: 0.98 }} onClick={retry}
+                <motion.button whileTap={{ scale: 0.97 }} onClick={retry}
                   className="w-full font-semibold text-sm rounded-2xl"
                   style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-primary)", border: "1px solid rgba(168,162,158,0.2)", minHeight: "52px" }}>
                   {errorCopy?.action ?? "Try again"}
+                </motion.button>
+              )}
+              {analysisError && (
+                <motion.button whileTap={{ scale: 0.97 }} onClick={openManualFallback}
+                  className="w-full font-semibold text-sm rounded-2xl"
+                  style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-primary)", border: "1px solid rgba(168,162,158,0.2)", minHeight: "52px" }}>
+                  Use manual self-assessment
                 </motion.button>
               )}
               <PrimaryButton onClick={handleSkip}>

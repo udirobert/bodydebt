@@ -129,6 +129,14 @@
     --sidebar-border: rgba(168, 162, 158, 0.15);
     --sidebar-ring: rgba(234, 88, 12, 0.5);
 
+    /* Motion tokens — shared scale for page / drawer / collapse */
+    --ease-protocol: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+    --duration-page: 220ms;
+    --duration-collapse: 220ms;
+    --duration-drawer-open: 250ms;
+    --duration-drawer-close: 150ms;
+
     /* Five-system palette — used by SystemMeter, StressorLedgerRow, ProtocolStep.
        Muted variants are alpha-blended onto #0A0A0B / #141416. */
     --system-cardiovascular: #F43F5E;
@@ -209,6 +217,22 @@
 
 .orb-glow-pulse {
   animation: orbPulseGlow 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-page: 0ms;
+    --duration-collapse: 0ms;
+    --duration-drawer-open: 0ms;
+    --duration-drawer-close: 0ms;
+  }
+
+  .orb-breathe,
+  .orb-turbulent,
+  .orb-glow-pulse,
+  .skeleton {
+    animation: none !important;
+  }
 }
 
 /* Skeleton shimmer */

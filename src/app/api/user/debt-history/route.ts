@@ -14,7 +14,7 @@ export const maxDuration = 10;
  * Each item: { id, debtScore, verdict, recoveryTime, stressorCount, hasFaceScan, hasHRV, createdAt }
  */
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth.ok) return auth.response;
 
   const sessions = await getDebtSessionsByUser(auth.user.id, 10);

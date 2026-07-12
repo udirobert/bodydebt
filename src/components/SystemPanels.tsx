@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { SystemScore } from "@/lib/types";
 import { SystemOrb } from "@/components/SystemOrb";
+import { Collapse } from "@/components/ui/collapse";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -161,7 +163,7 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
               style={{ backgroundColor: isUnknown ? "rgba(168,162,158,0.15)" : barColor }}
               initial={{ width: 0 }}
               animate={{ width: isUnknown ? "100%" : `${pct}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 0.8, ease: EASE_PROTOCOL }}
             />
           </div>
 
@@ -183,15 +185,7 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
       </div>
 
       {/* ── Expanded detail ── */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            className="overflow-hidden"
-          >
+      <Collapse open={expanded}>
             <div
               className="px-4 pb-4 space-y-3"
               style={{ borderTop: "1px solid rgba(168,162,158,0.06)" }}
@@ -251,9 +245,7 @@ function SystemPanel({ sys, now }: { sys: SystemScore; now: Date }) {
                 </div>
               )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </Collapse>
     </motion.div>
   );
 }

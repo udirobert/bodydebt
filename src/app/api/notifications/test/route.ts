@@ -8,7 +8,7 @@ import { requireAuth } from "@/lib/auth";
  * Customize `title` / `body` / `data` for your product.
  */
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth.ok) return auth.response;
 
   const callerLabel =

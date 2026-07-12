@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import type { ConfidenceTier } from "@/lib/types";
+import { Collapse } from "@/components/ui/collapse";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
 const CONFIDENCE_CONFIG: Record<string, { dot: string; label: string; color: string; explanation: string }> = {
   estimated: { dot: "◐", label: "Estimated",       color: "var(--color-text-faint)", explanation: "Based on your reported stressors only. No biometric data used." },
@@ -56,6 +58,7 @@ export function ConfidenceSignal({ tier }: ConfidenceSignalProps) {
 
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
+          transition={{ duration: 0.22, ease: EASE_PROTOCOL }}
           className="text-[7px]"
           style={{ color: cfg.color }}
         >
@@ -63,24 +66,17 @@ export function ConfidenceSignal({ tier }: ConfidenceSignalProps) {
         </motion.span>
       </motion.button>
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            id="confidence-explanation"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-            role="region"
-            aria-label="Confidence explanation"
-          >
-            <p className="text-[9px] text-center px-8 mt-1.5 leading-relaxed" style={{ color: "var(--color-text-faint)" }}>
-              {cfg.explanation}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Collapse open={expanded}>
+        <div
+          id="confidence-explanation"
+          role="region"
+          aria-label="Confidence explanation"
+        >
+          <p className="text-[9px] text-center px-8 mt-1.5 leading-relaxed" style={{ color: "var(--color-text-faint)" }}>
+            {cfg.explanation}
+          </p>
+        </div>
+      </Collapse>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { getQvacAdvice } from "@/lib/api";
 import { ProofCircuitVisual } from "./ProofCircuitVisual";
 import type { QvacProgress } from "@/lib/api";
 import type { OnChainVerificationStatus } from "@/lib/types";
+import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
 interface CircuitStep {
   label: string;
@@ -178,9 +179,9 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
           been purged from memory. Shows once when the user arrives
           at the result screen. Fades to a compact steady state. */}
       <motion.div
-        initial={{ opacity: 0, y: -8, height: 0 }}
-        animate={{ opacity: 1, y: 0, height: "auto" }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: EASE_PROTOCOL }}
         className="rounded-2xl px-4 py-3 flex items-center gap-3"
         style={{
           backgroundColor: "rgba(16, 185, 129, 0.08)",
@@ -188,9 +189,9 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
         }}
       >
         <motion.div
-          initial={{ scale: 0, rotate: -45 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ delay: 0.15, type: "spring", stiffness: 200, damping: 15 }}
+          initial={{ scale: 0.95, opacity: 0, rotate: -12 }}
+          animate={{ scale: 1, opacity: 1, rotate: 0 }}
+          transition={{ delay: 0.1, duration: 0.35, ease: EASE_PROTOCOL }}
         >
           <CheckCircle2 className="w-5 h-5" style={{ color: "var(--color-states-success)" }} />
         </motion.div>

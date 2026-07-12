@@ -24,6 +24,8 @@ export interface ProfileSlice {
   updatePlayer: (id: string, patch: Partial<SquadPlayer>) => void;
   removePlayer: (id: string) => void;
   setPlayerAnalysis: (id: string, analysis: DebtAnalysis | null) => void;
+  /** Replace the entire squad (used for DB → store hydration on sign-in) */
+  setSquad: (squad: SquadPlayer[]) => void;
 
   // Active player — when set, the analysis flow runs against this squad
   // player instead of the global single-user session.
@@ -80,6 +82,7 @@ export const createProfileSlice: StateCreator<
   setPlayerAnalysis: (id, analysis) => {
     set({ squad: get().squad.map((p) => (p.id === id ? { ...p, analysis } : p)) });
   },
+  setSquad: (squad) => set({ squad }),
 
   activePlayerId: null,
   setActivePlayerId: (id) => set({ activePlayerId: id }),

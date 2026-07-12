@@ -1,28 +1,11 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+// Server-side SDK shim.
+//
+// requireAuth and auth types are now backed by NextAuth.js (Auth.js v5)
+// in @/lib/auth. This file re-exports them for backward compatibility
+// with imports from @/lib/sdk/eazo-server.
 
-export type User = {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  avatarUrl?: string | null;
-};
-
-export type AuthResult =
-  | { ok: true; user: User }
-  | { ok: false; response: NextResponse };
-
-/**
- * Stub requireAuth. Always returns `ok: false` so the route handlers
- * proceed as a guest. This matches the guest-first design of body-debt:
- * no auth gate is enforced for analyze, face-scan, or notifications.
- */
-export function requireAuth(_request: NextRequest): AuthResult {
-  return {
-    ok: false,
-    response: NextResponse.json({ error: "auth removed in standalone build" }, { status: 401 }),
-  };
-}
+export { requireAuth } from "@/lib/auth";
+export type { AuthUser as User, AuthResult } from "@/lib/auth";
 
 export class EazoNotificationPublishError extends Error {
   code: number;
