@@ -4,21 +4,14 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
-import { getAllContexts } from "@/lib/contexts";
+import { getContextConfig } from "@/lib/contexts";
 import { memory } from "@/lib/sdk/eazo-client";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
 import { UserBadge } from "@/components/user-profile/user-badge";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import type { RecoveryMode } from "@/lib/types";
 import { EASE_PROTOCOL } from "@/lib/motion/protocol";
 
-// Per-mode picker icon
-const MODE_ICON: Record<RecoveryMode, string> = {
-  personal: "🧘",
-  football: "⚽",
-  fan: "❤️",
-};
-
-// Turbulence frames for dormant orb
 const DORMANT_FRAMES = [
   "52% 48% 50% 50% / 50% 52% 48% 50%",
   "50% 50% 52% 48% / 52% 48% 50% 50%",
@@ -26,34 +19,43 @@ const DORMANT_FRAMES = [
   "50% 50% 48% 52% / 48% 52% 50% 50%",
 ];
 
+const SECONDARY_MODES: { mode: RecoveryMode; label: string }[] = [
+  { mode: "football", label: "Match Fit" },
+  { mode: "fan", label: "Fan Recovery" },
+];
+
 export function OpeningScreen() {
   const router = useRouter();
-  const { analysis, setHasSeenOpening, setMode } = useBodyDebtStore();
+  const { analysis, setHasSeenOpening, setMode, hasSeenOpening, lastWakeTime, lastBedTime, streakDays } =
+    useBodyDebtStore();
   const { data: memoryData } = useMemoryContext("user body debt recovery patterns and habits");
   const [orbVisible, setOrbVisible] = useState(false);
-  const [textVisible, setTextVisible] = useState(false);
-  const [pickerVisible, setPickerVisible] = useState(false);
+  const [copyVisible, setCopyVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
-  const isReturning = memoryData?.enabled && (memoryData.profile || memoryData.memories.length > 0);
-  const memorySummary = isReturning
+  const memoryReturning =
+    memoryData?.enabled && (memoryData.profile || memoryData.memories.length > 0);
+  const localReturning = hasSeenOpening || streakDays > 0 || !!(lastWakeTime && lastBedTime);
+  const isReturning = memoryReturning || localReturning;
+  const memorySummary = memoryReturning
     ? memoryData.memories.slice(0, 2).join(" · ")
     : "";
-
-  const allContexts = getAllContexts();
+  const sleepHabit =
+    lastWakeTime && lastBedTime ? `${lastBedTime} → ${lastWakeTime}` : null;
 
   useEffect(() => {
     if (analysis) {
       router.replace("/dashboard");
       return;
     }
-    // Prefetch next routes while user reads the opening screen
     router.prefetch("/wake-time");
     router.prefetch("/intake");
-    const t1 = setTimeout(() => setOrbVisible(true), 200);
-    const t2 = setTimeout(() => setTextVisible(true), 1000);
-    const t3 = setTimeout(() => setPickerVisible(true), 1600);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    const t1 = setTimeout(() => setOrbVisible(true), 120);
+    const t2 = setTimeout(() => setCopyVisible(true), 420);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [analysis, router]);
 
   const handleSelectMode = (mode: RecoveryMode) => {
@@ -61,12 +63,14 @@ export function OpeningScreen() {
     setHasSeenOpening(true);
     setExiting(true);
     router.prefetch("/wake-time");
-    memory.reportAction({
-      content: `User started a ${mode} session from the opening screen.`,
-      event_type: "start",
-      page: "opening",
-      metadata: { type: "start_session", mode },
-    }).catch(() => {});
+    memory
+      .reportAction({
+        content: `User started a ${mode} session from the opening screen.`,
+        event_type: "start",
+        page: "opening",
+        metadata: { type: "start_session", mode },
+      })
+      .catch(() => {});
     router.push("/wake-time");
   };
 
@@ -81,50 +85,34 @@ export function OpeningScreen() {
       <div
         className="absolute pointer-events-none"
         style={{
-          top: "34%", left: "50%",
+          top: "32%",
+          left: "50%",
           transform: "translate(-50%, -50%)",
-          width: "480px", height: "480px",
+          width: "480px",
+          height: "480px",
           borderRadius: "50%",
           background: "radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%)",
           filter: "blur(40px)",
         }}
       />
 
-      {/* Sign-in / user badge — top right */}
       <div className="absolute top-4 right-4 z-20">
         <UserBadge />
       </div>
 
-      {/* Brand */}
-      <div className="relative z-10 w-full flex justify-center pt-14">
-        <AnimatePresence>
-          {textVisible && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: EASE_PROTOCOL }}
-            >
-              <span
-                className="tracking-[0.25em] text-xs font-semibold uppercase"
-                style={{ color: "rgba(168,162,158,0.5)" }}
-              >
-                BODY DEBT
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Dormant orb */}
-      <div className="relative z-10 flex flex-col items-center gap-6" style={{ marginTop: "-2vh" }}>
+      {/* Hero: brand + orb + hook */}
+      <div
+        className="relative z-10 w-full flex flex-col items-center px-8"
+        style={{ paddingTop: "18vh" }}
+      >
         <AnimatePresence>
           {orbVisible && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, ease: EASE_PROTOCOL }}
-              className="relative flex items-center justify-center"
-              style={{ width: "48vw", maxWidth: 200, height: "48vw", maxHeight: 200 }}
+              transition={{ duration: 0.45, ease: EASE_PROTOCOL }}
+              className="relative flex items-center justify-center mb-8"
+              style={{ width: "42vw", maxWidth: 168, height: "42vw", maxHeight: 168 }}
             >
               <motion.div
                 className="absolute inset-0 rounded-full"
@@ -135,8 +123,10 @@ export function OpeningScreen() {
               <motion.div
                 className="absolute rounded-full"
                 style={{
-                  width: "74%", height: "74%",
-                  background: "radial-gradient(circle at 35% 30%, #F59E0B, #EA580C 55%, #1a0800 100%)",
+                  width: "74%",
+                  height: "74%",
+                  background:
+                    "radial-gradient(circle at 35% 30%, #F59E0B, #EA580C 55%, #1a0800 100%)",
                   boxShadow: "0 0 50px 12px rgba(245,158,11,0.2)",
                 }}
                 animate={{ borderRadius: DORMANT_FRAMES, scale: [1, 1.025, 1] }}
@@ -148,154 +138,147 @@ export function OpeningScreen() {
               <motion.div
                 className="absolute rounded-full pointer-events-none"
                 style={{
-                  width: "46%", height: "46%",
-                  background: "radial-gradient(circle at 28% 28%, rgba(255,255,255,0.13), transparent 65%)",
+                  width: "46%",
+                  height: "46%",
+                  background:
+                    "radial-gradient(circle at 28% 28%, rgba(255,255,255,0.13), transparent 65%)",
                 }}
                 animate={{ opacity: [0.4, 0.7, 0.4] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
-              />
-              <div
-                className="absolute text-center font-normal"
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  fontSize: "clamp(2rem, 8vw, 3rem)",
-                  color: "rgba(245,245,244,0.25)",
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                  top: "50%", left: "50%",
-                  transform: "translate(-50%, -50%)",
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.8,
                 }}
-              >
-                —
-              </div>
+              />
             </motion.div>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {textVisible && (
+          {copyVisible && (
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.08, ease: EASE_PROTOCOL }}
-              className="text-center px-8"
+              transition={{ duration: 0.4, ease: EASE_PROTOCOL }}
+              className="text-center max-w-sm"
             >
-              <p
-                className="leading-relaxed"
+              <h1
+                className="tracking-[0.22em] font-semibold uppercase mb-5"
                 style={{
                   fontFamily: "var(--font-heading)",
-                  fontSize: "clamp(1rem, 4vw, 1.15rem)",
-                  color: "rgba(168,162,158,0.7)",
+                  fontSize: "clamp(1.35rem, 5.5vw, 1.65rem)",
+                  color: "var(--color-text-primary)",
+                  letterSpacing: "0.18em",
+                }}
+              >
+                Body Debt
+              </h1>
+              <p
+                className="leading-snug"
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: "clamp(1.05rem, 4vw, 1.25rem)",
+                  color: "rgba(168,162,158,0.85)",
                   letterSpacing: "0.01em",
                 }}
               >
                 {isReturning
-                  ? "Welcome back. Your coach remembers you — your patterns, past scores, and what actually worked."
-                  : "Your body keeps the score. Quantify the debt from last night's choices — alcohol, sleep, training, stress — and get a recovery plan that works offline."}
+                  ? "Welcome back. Ready to check today's debt?"
+                  : "Your body keeps the score."}
               </p>
-              {isReturning && memorySummary && (
-                <motion.p
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-[11px] mt-3 font-mono leading-relaxed"
-                  style={{ color: "#a855f7" }}
+              {!isReturning && (
+                <p
+                  className="mt-3 text-sm leading-relaxed"
+                  style={{ color: "var(--color-text-faint)" }}
                 >
-                  🧠 {memorySummary.length > 120 ? memorySummary.slice(0, 120) + "…" : memorySummary}
-                </motion.p>
+                  Log last night. Get a recovery plan that runs on-device.
+                </p>
+              )}
+              {isReturning && sleepHabit && (
+                <p
+                  className="mt-3 text-[11px] font-mono"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  Usual sleep · {sleepHabit}
+                </p>
+              )}
+              {isReturning && memorySummary && (
+                <p
+                  className="text-[11px] mt-3 font-mono leading-relaxed"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  {memorySummary.length > 120
+                    ? memorySummary.slice(0, 120) + "…"
+                    : memorySummary}
+                </p>
+              )}
+              {isReturning && streakDays > 0 && !memorySummary && (
+                <p
+                  className="mt-3 text-[11px] font-mono"
+                  style={{ color: "var(--color-states-success)" }}
+                >
+                  {streakDays}d streak · keep the chain going
+                </p>
               )}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Mode picker */}
-      <div className="relative z-10 w-full flex-1 flex flex-col justify-center px-6 pb-10">
+      {/* Primary path + quiet mode links */}
+      <div className="relative z-10 w-full flex-1 flex flex-col justify-end px-6 pb-10">
         <AnimatePresence>
-          {pickerVisible && (
+          {copyVisible && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: EASE_PROTOCOL }}
-              className="flex flex-col gap-3"
+              transition={{ duration: 0.4, delay: 0.12, ease: EASE_PROTOCOL }}
+              className="flex flex-col gap-5"
             >
-              {allContexts.map((c) => {
-                const v = c.vocabulary;
-                const isDefault = c.mode === "personal";
-                return (
-                  <motion.button
-                    key={c.mode}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => handleSelectMode(c.mode)}
-                    className="w-full rounded-2xl px-5 py-4 text-left flex items-start gap-4 transition-colors"
-                    style={{
-                      backgroundColor: isDefault ? "rgba(234,88,12,0.06)" : "var(--color-bg-surface)",
-                      border: isDefault ? "1px solid rgba(234,88,12,0.2)" : "1px solid rgba(168,162,158,0.1)",
-                    }}
-                  >
-                    <span className="text-xl flex-shrink-0 pt-0.5">
-                      {MODE_ICON[c.mode] ?? "🧘"}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+              <PrimaryButton
+                size="lg"
+                shimmer
+                onClick={() => handleSelectMode("personal")}
+              >
+                {isReturning ? "Check today's debt" : "Check my debt"}
+              </PrimaryButton>
+
+              <div className="flex flex-col items-center gap-2.5">
+                <p
+                  className="text-[10px] font-mono uppercase tracking-widest"
+                  style={{ color: "rgba(82,79,76,0.75)" }}
+                >
+                  Or continue as
+                </p>
+                <div className="flex items-center justify-center gap-1 flex-wrap">
+                  {SECONDARY_MODES.map((m, i) => (
+                    <span key={m.mode} className="flex items-center">
+                      {i > 0 && (
                         <span
-                          className={`text-sm font-semibold block ${isDefault ? "" : ""}`}
-                          style={{ color: "var(--color-text-primary)" }}
+                          className="mx-2 text-[10px]"
+                          style={{ color: "rgba(82,79,76,0.5)" }}
+                          aria-hidden
                         >
-                          {v.appName}
+                          ·
                         </span>
-                        {isDefault && (
-                          <span
-                            className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
-                            style={{
-                              backgroundColor: "rgba(234,88,12,0.1)",
-                              color: "var(--color-brand-primary)",
-                            }}
-                          >
-                            Default
-                          </span>
-                        )}
-                        {c.mode === "football" && (
-                          <span
-                            className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
-                            style={{
-                              backgroundColor: "rgba(74,222,128,0.08)",
-                              color: "var(--color-states-success)",
-                            }}
-                          >
-                            Squad mode
-                          </span>
-                        )}
-                        {c.mode === "fan" && (
-                          <span
-                            className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
-                            style={{
-                              backgroundColor: "rgba(251,113,133,0.1)",
-                              color: "#fb7185",
-                            }}
-                          >
-                            Fan mode
-                          </span>
-                        )}
-                      </div>
-                      <span
-                        className="text-[11px] block mt-0.5 leading-relaxed"
-                        style={{ color: "var(--color-text-secondary)" }}
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleSelectMode(m.mode)}
+                        className="text-[12px] font-medium underline-offset-4 hover:underline transition-colors"
+                        style={{ color: "var(--color-text-secondary)", minHeight: 44 }}
+                        title={getContextConfig(m.mode).vocabulary.tagline}
                       >
-                        {v.tagline}
-                      </span>
-                    </div>
-                    <span
-                      className="text-lg flex-shrink-0 pt-0.5"
-                      style={{ color: "var(--color-text-faint)" }}
-                    >
-                      →
+                        {m.label}
+                      </button>
                     </span>
-                  </motion.button>
-                );
-              })}
+                  ))}
+                </div>
+              </div>
+
               <p
-                className="text-center mt-4 text-[10px] tracking-widest uppercase font-mono"
+                className="text-center text-[10px] tracking-widest uppercase font-mono"
                 style={{ color: "rgba(82,79,76,0.7)" }}
               >
                 {isReturning

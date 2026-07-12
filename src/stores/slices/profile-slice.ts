@@ -36,6 +36,12 @@ export interface ProfileSlice {
   hasSeenOpening: boolean;
   setHasSeenOpening: (v: boolean) => void;
 
+  // Habitual sleep window — survives midnight session reset so returning
+  // users land on last night's bed/wake as defaults.
+  lastWakeTime: string | null;
+  lastBedTime: string | null;
+  setLastSleepWindow: (bed: string, wake: string) => void;
+
   // Streak — consecutive days with debt < 20
   streakDays: number;
   lastStreakDate: string | null;
@@ -90,6 +96,10 @@ export const createProfileSlice: StateCreator<
   hasSeenOpening: false,
   setHasSeenOpening: (v) => set({ hasSeenOpening: v }),
 
+  lastWakeTime: null,
+  lastBedTime: null,
+  setLastSleepWindow: (bed, wake) => set({ lastBedTime: bed, lastWakeTime: wake }),
+
   // ── Streak ────────────────────────────────────────────────────────────
   streakDays: 0,
   lastStreakDate: null,
@@ -123,6 +133,8 @@ export const createProfileSlice: StateCreator<
 export const PROFILE_PERSIST_FIELDS = [
   "mode",
   "hasSeenOpening",
+  "lastWakeTime",
+  "lastBedTime",
   "streakDays",
   "lastStreakDate",
   "orbPersonality",

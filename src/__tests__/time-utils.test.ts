@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { buildTimeSlots, buildBedtimeSlots, getCircadianNote } from "@/lib/time-utils";
+import {
+  buildTimeSlots,
+  buildBedtimeSlots,
+  getCircadianNote,
+  sleepDurationLabel,
+  slotToMinutes,
+} from "@/lib/time-utils";
 
 describe("buildTimeSlots", () => {
   it("returns wake-time slots from 4:00 AM to 12:00 PM", () => {
@@ -84,5 +90,19 @@ describe("getCircadianNote", () => {
     // 12 PM = hour 12, which doesn't match PM = 21/22 or AM = 0-4
     // so it falls through to default
     expect(note.penalty).toBe("none");
+  });
+});
+
+describe("slotToMinutes / sleepDurationLabel", () => {
+  it("parses AM/PM correctly", () => {
+    expect(slotToMinutes("12:00 AM")).toBe(0);
+    expect(slotToMinutes("7:30 AM")).toBe(7 * 60 + 30);
+    expect(slotToMinutes("12:00 PM")).toBe(12 * 60);
+    expect(slotToMinutes("11:00 PM")).toBe(23 * 60);
+  });
+
+  it("computes overnight sleep length", () => {
+    expect(sleepDurationLabel("11:00 PM", "7:30 AM")).toBe("8h 30m sleep");
+    expect(sleepDurationLabel("10:00 PM", "6:00 AM")).toBe("8h sleep");
   });
 });

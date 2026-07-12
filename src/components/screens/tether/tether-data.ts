@@ -250,7 +250,7 @@ export const QVAC_PIPELINE = [
 // ─── Architecture ────────────────────────────────────────────────────────────
 
 export const ARCHITECTURE = [
-  { step: "Manager opens Match Fit mode", icon: "⚽", detail: "Mode picker on opening screen — Personal or Match Fit" },
+  { step: "Manager opens Match Fit mode", icon: "⚽", detail: "Opening screen — Check my debt, or Match Fit / Fan Recovery" },
   { step: "Add player to squad", icon: "👥", detail: "Name, position (GK/DEF/MID/FWD), stressor log" },
   { step: "Optional: face scan", icon: "📷", detail: "MediaPipe FaceMesh → 7-dim feature vector → ZK proof (Web Worker)" },
   { step: "QVAC 4-agent pipeline", icon: "🧠", detail: "Qwen3-1.7B via QVAC SDK — triage → coach → schedule → reflection" },

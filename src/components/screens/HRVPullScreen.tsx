@@ -160,12 +160,33 @@ export function HRVPullScreen() {
             className="relative z-10 flex-1 flex flex-col gap-4 pb-10">
             <div className="mb-1">
               <h2 className="font-normal leading-snug" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(1.4rem,5.5vw,1.75rem)", color: "var(--color-text-primary)" }}>
-                Your watch knows things I don&apos;t.
+                Your score is ready
               </h2>
               <p className="text-xs mt-1.5" style={{ color: "var(--color-text-faint)" }}>
-                Connect for a more accurate score — or answer a quick check-in
+                Optional: connect a wearable to sharpen it — or see your debt now
               </p>
             </div>
+
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleRunAnalysis(null, true)}
+              className="w-full font-semibold text-sm rounded-2xl mb-1"
+              style={{
+                backgroundColor: "var(--color-brand-primary)",
+                color: "var(--color-text-primary)",
+                fontFamily: "var(--font-body)",
+                minHeight: "58px",
+              }}
+            >
+              See my debt score
+            </motion.button>
+
+            <p
+              className="text-[10px] font-mono uppercase tracking-widest text-center mt-3 mb-1"
+              style={{ color: "var(--color-text-faint)" }}
+            >
+              Or sharpen with a wearable
+            </p>
 
             <div className="flex flex-col gap-2.5">
               {DEVICE_OPTIONS.map((opt, i) => (
@@ -174,7 +195,7 @@ export function HRVPullScreen() {
                   whileTap={{ scale: 0.975 }}
                   onClick={() => handleDeviceSelect(opt)}
                   className="relative w-full rounded-2xl flex items-center text-left"
-                  style={{ minHeight: "64px", padding: "14px 16px", backgroundColor: "var(--color-bg-surface)", border: "1.5px solid rgba(168,162,158,0.12)" }}>
+                  style={{ minHeight: "56px", padding: "12px 16px", backgroundColor: "var(--color-bg-surface)", border: "1.5px solid rgba(168,162,158,0.12)" }}>
                   <span className="text-xl mr-3.5 flex-shrink-0">{opt.icon}</span>
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-semibold block" style={{ color: "var(--color-text-primary)" }}>{opt.name}</span>
@@ -186,11 +207,6 @@ export function HRVPullScreen() {
                 </motion.button>
               ))}
             </div>
-
-            <button onClick={() => handleRunAnalysis(null, true)}
-              className="w-full text-center text-[11px] py-2.5 font-medium" style={{ color: "var(--color-text-faint)" }}>
-              Skip all — use fewer data points
-            </button>
           </motion.div>
         )}
 

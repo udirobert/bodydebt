@@ -26,18 +26,13 @@ export type ScanPhase =
 export type CameraError = "denied" | "unavailable" | "in_use" | "insecure" | "generic" | "mediapipe_loading";
 
 export const SCAN_MESSAGES = [
-  "Extracting facial geometry locally...",
-  "Mapping 468 landmark points...",
-  "Measuring eye aspect ratio...",
-  "Detecting brow tension patterns...",
-  "Analyzing mouth geometry...",
-  "Computing eye symmetry...",
-  "Running ZK circuit in Web Worker...",
-  "Generating Halo2 proof...",
-  "Hashing proof against model weights...",
-  "Verifying proof against verifier key...",
-  "Preparing SKALE on-chain transaction...",
-  "Committing credential to chain...",
+  "Reading face geometry on this device…",
+  "Measuring eye openness…",
+  "Checking brow tension…",
+  "Mapping facial landmarks…",
+  "Building a private proof…",
+  "Verifying the proof locally…",
+  "Almost done — nothing uploaded…",
 ];
 
 export function cameraErrorCopy(kind: CameraError) {

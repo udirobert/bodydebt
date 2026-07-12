@@ -279,7 +279,7 @@ export function ContextDeepenerScreen() {
                 className="text-[11px] font-medium px-3 py-2"
                 style={{ color: "var(--color-text-faint)" }}
               >
-                Skip · accept default
+                Skip this detail
               </button>
             </div>
           </div>
@@ -305,10 +305,10 @@ export function ContextDeepenerScreen() {
                 color: "var(--color-text-primary)",
               }}
             >
-              Your picture is clear
+              Got it
             </h2>
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              All stressors secured. Ready to check your face.
+              Next: a quick face check to estimate stress — on-device, nothing uploaded.
             </p>
           </div>
         ) : null}
@@ -322,7 +322,7 @@ export function ContextDeepenerScreen() {
           className="relative z-10 pb-10 pt-4"
         >
           <PrimaryButton size="md" onClick={() => router.push("/face-scan")}>
-            Continue — face check
+            Continue to face check
           </PrimaryButton>
         </motion.div>
       )}

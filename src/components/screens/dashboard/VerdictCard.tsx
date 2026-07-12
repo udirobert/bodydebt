@@ -19,13 +19,19 @@ export function VerdictCard({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3, duration: 0.4, ease: "easeOut" }}
+      transition={{ delay: 0.12, duration: 0.35, ease: "easeOut" }}
       className="rounded-2xl px-5 py-3.5 mt-3 mx-2 text-center"
       style={{
         backgroundColor: "var(--color-bg-surface)",
         border: "1px solid rgba(168,162,158,0.08)",
       }}
     >
+      <p
+        className="text-[9px] font-mono uppercase tracking-widest mb-2"
+        style={{ color: "var(--color-text-faint)" }}
+      >
+        What it means
+      </p>
       {/* Verdict text */}
       <p
         className="font-normal leading-relaxed"

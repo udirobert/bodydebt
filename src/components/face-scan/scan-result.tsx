@@ -556,16 +556,10 @@ export function ScanResult({ txHash, onChainStatus, extractedFeatures }: {
           onClick={() => router.push("/hrv-pull")}
           className="w-full font-semibold text-sm rounded-2xl"
           style={{ backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)", fontFamily: "var(--font-body)", minHeight: "58px" }}>
-          {isCryptoVerified
-            ? "Continue to HRV data"
-            : isCryptoFailed || isMock
-              ? "Continue without on-chain proof"
-              : "Verifying..."}
+          Continue to your score
         </motion.button>
         <p className="text-[10px] text-center mt-2" style={{ color: "var(--color-text-faint)" }}>
-          {isCryptoFailed || isMock
-            ? "Your analysis will use intake + HRV data only."
-            : "Next: connect a watch or answer a check-in."}
+          Next is optional — add a wearable, or skip straight to your debt score.
         </p>
       </div>
     </motion.div>

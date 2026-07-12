@@ -22,7 +22,7 @@ import { getOrbCopy } from "@/lib/orbPersonality";
 
 export function FaceScanScreen() {
   const {
-    phase, setPhase, scanMessageIdx, cameraError, analysisError,
+    phase, scanMessageIdx, cameraError, analysisError,
     faceStatus, lightingStatus, blurStatus, distanceStatus, captureCountdown,
     capturedImageUrl, extractedFeatures, gatesRelaxed,
     txHash, isConfirmed,
@@ -88,7 +88,7 @@ export function FaceScanScreen() {
                 page: "face-scan",
                 metadata: { type: "accept_privacy" },
               }).catch(() => {});
-              setPhase("prompt");
+              startCamera();
             }} onDecline={handleSkip} />
           </motion.div>
         )}
@@ -101,23 +101,23 @@ export function FaceScanScreen() {
                 {personalityCopy.scanPrompt}
               </h2>
               <p className="text-xs mt-1.5 flex items-center justify-center gap-1.5" style={{ color: "var(--color-text-faint)" }}>
-                <ShieldCheck className="w-3 h-3 text-emerald-500" /> Processed entirely on your device
+                <ShieldCheck className="w-3 h-3 text-emerald-500" /> Optional · processed on this device
               </p>
             </div>
             <div className="mx-auto w-full max-w-xs rounded-2xl flex items-center justify-center mb-6"
               style={{ aspectRatio: "4/5", backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.12)" }}>
               <div className="flex flex-col items-center gap-3">
                 <Camera className="w-10 h-10 opacity-20" style={{ color: "var(--color-text-secondary)" }} />
-                <p className="text-xs" style={{ color: "var(--color-text-disabled)" }}>Camera will open here</p>
+                <p className="text-xs" style={{ color: "var(--color-text-disabled)" }}>Camera opens on this screen</p>
               </div>
             </div>
             <div className="mt-auto flex flex-col gap-3 pb-10">
               <PrimaryButton size="lg" onClick={startCamera}>
                 <div className="font-bold text-base mb-0.5">Open camera</div>
-                <div className="text-[10px] font-normal opacity-80">Measured on-device · nothing uploaded</div>
+                <div className="text-[10px] font-normal opacity-80">Nothing uploaded · skip anytime</div>
               </PrimaryButton>
               <button onClick={handleSkip} className="w-full text-center text-[13px] py-2.5 font-medium" style={{ color: "var(--color-text-secondary)" }}>
-                Skip — continue with intake only
+                Skip — continue without scan
               </button>
             </div>
           </motion.div>
@@ -266,7 +266,7 @@ export function FaceScanScreen() {
                             lightingStatus !== "ok" ||
                             blurStatus === "blurry")
                           ? "Capture anyway"
-                          : "Capture & Prove"
+                          : "Capture"
                         : "Adjust to continue"}
                 </span>
               </PrimaryButton>
@@ -280,7 +280,7 @@ export function FaceScanScreen() {
                 className="w-full text-center text-[13px] py-2.5 font-medium"
                 style={{ color: "var(--color-text-secondary)" }}
               >
-                Skip face scan — continue with intake only
+                Skip — continue without scan
               </button>
             </div>
           </motion.div>
@@ -356,7 +356,7 @@ export function FaceScanScreen() {
               </div>
               <div className="rounded-2xl p-4 w-full" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
                 <p className="text-[10px] text-center flex items-center justify-center gap-1.5" style={{ color: "var(--color-states-success)" }}>
-                  <ShieldCheck className="w-3 h-3" /> Raw biometric data never leaves this device
+                  <ShieldCheck className="w-3 h-3" /> Still on this device · photo clears when done
                 </p>
               </div>
             </div>

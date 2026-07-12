@@ -87,11 +87,13 @@ export function DebtIntakeScreen() {
   const question =
     mode === "fan"
       ? "How did the match leave you?"
-      : "What did you put your body through last night?";
+      : mode === "football"
+        ? "What hit the player last night?"
+        : "What hit you last night?";
   const questionHint =
     mode === "fan"
-      ? "Log the result and how it felt · chevron to add detail"
-      : "Tap to log · chevron to add detail";
+      ? "Log 1–2 things to continue · add detail if you want"
+      : "Log 1–2 things to continue · add detail if you want";
 
   // Fan intake leads with the match itself (result, tension, scroll) before the
   // shared lifestyle stressors; see `intakeStressors`.
@@ -217,7 +219,11 @@ export function DebtIntakeScreen() {
           onClick={() => router.push("/context-deepener")}
           disabled={!hasSelection}
         >
-          {hasSelection ? "Continue" : "Select what hit you"}
+          {hasSelection
+            ? selectedStressors.length === 1
+              ? "Continue with 1 logged"
+              : `Continue with ${selectedStressors.length} logged`
+            : "Log 1–2 things to continue"}
         </PrimaryButton>
 
         <button

@@ -48,7 +48,7 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
           On-device. Nothing uploaded.
         </h3>
         <p className="text-[12px] mt-1" style={{ color: "var(--color-text-secondary)" }}>
-          Your image never leaves this browser.
+          Estimates stress from facial cues. Your image never leaves this browser.
         </p>
       </div>
 
@@ -119,7 +119,7 @@ export function PrivacyNotice({ onAccept, onDecline }: PrivacyNoticeProps) {
           className="w-full text-center text-[12px] py-2.5 font-medium"
           style={{ color: "var(--color-text-secondary)" }}
         >
-          Skip — score without face scan
+          Skip — continue without scan
         </button>
         <p
           className="text-[10px] text-center mt-1 font-mono uppercase tracking-widest"

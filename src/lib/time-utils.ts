@@ -48,3 +48,27 @@ export function getCircadianNote(slot: string): { label: string; color: string; 
   if (h >= 2 && h <= 4) return { label: "Significant circadian misalignment. Debt elevated.", color: "var(--color-states-error)", penalty: "significant" };
   return { label: "Aligned. Optimal recovery window.", color: "var(--color-states-success)", penalty: "none" };
 }
+
+/** Parse "7:30 AM" style slots into minutes from midnight. */
+export function slotToMinutes(slot: string): number {
+  const isPM = slot.includes("PM");
+  const isAM = slot.includes("AM");
+  const [hStr, mStr] = slot.replace(/ AM| PM/, "").split(":");
+  let h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (isPM && h !== 12) h += 12;
+  if (isAM && h === 12) h = 0;
+  return h * 60 + m;
+}
+
+/** Sleep length from bedtime → wake, crossing midnight when needed. */
+export function sleepDurationLabel(bedSlot: string, wakeSlot: string): string {
+  const bed = slotToMinutes(bedSlot);
+  const wake = slotToMinutes(wakeSlot);
+  let mins = wake - bed;
+  if (mins <= 0) mins += 24 * 60;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (m === 0) return `${h}h sleep`;
+  return `${h}h ${m}m sleep`;
+}

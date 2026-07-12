@@ -407,6 +407,14 @@ export function DashboardScreen() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, type: "spring" }}>
 
+          {/* Score eyebrow */}
+          <p
+            className="text-[10px] font-mono uppercase tracking-widest mb-1"
+            style={{ color: "var(--color-text-faint)" }}
+          >
+            Debt score
+          </p>
+
           {/* Score number */}
           <motion.div
             className="font-black leading-none debt-score-display"
