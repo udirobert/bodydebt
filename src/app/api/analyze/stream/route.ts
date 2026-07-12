@@ -1,13 +1,14 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { createDebtSession, getUserPatterns, formatPatternsForPrompt } from "@/lib/db/queries";
+import { createDebtSession, getUserPatterns, formatPatternsForPrompt, getLatestDebtSession } from "@/lib/db/queries";
 import type { AnalyzeBodyRequest, DebtAnalysis } from "@/lib/types";
 import { computeScore, deterministicPrescription, deterministicSchedule } from "../score/route";
 import { ai } from "@/lib/sdk/eazo-client";
 import { runMultiAgentPipeline, buildAgentTrace } from "@/lib/qvac";
 import type { MultiAgentInput } from "@/lib/qvac";
 import { validateSSEEvent } from "@/lib/sse-schemas";
-import { getMemoryContext, logSession, isMemoryEnabled } from "@/lib/supermemory";
+import { getMemoryContext, logSession, logOutcomeSignal, isMemoryEnabled } from "@/lib/supermemory";
+import { parsePriorDebtScoreFromMemory } from "@/lib/supermemory/outcome-signals";
 
 // ─── Feature flags ───────────────────────────────────────────────────────────
 //
@@ -98,6 +99,12 @@ export async function POST(request: NextRequest) {
         ? getUserPatterns(userId).then(p => p ? formatPatternsForPrompt(p) : null)
         : Promise.resolve(null);
 
+      const priorScorePromise = userId
+        ? getLatestDebtSession(userId).then((s) => s?.debtScore ?? null)
+        : memoryPromise.then((ctx) =>
+            ctx ? parsePriorDebtScoreFromMemory(ctx.profile, ctx.memories) : null,
+          );
+
       // ── Layer 2: AI verdict (runs in parallel with agents) ──────────────
       // When NEXT_PUBLIC_ENABLE_CLOUD_VERDICT is off, skip the cloud AI
       // call and use the deterministic Layer 1 score as the verdict.
@@ -123,9 +130,20 @@ export async function POST(request: NextRequest) {
 
       // ── Layer 3: QVAC multi-agent pipeline (primary AI path) ─────────────
       // Resolve memory context + DB patterns before building the QVAC input.
-      // The agents need both in their prompts. Runs in parallel with Layer 1 + 2.
       const memoryCtx = await memoryPromise;
       const dbPatterns = await patternsPromise;
+
+      const profileLines = memoryCtx?.profile?.split("\n").filter(Boolean) ?? [];
+      const memoryLines = memoryCtx?.memories?.split("\n").filter(Boolean) ?? [];
+      const factCount = profileLines.length + memoryLines.length;
+
+      emit("memory_recall", {
+        factCount,
+        preview: [...profileLines, ...memoryLines].slice(0, 2).join(" · ").slice(0, 160),
+        source: process.env.SUPERMEMORY_BASE_URL ?? "http://localhost:6767",
+        hasHistory: factCount > 0,
+      });
+
       const memoryContext = [
         memoryCtx?.profile && `User profile:\n${memoryCtx.profile}`,
         memoryCtx?.memories && `Relevant past memories:\n${memoryCtx.memories}`,
@@ -175,7 +193,7 @@ export async function POST(request: NextRequest) {
             _layer: "qvac_multi_agent",
           };
           schedule = qvacResult.schedule ?? undefined;
-          agentTrace = buildAgentTrace(qvacResult);
+          agentTrace = buildAgentTrace(qvacResult, memoryContext);
         } else {
           // QVAC unavailable — fall back to cloud AI
           prescriptionData = await fetchPrescriptionFromCloud(body, layer1);
@@ -253,10 +271,19 @@ export async function POST(request: NextRequest) {
         }).catch(() => {});
       }
 
-      // Store to Supermemory Local (non-blocking) — gives agents memory
-      // of past sessions for personalized recovery advice. Uses userId
-      // as containerTag when authenticated (stable across devices).
+      // Store to Supermemory (non-blocking) — outcome signal first, then session.
+      // Order matters: outcome compares against prior recall, session becomes next prior.
       if (containerTag && isMemoryEnabled) {
+        const priorScore = await priorScorePromise;
+
+        logOutcomeSignal(containerTag, {
+          currentScore: final.debtScore,
+          priorScore,
+          prescription: final.prescription,
+          memoryCtx,
+          stressors: body.stressors.map((s) => s.type),
+        });
+
         logSession(containerTag, {
           debtScore:    final.debtScore,
           verdict:      final.verdict,

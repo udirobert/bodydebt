@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
 import { useEazo } from "@/lib/sdk/eazo-react";
+import { useMemoryContainerTag } from "@/hooks/useMemoryContainerTag";
 
 export interface MemoryFacts {
   enabled: boolean;
@@ -28,7 +28,7 @@ export function useMemoryContext(query?: string): {
   loading: boolean;
   refetch: () => void;
 } {
-  const anonymousId = useBodyDebtStore((s) => s.anonymousId);
+  const containerTag = useMemoryContainerTag();
   const authenticated = useEazo((s) => s.auth.authenticated);
   const [data, setData] = useState<MemoryFacts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,14 +41,12 @@ export function useMemoryContext(query?: string): {
 
   useEffect(() => {
     // Need either anonymousId (guest) or authentication (user)
-    if (!anonymousId && !authenticated) return;
+    if (!containerTag && !authenticated) return;
     let cancelled = false;
     const q = query ?? "body debt recovery patterns";
-    // When authenticated, the server ignores containerTag and uses userId.
-    // For guests, send anonymousId as fallback.
     const params = new URLSearchParams({ q });
-    if (!authenticated && anonymousId) {
-      params.set("containerTag", anonymousId);
+    if (!authenticated && containerTag) {
+      params.set("containerTag", containerTag);
     }
     fetch(`/api/memory/context?${params}`)
       .then((r) => r.json())
@@ -62,7 +60,7 @@ export function useMemoryContext(query?: string): {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [anonymousId, authenticated, query, nonce]);
+  }, [containerTag, authenticated, query, nonce]);
 
   return { data, loading, refetch };
 }

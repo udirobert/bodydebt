@@ -31,9 +31,6 @@ const SOURCE_COLORS: Record<string, string> = {
  * Shows the multi-agent pipeline that produced the user's prescription.
  * Collapsible. Displays each agent's role, status, duration, and source
  * (QVAC local vs cloud fallback vs deterministic).
- *
- * This is a key differentiator for the QVAC hackathon: it makes the
- * multi-agent edge AI flow visible and legible to judges.
  */
 export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
   const [expanded, setExpanded] = useState(false);
@@ -168,7 +165,7 @@ export function AgentTracePanel({ trace }: { trace: AgentTrace }) {
                         🧠 Memory Context
                       </span>
                       <span className="text-[8px] font-mono" style={{ color: "#a855f7" }}>
-                        Supermemory Local
+                        Supermemory
                       </span>
                     </div>
                     <div className="max-h-32 overflow-y-auto">

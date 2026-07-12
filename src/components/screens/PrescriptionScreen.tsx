@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useBodyDebtStore } from "@/stores/useBodyDebtStore";
@@ -15,6 +15,12 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { SecondaryButton } from "@/components/SecondaryButton";
 import { SignalUpsellCard } from "@/components/SignalUpsellCard";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
+import { useMemoryContainerTag } from "@/hooks/useMemoryContainerTag";
+import {
+  attributePrescriptionLines,
+  collectMemoryFacts,
+  type PrescriptionKey,
+} from "@/lib/supermemory/prescription-attribution";
 import { DebtGauge } from "./DebtGauge";
 import { RecoveryTimeline } from "./RecoveryTimeline";
 import { DonutChart, BarChartView } from "./StressorBreakdownChart";
@@ -40,14 +46,43 @@ const FALLBACK_PRESCRIPTION = {
 
 export function PrescriptionScreen() {
   const router = useRouter();
-  const { analysis, confidenceTier, orbPersonality } = useBodyDebtStore();
+  const { analysis, confidenceTier, orbPersonality, previewMode } = useBodyDebtStore();
+  const memoryContainerTag = useMemoryContainerTag();
   const user = useEazo((s) => s.auth.user);
-  const { data: memoryData } = useMemoryContext("recovery prescription patterns what worked");
+  const { data: memoryData, refetch: refetchMemory } = useMemoryContext("recovery prescription patterns what worked");
+  const [forgottenFact, setForgottenFact] = useState<string | null>(null);
   const isGuest = !user && !!analysis;
   const personalityCopy = getOrbCopy(orbPersonality);
   const rx = analysis?.prescription ?? FALLBACK_PRESCRIPTION;
   const score = analysis?.debtScore ?? 0;
   const breakdown = analysis?.stressorBreakdown ?? [];
+
+  const memoryFacts = useMemo(() => {
+    if (!memoryData?.enabled) return [];
+    return collectMemoryFacts(memoryData.profile, memoryData.memories);
+  }, [memoryData]);
+
+  const attribution = useMemo(() => {
+    if (memoryFacts.length === 0) return null;
+    return attributePrescriptionLines(rx, memoryFacts);
+  }, [rx, memoryFacts]);
+
+  const topForgettableFact = memoryFacts.find((f) => f !== forgottenFact) ?? null;
+
+  const handleForgetFact = async (content: string) => {
+    if (!memoryContainerTag || previewMode) return;
+    setForgottenFact(content);
+    try {
+      await fetch("/api/memory", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ containerTag: memoryContainerTag, content }),
+      });
+      refetchMemory();
+    } catch {
+      setForgottenFact(null);
+    }
+  };
 
   const reportedView = useRef(false);
 
@@ -138,6 +173,22 @@ export function PrescriptionScreen() {
               <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: labelColor }}>
                 {label}
               </span>
+              {attribution?.[key as PrescriptionKey] === "memory" && (
+                <span
+                  className="text-[7px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded ml-auto"
+                  style={{ backgroundColor: "rgba(168,85,247,0.12)", color: "#a855f7" }}
+                >
+                  from memory
+                </span>
+              )}
+              {attribution?.[key as PrescriptionKey] === "new" && memoryFacts.length > 0 && (
+                <span
+                  className="text-[7px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded ml-auto"
+                  style={{ backgroundColor: "rgba(168,162,158,0.08)", color: "var(--color-text-faint)" }}
+                >
+                  new today
+                </span>
+              )}
             </div>
             <p className="px-4 pb-4 text-sm leading-relaxed font-medium" style={{ color: "var(--color-text-primary)" }}>
               {rx[key]}
@@ -195,9 +246,27 @@ export function PrescriptionScreen() {
                 </p>
               ))}
             </div>
+            {topForgettableFact && !previewMode && (
+              <div
+                className="flex items-start justify-between gap-3 mt-3 p-3 rounded-xl"
+                style={{ backgroundColor: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.1)" }}
+              >
+                <p className="text-[10px] leading-relaxed flex-1" style={{ color: "var(--color-text-secondary)" }}>
+                  <span style={{ color: "#a855f7" }}>Remembered: </span>
+                  {topForgettableFact.length > 80 ? topForgettableFact.slice(0, 80) + "…" : topForgettableFact}
+                </p>
+                <button
+                  onClick={() => handleForgetFact(topForgettableFact)}
+                  className="text-[9px] font-mono uppercase tracking-wider flex-shrink-0"
+                  style={{ color: "var(--color-text-faint)" }}
+                >
+                  Forget
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-1.5 mt-3 pt-2" style={{ borderTop: "1px solid rgba(168,85,247,0.1)" }}>
               <span className="text-[8px] font-mono" style={{ color: "var(--color-text-faint)" }}>
-                🧠 From Supermemory Local · stays on your machine
+                Your coach recalls this before every prescription
               </span>
             </div>
           </motion.div>

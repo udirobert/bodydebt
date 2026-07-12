@@ -12,24 +12,34 @@ The app logs lifestyle stressors, computes deterministic physiological debt acro
 
 The coach doesn't just retrieve memories — it **reasons over them**. Memory context is injected into the triage and coach agent prompts in the QVAC pipeline, so the prescription you get on day 2 is different from day 1 because the agent knows what happened on day 1.
 
+After each session, an **outcome signal** logs whether debt moved and which prior advice was echoed — closing the feedback loop so future recalls include results, not just prescriptions.
+
 **Three primitives, all used:**
 
 | Primitive | Where | What it does |
 |---|---|---|
-| `add()` | `POST /api/memory` | Logs actions and completed analysis sessions |
+| `add()` | `POST /api/memory`, `logSession()`, `logOutcomeSignal()` | Logs actions, sessions, and cross-session outcome signals |
 | `search()` / `profile()` | `GET /api/memory/context` | Retrieves profile facts + relevant memories for agent context and UI display |
 | `forget()` | `DELETE /api/memory` | Single-memory soft-delete + agentic mass-forget with user confirmation |
 
-**Six UI touchpoints** (all gracefully hidden when Supermemory is disabled):
+**User-facing flows:**
+
+| Route | Purpose |
+|---|---|
+| `/coach-memory` | Side-by-side day 1 vs day 2 prescription comparison |
+| `/preview` | Full labeled example dashboard (isolated from user data) |
+| Opening screen | Links to both for first-time and returning users |
+
+**UI touchpoints** (gracefully hidden when Supermemory is disabled):
 
 1. Dashboard "Remembers you" badge
-2. "Your coach remembers" card with per-fact forget buttons + "Forget all" dialog
+2. "Your coach remembers" card with per-fact forget + local memory status
 3. Agent trace panel showing injected memory context
-4. Analysis loader "Recalling your history" step
-5. Opening screen welcome-back for returning users
-6. Prescription "Why this prescription" callout
+4. Analysis loader driven by real `memory_recall` SSE events
+5. Opening screen welcome-back with recalled facts
+6. Prescription screen with `from memory` / `new today` attribution chips
 
-**Architecture:** All Supermemory calls go through `src/lib/supermemory/` (server-only). Client code POSTs to `/api/memory` which calls the server module. Memory is fetched in parallel during analysis and injected into agent prompts. The `containerTag` is the user's `anonymousId` from the profile store.
+**Architecture:** All Supermemory calls go through `src/lib/supermemory/` (server-only). Client code POSTs to `/api/memory` which calls the server module. Memory is fetched in parallel during analysis (`/api/analyze/stream`) and injected into agent prompts. The `containerTag` is the user's `anonymousId` (or `userId` when authenticated). Example sessions at `/preview` use a shared demo container without touching the user's ID.
 
 ## Current focus
 

@@ -1,4 +1,6 @@
 import Supermemory from "supermemory";
+import type { OutcomeSignalInput } from "./outcome-signals";
+import { buildOutcomeSignal } from "./outcome-signals";
 
 // ─── Client (singleton) ──────────────────────────────────────────────────────
 
@@ -105,6 +107,21 @@ Prescription:
     debtScore: session.debtScore,
     mode: session.mode,
   }).catch(() => {});
+}
+
+// ─── Outcome: close the memory feedback loop ─────────────────────────────────
+//
+// After recall shaped the prescription, log whether debt moved and which
+// prior patterns were echoed — so future sessions learn from outcomes.
+
+export function logOutcomeSignal(
+  containerTag: string,
+  input: OutcomeSignalInput,
+): void {
+  if (!client) return;
+  const signal = buildOutcomeSignal(input);
+  if (!signal.shouldLog) return;
+  logAction(containerTag, signal.content, signal.metadata).catch(() => {});
 }
 
 // ─── Forget: single memory by content match ──────────────────────────────────

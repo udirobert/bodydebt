@@ -10,8 +10,9 @@ import { PreferencesSyncEffect } from "@/components/PreferencesSyncEffect";
 import { PageTransition } from "@/components/PageTransition";
 import { MotionProvider } from "@/components/providers/MotionProvider";
 import { WagmiProviderWrapper } from "@/components/providers/WagmiProviderWrapper";
+import { Suspense } from "react";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
-import { DemoModeInit } from "@/components/DemoModeInit";
+import { PreviewShell } from "@/components/PreviewShell";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -95,7 +96,9 @@ export default function RootLayout({
                 <UserSyncEffect />
                 <PreferencesSyncEffect />
                 <ServiceWorkerRegister />
-                <DemoModeInit />
+                <Suspense fallback={null}>
+                  <PreviewShell />
+                </Suspense>
                 <PageTransition>
                   {children}
                 </PageTransition>

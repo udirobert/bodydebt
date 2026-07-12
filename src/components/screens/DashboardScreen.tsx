@@ -38,6 +38,7 @@ import { PatternLayer } from "./dashboard/PatternLayer";
 import { AgentSchedule } from "./dashboard/AgentSchedule";
 import { MemoryCard } from "./dashboard/MemoryCard";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
+import { useMemoryContainerTag } from "@/hooks/useMemoryContainerTag";
 import type { DebtAnalysis, ConfidenceTier } from "@/lib/types";
 
 // ─── Fallback ─────────────────────────────────────────────────────────────────
@@ -81,14 +82,15 @@ export function DashboardScreen() {
     analysis, selectedStressors, reset, isAnalyzing,
     hrvData, faceAnalysis, zkProof,
     streakDays, confidenceTier,
-    orbPersonality, agentEvents, agentProgress,
+    orbPersonality, agentEvents, agentProgress, memoryRecall,
+    previewMode, exitPreview,
     locale,
   } = useBodyDebtStore();
 
   const ctx = useRecoveryContext();
   const user = useEazo((s) => s.auth.user);
   const { data: memoryData, refetch: refetchMemory } = useMemoryContext();
-  const anonymousId = useBodyDebtStore((s) => s.anonymousId);
+  const memoryContainerTag = useMemoryContainerTag();
   const data: DebtAnalysis = analysis ?? FALLBACK_ANALYSIS;
   const isEmpty = !analysis && selectedStressors.length === 0;
   const hasData = !!analysis || selectedStressors.length > 0;
@@ -240,6 +242,7 @@ export function DashboardScreen() {
         hasHRV={!!hrvData}
         agentEvents={agentEvents}
         agentProgress={agentProgress}
+        memoryRecall={memoryRecall}
       />
     );
   }
@@ -293,17 +296,21 @@ export function DashboardScreen() {
             >
               {ctx.vocabulary.appName}
             </span>
-            {/* Badges — edge AI + on-chain, compact */}
+            {/* Status badges — each explains a layer of how Body Debt works */}
             <div className="flex items-center gap-1.5 overflow-hidden">
               {data.agentTrace && data.agentTrace.source === "qvac-local" && (
-                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                <span
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                  title="Your prescription was generated on this device — no cloud AI required"
                   style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
                   <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "var(--color-states-success)" }} />
-                  <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>Edge AI</span>
+                  <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "var(--color-states-success)" }}>On-device</span>
                 </span>
               )}
               {memoryData?.enabled && (memoryData.profile || memoryData.memories.length > 0) && (
-                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                <span
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                  title="Your coach remembers past sessions and shapes advice from your history"
                   style={{ backgroundColor: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.15)" }}>
                   <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#a855f7" }} />
                   <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#a855f7" }}>Remembers you</span>
@@ -317,22 +324,29 @@ export function DashboardScreen() {
                   onClick={(e) => e.stopPropagation()}
                   className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
                   style={{ backgroundColor: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.15)" }}
-                  title={`Last verified ${zkProof.durationMs ? `${(zkProof.durationMs / 1000).toFixed(1)}s ago · on SKALE` : "on SKALE"}`}
-                  aria-label="View on-chain verification on SKALE explorer"
+                  title="Face scan proved locally with zero-knowledge math — your photo never left this device. Only the proof was logged on-chain."
+                  aria-label="View zero-knowledge proof verification on SKALE explorer"
                 >
                   <span className="w-1 h-1 rounded-full" style={{ backgroundColor: "#60A5FA" }} />
                   <span className="text-[8px] font-mono uppercase tracking-wider" style={{ color: "#60A5FA" }}>
-                    On-chain
+                    ZK verified
                   </span>
                 </a>
               )}
             </div>
           </div>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowReLogConfirm(true)}
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => {
+            if (previewMode) {
+              exitPreview();
+              router.push("/wake-time");
+              return;
+            }
+            setShowReLogConfirm(true);
+          }}
             className="text-[11px] font-medium rounded-xl flex-shrink-0"
             style={{ color: "var(--color-text-secondary)", border: "1px solid rgba(168,162,158,0.15)", backgroundColor: "rgba(0,0,0,0.4)", minHeight: 34, padding: "4px 12px" }}
-            aria-label="Start new assessment">
-            New assessment
+            aria-label={previewMode ? "Start your own check-in" : "Start new assessment"}>
+            {previewMode ? "Start my check-in" : "New assessment"}
           </motion.button>
         </div>
 
@@ -501,8 +515,9 @@ export function DashboardScreen() {
           <MemoryCard
             profile={memoryData.profile}
             memories={memoryData.memories}
-            containerTag={anonymousId ?? undefined}
-            onForget={refetchMemory}
+            containerTag={memoryContainerTag}
+            onForget={previewMode ? undefined : refetchMemory}
+            readOnly={previewMode}
           />
         </div>
       )}

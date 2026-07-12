@@ -47,7 +47,7 @@ export function useStreamingAnalysis() {
     if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
     navigatedRef.current = false;
     setAgentEvents([]);
-    useBodyDebtStore.setState({ agentProgress: null });
+    useBodyDebtStore.setState({ agentProgress: null, memoryRecall: null });
 
     if (skipped) {
       setHrvSkipped(true);
@@ -123,6 +123,18 @@ export function useStreamingAnalysis() {
                   router.push("/dashboard");
                 }
               }, 15000);
+            }
+
+            if (eventType === "memory_recall") {
+              useBodyDebtStore.setState({
+                memoryRecall: {
+                  factCount: data.factCount as number,
+                  preview: data.preview as string,
+                  source: data.source as string,
+                  hasHistory: data.hasHistory as boolean,
+                  recalled: true,
+                },
+              });
             }
 
             if (eventType === "agent_start") {

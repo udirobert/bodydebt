@@ -25,6 +25,16 @@ import {
   WALLET_PERSIST_FIELDS,
   type WalletSlice,
 } from "./slices/wallet-slice";
+import {
+  DEMO_STRESSORS,
+  MEMORY_DEMO_ANALYSIS,
+} from "@/lib/memory-demo-data";
+import {
+  savePreviewBackup,
+  loadPreviewBackup,
+  clearPreviewBackup,
+} from "@/lib/preview-session";
+import type { ConfidenceTier } from "@/lib/types";
 
 /**
  * Combined store type — flat API for backward compatibility with all
@@ -40,6 +50,10 @@ import {
 export type BodyDebtState = ProfileSlice & SessionSlice & StreamSlice & WalletSlice & {
   /** Reset session + stream, keep profile + wallet. */
   reset: () => void;
+  /** Load example session — backs up real state, never touches anonymousId. */
+  enterPreview: () => void;
+  /** Restore backed-up session and leave example mode. */
+  exitPreview: () => void;
 };
 
 // Re-export slice types and the agent event type for consumers.
@@ -61,6 +75,44 @@ export const useBodyDebtStore = create<BodyDebtState>()(
        */
       reset: () => {
         get().resetSession();
+        get().resetStream();
+      },
+
+      enterPreview: () => {
+        if (get().previewMode) return;
+        savePreviewBackup({
+          analysis: get().analysis,
+          selectedStressors: get().selectedStressors,
+          wakeTime: get().wakeTime,
+          bedTime: get().bedTime,
+          confidenceTier: get().confidenceTier,
+          faceAnalysis: get().faceAnalysis,
+          hrvData: get().hrvData,
+        });
+        get().setPreviewMode(true);
+        set({
+          analysis: MEMORY_DEMO_ANALYSIS,
+          selectedStressors: DEMO_STRESSORS,
+          confidenceTier: "medium" as ConfidenceTier,
+          isAnalyzing: false,
+        });
+      },
+
+      exitPreview: () => {
+        if (!get().previewMode) return;
+        const backup = loadPreviewBackup();
+        clearPreviewBackup();
+        get().setPreviewMode(false);
+        set({
+          analysis: backup?.analysis ?? null,
+          selectedStressors: backup?.selectedStressors ?? [],
+          wakeTime: backup?.wakeTime ?? null,
+          bedTime: backup?.bedTime ?? null,
+          confidenceTier: backup?.confidenceTier ?? "estimated",
+          faceAnalysis: backup?.faceAnalysis ?? null,
+          hrvData: backup?.hrvData ?? null,
+          isAnalyzing: false,
+        });
         get().resetStream();
       },
 
@@ -88,8 +140,11 @@ export const useBodyDebtStore = create<BodyDebtState>()(
         for (const key of PROFILE_PERSIST_FIELDS) {
           persisted[key] = state[key];
         }
-        for (const key of SESSION_PERSIST_FIELDS) {
-          persisted[key] = state[key];
+        // Never persist example session into the user's real localStorage slot.
+        if (!state.previewMode) {
+          for (const key of SESSION_PERSIST_FIELDS) {
+            persisted[key] = state[key];
+          }
         }
         for (const key of WALLET_PERSIST_FIELDS) {
           persisted[key] = state[key];

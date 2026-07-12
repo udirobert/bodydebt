@@ -7,16 +7,17 @@ Body Debt is different. The AI coach uses @Supermemory to remember your patterns
 Day 1: "Drink water. Get sleep."
 Day 2: "Delay caffeine 90min — your sleep was shorter than yesterday. Avoid alcohol — your liver is still processing. Walk 20min — natural light is critical after two short nights."
 
-The prescription changes because the context changes.
+The prescription changes because the context changes — and we log whether it worked.
+
+Outcome loop: after each session, the coach logs debt delta + which prior advice was repeated. Memory becomes infrastructure, not a dump.
 
 Three primitives, all used:
-→ add() to store sessions
-→ search() + profile() to recall patterns
-→ forget() to delete — per-fact or wipe everything
+→ add() — sessions + outcome signals
+→ search() + profile() — recall patterns
+→ forget() — per-fact or wipe everything
 
-Six UI touchpoints. User-controlled memory. The full lifecycle.
-
-Live demo: bodydebt.thisyearnofear.com
+Explore: bodydebt.thisyearnofear.com/coach-memory
+Full example: bodydebt.thisyearnofear.com/preview
 GitHub: github.com/udirobert/bodydebt
 
 Built with @Supermemory × QVAC on-device AI × Next.js

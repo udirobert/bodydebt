@@ -87,7 +87,7 @@ Deploy: `scripts/deploy.sh` builds locally, trims `node_modules` for the target 
 | Evidence data | `src/components/screens/evidence/evidence-data.ts`, `systems-science.ts` |
 | Format utility | `src/lib/format-ms.ts` |
 | QVAC | `scripts/qvac-worker.mjs`, `src/lib/qvac/index.ts`, `src/app/api/qvac/infer/route.ts` |
-| Supermemory (user memory) | `src/lib/supermemory/index.ts`, `src/app/api/memory/` (`route.ts` POST, `context/route.ts` GET) |
+| Supermemory (user memory) | `src/lib/supermemory/` (`index.ts`, `outcome-signals.ts`, `prescription-attribution.ts`), `src/app/api/memory/` (`route.ts`, `context/route.ts`, `status/route.ts`) |
 | WDK payments | `src/lib/wdk/` (`index.ts`, `types.ts`, `payments.ts`), `src/app/api/wallet/` (`connect`, `balance`, `send`), `src/stores/slices/wallet-slice.ts` |
 | Wearables | `src/app/api/terra/`, `src/app/api/google-fit/`, `src/app/api/garmin/parse/route.ts`, `src/app/api/hrv/resolve/route.ts` |
 | DB | `src/lib/db/schema/`, `src/lib/db/queries/`, `src/lib/db/client.ts` |

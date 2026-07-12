@@ -6,6 +6,7 @@ import { useEazo } from "@/lib/sdk/eazo-react";
 import { useUserPatterns } from "@/hooks/useUserPatterns";
 import { Collapse } from "@/components/ui/collapse";
 import { EASE_PROTOCOL } from "@/lib/motion/protocol";
+import { MemoryStatusIndicator } from "@/components/MemoryStatusIndicator";
 
 interface MemoryCardProps {
   profile: string;
@@ -14,6 +15,8 @@ interface MemoryCardProps {
   containerTag?: string;
   /** Callback after memories are forgotten (parent refetches) */
   onForget?: () => void;
+  /** Example session — hide forget controls */
+  readOnly?: boolean;
 }
 
 /**
@@ -29,7 +32,7 @@ interface MemoryCardProps {
  * with a confirmation dialog. This uses the Supermemory forget()
  * API — soft-delete, not permanent deletion.
  */
-export function MemoryCard({ profile, memories, containerTag, onForget }: MemoryCardProps) {
+export function MemoryCard({ profile, memories, containerTag, onForget, readOnly }: MemoryCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showForgetConfirm, setShowForgetConfirm] = useState(false);
   const [forgetting, setForgetting] = useState(false);
@@ -65,7 +68,7 @@ export function MemoryCard({ profile, memories, containerTag, onForget }: Memory
   // Preview: first 2 facts for the collapsed state
   const previewFacts = [...profileFacts, ...topMemories].slice(0, 2);
 
-  const canForget = !!containerTag && !!onForget;
+  const canForget = !readOnly && !!containerTag && !!onForget;
 
   const handleForgetOne = async (content: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -264,9 +267,13 @@ export function MemoryCard({ profile, memories, containerTag, onForget }: Memory
               )}
 
               {/* Privacy footer + forget all */}
-              <div className="flex items-center justify-between gap-2 pt-2" style={{ borderTop: "1px solid rgba(168,162,158,0.06)" }}>
+              <div className="flex flex-col gap-1.5 pt-2" style={{ borderTop: "1px solid rgba(168,162,158,0.06)" }}>
+                <MemoryStatusIndicator containerTag={containerTag} />
+                <div className="flex items-center justify-between gap-2">
                 <span className="text-[8px] font-mono" style={{ color: "var(--color-text-faint)" }}>
-                  🔒 You control your memory — nothing uploaded
+                  {readOnly
+                    ? "Example memory — start your own check-in to build yours"
+                    : "You control your memory — forget anything, anytime"}
                 </span>
                 {canForget && (
                   <button
@@ -277,6 +284,7 @@ export function MemoryCard({ profile, memories, containerTag, onForget }: Memory
                     Forget all
                   </button>
                 )}
+                </div>
               </div>
             </div>
       </Collapse>

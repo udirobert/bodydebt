@@ -10,7 +10,7 @@
  * Validation never blocks the stream. On mismatch the event is still delivered
  * but a console warning is emitted so mismatches surface during development.
  *
- * Event catalog (10 events):
+ * Event catalog (11 events):
  *
  *   score        → Layer 1: deterministic debt score + seed prescription
  *   agent_start  → A QVAC agent has begun work (triage / coach / schedule / reflection)
@@ -129,6 +129,7 @@ export const AgentTraceSchema = z.object({
   totalDurationMs: z.number().optional(),
   cloudDurationMs: z.number().optional(),
   model: z.string().optional(),
+  memoryContext: z.string().nullable().optional(),
 });
 
 // ─── Full DebtAnalysis schema (for the "done" event) ─────────────────────────
@@ -230,6 +231,17 @@ export const VerdictEventSchema = z.object({
 });
 
 /**
+ * event: memory_recall
+ * Supermemory profile + memories fetched and ready for agent injection.
+ */
+export const MemoryRecallEventSchema = z.object({
+  factCount: z.number(),
+  preview: z.string(),
+  source: z.string(),
+  hasHistory: z.boolean(),
+});
+
+/**
  * event: prescription
  * Layer 3 — full prescription from QVAC multi-agent pipeline (or fallback).
  */
@@ -263,6 +275,7 @@ export const sseEventSchemas: Record<string, z.ZodTypeAny> = {
   agent_done: AgentDoneEventSchema,
   agent_error: AgentErrorEventSchema,
   agent_progress: AgentProgressEventSchema,
+  memory_recall: MemoryRecallEventSchema,
   verdict: VerdictEventSchema,
   prescription: PrescriptionEventSchema,
   done: DoneEventSchema,

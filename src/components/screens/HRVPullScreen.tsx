@@ -30,6 +30,7 @@ export function HRVPullScreen() {
     faceAnalysis,
     agentEvents,
     agentProgress,
+    memoryRecall,
   } = useBodyDebtStore();
 
   const { runAnalysis } = useStreamingAnalysis();
@@ -373,6 +374,7 @@ export function HRVPullScreen() {
               } : undefined}
               agentEvents={agentEvents}
               agentProgress={agentProgress}
+              memoryRecall={memoryRecall}
             />
           </motion.div>
         )}

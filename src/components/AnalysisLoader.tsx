@@ -46,9 +46,17 @@ interface AnalysisLoaderProps {
   faceContext?: { summary: string };
   agentEvents?: AgentEventState[];
   agentProgress?: { status: string; percent?: number; loaded?: number; total?: number } | null;
+  /** Real Supermemory recall from SSE — replaces simulated memory badge */
+  memoryRecall?: {
+    factCount: number;
+    preview: string;
+    source: string;
+    hasHistory: boolean;
+    recalled: boolean;
+  } | null;
 }
 
-export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, agentEvents, agentProgress }: AnalysisLoaderProps) {
+export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, agentEvents, agentProgress, memoryRecall }: AnalysisLoaderProps) {
   const [elapsed, setElapsed] = useState(0);       // 0–1 simulated progress
   const [orbScore, setOrbScore] = useState(0);     // orb heats up as signals process
 
@@ -90,6 +98,8 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
   // If we have live agent events, show them instead of the simulated signals
   const hasLiveAgents = agentEvents && agentEvents.length > 0;
   const isLoadingModel = agentProgress && !hasLiveAgents;
+  const showMemoryBadge = memoryRecall?.recalled;
+  const isLocalSource = memoryRecall?.source?.includes("localhost") ?? false;
 
   // Drive progress from real agent state when agents are live.
   // Each completed agent = 25%. Active agent adds partial credit.
@@ -211,23 +221,40 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
           </motion.div>
         )}
 
-        {/* Memory badge — shown during the recall phase */}
-        {!hasLiveAgents && elapsed >= 0.25 && elapsed < 0.45 && (
+        {/* Memory badge — driven by real SSE memory_recall event */}
+        {showMemoryBadge && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-            style={{ backgroundColor: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)" }}
+            className="flex flex-col items-center gap-1"
           >
-            <motion.span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: "#a855f7" }}
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
-            <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#a855f7" }}>
-              Recalling from Supermemory
-            </span>
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+              style={{ backgroundColor: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)" }}
+            >
+              <motion.span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: "#a855f7" }}
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+              <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: "#a855f7" }}>
+                {memoryRecall!.hasHistory
+                  ? `Recalling ${memoryRecall!.factCount} things your coach knows`
+                  : "First session — building your memory"}
+              </span>
+            </div>
+            {memoryRecall!.hasHistory && memoryRecall!.preview && (
+              <p className="text-[8px] font-mono text-center max-w-xs px-2" style={{ color: "var(--color-text-faint)" }}>
+                {memoryRecall!.preview.slice(0, 100)}
+                {memoryRecall!.preview.length > 100 ? "…" : ""}
+              </p>
+            )}
+            {isLocalSource && (
+              <span className="text-[8px] font-mono" style={{ color: "var(--color-text-faint)" }}>
+                Recalled from your coach&apos;s memory
+              </span>
+            )}
           </motion.div>
         )}
 
@@ -312,7 +339,8 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
           /* Simulated signal checklist — trimmed spacing */
           <div className="w-full space-y-1.5 mt-1">
             {activeSignals.map((sig) => {
-              const done    = elapsed >= sig.doneAt;
+              const memoryDone = sig.id === "memory" && memoryRecall?.recalled;
+              const done    = memoryDone || elapsed >= sig.doneAt;
               const active  = !done && elapsed >= sig.doneAt - 0.15;
               return (
                 <motion.div key={sig.id}

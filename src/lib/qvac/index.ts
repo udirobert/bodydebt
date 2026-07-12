@@ -180,7 +180,10 @@ export async function runMultiAgentPipeline(
 
 // ─── Build agent trace for UI ────────────────────────────────────────────────
 
-export function buildAgentTrace(result: MultiAgentResult): AgentTrace {
+export function buildAgentTrace(
+  result: MultiAgentResult,
+  memoryContext?: string | null,
+): AgentTrace {
   const steps: AgentStep[] = result.agentMeta.map((m) => ({
     agent: m.agent as AgentStep["agent"],
     label: AGENT_LABELS[m.agent] ?? m.agent,
@@ -192,13 +195,29 @@ export function buildAgentTrace(result: MultiAgentResult): AgentTrace {
     raw: m.raw,
   }));
 
+  if (memoryContext?.trim()) {
+    const coachStep = steps.find((s) => s.agent === "coach");
+    if (coachStep) {
+      const refs = memoryContext
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .slice(0, 4);
+      const attribution =
+        refs.length > 0
+          ? `\n\n[Memory injected into coach prompt]\n${refs.map((l) => `• ${l}`).join("\n")}`
+          : "";
+      coachStep.raw = `${coachStep.raw ?? ""}${attribution}`.trim();
+    }
+  }
+
   return {
     steps,
     triage: result.triage ?? undefined,
     source: result.source,
     totalDurationMs: result.totalDurationMs,
     model: result.model,
-    memoryContext: input.memoryContext ?? null,
+    memoryContext: memoryContext ?? null,
   };
 }
 

@@ -17,6 +17,14 @@ export interface AgentProgress {
   total?: number;
 }
 
+export interface MemoryRecallState {
+  factCount: number;
+  preview: string;
+  source: string;
+  hasHistory: boolean;
+  recalled: boolean;
+}
+
 /**
  * Stream slice — ephemeral runtime state that is NEVER persisted.
  *
@@ -39,6 +47,14 @@ export interface StreamSlice {
   agentProgress: AgentProgress | null;
   setAgentProgress: (progress: AgentProgress | null) => void;
 
+  // Supermemory recall result from SSE (live during analysis — not persisted)
+  memoryRecall: MemoryRecallState | null;
+  setMemoryRecall: (recall: MemoryRecallState | null) => void;
+
+  /** Example session — ephemeral, never persisted */
+  previewMode: boolean;
+  setPreviewMode: (active: boolean) => void;
+
   resetStream: () => void;
 }
 
@@ -60,9 +76,17 @@ export const createStreamSlice: StateCreator<
   agentProgress: null,
   setAgentProgress: (progress) => set({ agentProgress: progress }),
 
+  memoryRecall: null,
+  setMemoryRecall: (recall) => set({ memoryRecall: recall }),
+
+  previewMode: false,
+  setPreviewMode: (active) => set({ previewMode: active }),
+
   resetStream: () => set({
     zkProof: null,
     agentEvents: [],
     agentProgress: null,
+    memoryRecall: null,
+    previewMode: false,
   }),
 });

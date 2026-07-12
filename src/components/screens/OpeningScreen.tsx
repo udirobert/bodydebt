@@ -195,6 +195,26 @@ export function OpeningScreen() {
                   Log last night. Get a recovery plan that runs on-device.
                 </p>
               )}
+              {!isReturning && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/coach-memory")}
+                  className="mt-4 text-[10px] font-mono tracking-wide underline-offset-2 hover:underline"
+                  style={{ color: "#a855f7" }}
+                >
+                  See how your coach learns over time →
+                </button>
+              )}
+              {!isReturning && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/preview")}
+                  className="mt-2 text-[9px] font-mono"
+                  style={{ color: "var(--color-text-faint)" }}
+                >
+                  Or explore a full example session →
+                </button>
+              )}
               {isReturning && sleepHabit && (
                 <p
                   className="mt-3 text-[11px] font-mono"
@@ -212,6 +232,16 @@ export function OpeningScreen() {
                     ? memorySummary.slice(0, 120) + "…"
                     : memorySummary}
                 </p>
+              )}
+              {isReturning && memoryReturning && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/coach-memory")}
+                  className="mt-2 text-[9px] font-mono"
+                  style={{ color: "#a855f7" }}
+                >
+                  How your coach uses this →
+                </button>
               )}
               {isReturning && streakDays > 0 && !memorySummary && (
                 <p
