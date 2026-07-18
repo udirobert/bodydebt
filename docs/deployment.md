@@ -62,6 +62,8 @@ Notes:
   hot-reloads; cert issuance/renewal is automatic.
 - To undo: delete `orbura.yaml`. The change is isolated to this host and does
   not affect other apps the proxy serves.
+- The old `bodydebt.thisyearnofear.com` route (`bodydebt.yaml`) now redirects to
+  `https://orbura.famile.xyz` while preserving path and query.
 
 ## Don't
 
