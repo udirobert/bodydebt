@@ -256,4 +256,4 @@ GITHUB_CLIENT_SECRET=
 - Face scan reliability: `docs/face-scan.md`
 - Recent progress: `docs/progress.md`
 - Archived legacy notes: `docs/legacy/`
-- Historical HF-space experiments: `hf-space/archive/`
+- Historical HF Space: https://huggingface.co/spaces/Papajams/orbura (no longer tracked in this repo)

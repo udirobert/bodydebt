@@ -267,18 +267,9 @@ public/ezkl/witness.json
 # Python virtualenvs
 .venv-challenge/
 
-# HF Space datasets (large, regenerable)
-hf-space/datasets/
-
-# Local archive / scratch dirs
-archive/*
-!archive/
-!archive/README.md
-!archive/legacy-gradio/
-!archive/legacy-gradio/**
-hf-space/archive/*
-!hf-space/archive/
-!hf-space/archive/README.md
+# HF Space — now lives independently at https://huggingface.co/spaces/Papajams/orbura
+# The source is no longer tracked in this repo; the Space is updated directly.
+hf-space/
 
 # Demo video project (separate HyperFrames project, large binaries)
 demo-video/
