@@ -1,6 +1,6 @@
 # ZK Pipeline Notes
 
-This document holds the longer implementation notes for Body Debt's face-scan ZK flow. Keep `AGENTS.md` compact and link here for detail.
+This document holds the longer implementation notes for Orbura's face-scan ZK flow. Keep `AGENTS.md` compact and link here for detail.
 
 ## Purpose
 

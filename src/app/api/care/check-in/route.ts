@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
             .where(eq(carePatients.id, observation.patientId))
             .limit(1);
 
-          const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://bodydebt.thisyearnofear.com";
+          const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://orbura.famile.xyz";
           const { subject, text, html } = buildEscalationEmail(
             escalation,
             observation,

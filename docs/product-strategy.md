@@ -2,7 +2,7 @@
 
 ## Company thesis
 
-Body Debt is evolving from a multi-mode recovery demo into a longitudinal
+Orbura is evolving from a multi-mode recovery demo into a longitudinal
 intervention platform: turn fragmented health signals into one safe action,
 learn what a person can sustain, and bring a clinician in when human judgment is
 needed.
@@ -10,7 +10,7 @@ needed.
 The platform may support several products, but they are not modes of one
 user-facing health experience:
 
-- **Body Debt** — the original personal recovery product and consumer laboratory.
+- **Orbura** — the original personal recovery product and consumer laboratory.
 - **Match Fit** — a separate football readiness product.
 - **Fan Recovery** — an experimental football-fan recovery product.
 - **Care Companion** — the primary commercial direction for chronic care.

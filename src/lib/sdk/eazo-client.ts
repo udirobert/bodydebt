@@ -1,6 +1,6 @@
 // Auth.js v5 client bridge.
 //
-// Body-debt originally ran on the Eazo platform with a custom SDK.
+// Orbura originally ran on the Eazo platform with a custom SDK.
 // We've replaced it with NextAuth.js (Auth.js v5) — self-hosted,
 // open source, no vendor lock-in. This module preserves the same
 // interface (`auth`, `memory`, `share`, `notifications`, `ai`) that
@@ -62,7 +62,7 @@ export const memory = {
       // The server route checks auth() first, so we don't need to
       // send containerTag for authenticated users. We still send it
       // as fallback for guests.
-      const raw = localStorage.getItem("body-debt-session");
+      const raw = localStorage.getItem("orbura-session");
       const state = raw ? JSON.parse(raw)?.state : null;
       const containerTag = state?.anonymousId;
       await fetch("/api/memory", {

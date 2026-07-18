@@ -51,7 +51,7 @@ function createMockGetRequest(token: string | null, baseUrl = "http://localhost:
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-06-03T06:00:00.000Z"));
-  process.env.NEXT_PUBLIC_APP_URL = "https://bodydebt.app";
+  process.env.NEXT_PUBLIC_APP_URL = "https://orbura.famile.xyz";
 });
 
 afterEach(() => {
@@ -71,7 +71,7 @@ describe("POST /api/squad/share", () => {
     expect(data).toHaveProperty("url");
     expect(typeof data.token).toBe("string");
     expect(data.token.length).toBe(8);
-    expect(data.url).toBe(`https://bodydebt.app/squad/shared/${data.token}`);
+    expect(data.url).toBe(`https://orbura.famile.xyz/squad/shared/${data.token}`);
   });
 
   it("returns token and url without appName", async () => {
@@ -247,7 +247,7 @@ describe("end-to-end: POST then GET", () => {
     const { token, url } = await postRes.json();
 
     expect(token).toMatch(/^[a-z0-9]{8}$/);
-    expect(url).toBe(`https://bodydebt.app/squad/shared/${token}`);
+    expect(url).toBe(`https://orbura.famile.xyz/squad/shared/${token}`);
 
     // GET the same token
     const getReq = createMockGetRequest(token);

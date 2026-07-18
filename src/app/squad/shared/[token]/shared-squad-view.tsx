@@ -110,7 +110,7 @@ export function SharedSquadView({
 
         {/* Footer */}
         <p className="text-center text-[9px] font-mono uppercase tracking-widest text-slate-600 mt-8">
-          bodydebt.app · Shared squad snapshot
+          orbura.famile.xyz · Shared squad snapshot
         </p>
       </div>
     </div>

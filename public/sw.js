@@ -1,8 +1,8 @@
-// Body Debt — ZK Artifact Cache Service Worker
+// Orbura — ZK Artifact Cache Service Worker
 // Pre-caches the 138MB pk.key, 4MB srs.key, and 10KB compiled.ezkl
 // so proof generation is instant on return visits.
 
-const CACHE_NAME = "bodydebt-zk-artifacts-v1";
+const CACHE_NAME = "orbura-zk-artifacts-v1";
 const ZK_ARTIFACTS = [
   "/ezkl/pk.key",
   "/ezkl/srs.key",

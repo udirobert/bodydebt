@@ -56,7 +56,7 @@ export default function SignInPage() {
           className="flex items-center gap-1.5 text-xs text-(--color-text-faint) hover:text-(--color-text-secondary) transition-colors mb-8"
         >
           <ArrowLeft className="h-3 w-3" />
-          Back to Body Debt
+          Back to Orbura
         </Link>
 
         <h1

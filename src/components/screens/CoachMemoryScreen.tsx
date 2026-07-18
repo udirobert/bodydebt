@@ -70,7 +70,7 @@ export function CoachMemoryScreen() {
           Same stressors. Different advice.
         </h1>
         <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--color-text-secondary)" }}>
-          Most apps reset every session. Body Debt remembers what worked — sleep patterns,
+          Most apps reset every session. Orbura remembers what worked — sleep patterns,
           prescriptions that helped, what to avoid — and shapes tomorrow&apos;s plan around it.
         </p>
         <p

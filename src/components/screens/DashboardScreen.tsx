@@ -278,7 +278,7 @@ export function DashboardScreen() {
             className="text-[10px] font-mono uppercase tracking-widest mb-2"
             style={{ color: "var(--color-text-faint)" }}
           >
-            Body Debt
+            Orbura
           </p>
           <h2
             className="text-xl font-normal mb-2"
@@ -328,7 +328,7 @@ export function DashboardScreen() {
             >
               {ctx.vocabulary.appName}
             </span>
-            {/* Status badges — each explains a layer of how Body Debt works */}
+            {/* Status badges — each explains a layer of how Orbura works */}
             <div className="flex items-center gap-1.5 overflow-hidden">
               {data.agentTrace && data.agentTrace.source === "qvac-local" && (
                 <span

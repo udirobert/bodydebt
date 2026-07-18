@@ -187,7 +187,7 @@ export const QUALITY_METRICS = {
 export const RELEASE_LINKS = {
   huggingFace: "https://huggingface.co/Papajams",
   kaggle: "https://kaggle.com/udirobert",
-  github: "https://github.com/udirobert/bodydebt",
+  github: "https://github.com/udirobert/orbura",
   demo: "/autoscientist-demo",
   adaption: "https://adaptionlabs.ai",
   challenge: "https://adaptionlabs.ai/blog/autoscientist-challenge",

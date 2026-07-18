@@ -1,6 +1,6 @@
 import type { DebtAnalysis, Stressor, ConfidenceTier, FaceAnalysisResult, HRVData } from "@/lib/types";
 
-const BACKUP_KEY = "body-debt-preview-backup";
+const BACKUP_KEY = "orbura-preview-backup";
 
 export interface PreviewSessionBackup {
   analysis: DebtAnalysis | null;

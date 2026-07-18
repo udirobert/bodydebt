@@ -1,13 +1,13 @@
-# Body Debt
+# Orbura
 
-Body Debt is evolving into a longitudinal intervention platform: turn fragmented
+Orbura (formerly Body Debt) is evolving into a longitudinal intervention platform: turn fragmented
 health signals into one safe action, learn what a person can sustain, and bring
 a human care team in when judgment is needed.
 
 The repository currently contains several product shells and technology
 showcases built on shared recovery infrastructure:
 
-- **Body Debt** — the original personal recovery product.
+- **Orbura** — the original personal recovery product.
 - **Match Fit** — football squad readiness and recovery.
 - **Fan Recovery** — an experimental post-match recovery experience.
 - **Care Companion** — the primary commercial direction for chronic care.

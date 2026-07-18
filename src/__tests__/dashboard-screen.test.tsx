@@ -54,7 +54,7 @@ const mockUseRecoveryContext = vi.fn((): {
   supportsSquad: boolean;
   agentPrompts?: { verdictPrefix?: string };
 } => ({
-  vocabulary: { appName: "BODY DEBT", scheduleLabel: "Recovery Schedule" },
+  vocabulary: { appName: "Orbura", scheduleLabel: "Recovery Schedule" },
   supportsSquad: false,
 }));
 vi.mock("@/lib/contexts/RecoveryContext", () => ({
@@ -292,7 +292,7 @@ describe("DashboardScreen — main dashboard", () => {
   it("renders the app name in the header", async () => {
     const { DashboardScreen } = await import("@/components/screens/DashboardScreen");
     render(<DashboardScreen />);
-    expect(screen.getByText("BODY DEBT")).toBeDefined();
+    expect(screen.getByText("Orbura")).toBeDefined();
   });
 
   it("renders the score display", async () => {

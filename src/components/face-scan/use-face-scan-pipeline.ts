@@ -658,7 +658,7 @@ export function useFaceScanPipeline() {
           clearTimeout(timer);
           reject(new Error("Proof worker crashed"));
         };
-        workerRef.current.postMessage({ features, threshold: 0.5, modelId: "bodydebt-stress-v1" });
+        workerRef.current.postMessage({ features, threshold: 0.5, modelId: "orbura-stress-v1" });
       });
 
       setLastProof(proofResult);

@@ -7,7 +7,7 @@ import { registerGetRecoveryStatusTool } from "./tools/get-recovery-status";
 
 export function buildMcpServer(userId: string): McpServer {
   const server = new McpServer({
-    name: "body-debt-mcp",
+    name: "orbura-mcp",
     version: "1.0.0",
   });
 

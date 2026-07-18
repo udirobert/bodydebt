@@ -16,9 +16,9 @@ config({ path: ".env" });
 
 const DATABASE_URL = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/myapp";
 
-const CLINIC_NAME = "Body Debt Demo Clinic";
-const CLINICIAN_EMAIL = "demo-clinician@bodydebt.local";
-const PATIENT_EMAIL = "demo-patient@bodydebt.local";
+const CLINIC_NAME = "Orbura Demo Clinic";
+const CLINICIAN_EMAIL = "demo-clinician@orbura.local";
+const PATIENT_EMAIL = "demo-patient@orbura.local";
 
 async function findOrCreateUser(email: string, name: string) {
   const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);

@@ -7,7 +7,7 @@
 
 ## Setup (before recording)
 
-1. Open the app at `bodydebt.app` in Chrome
+1. Open the app at `orbura.famile.xyz` in Chrome
 2. Open DevTools → Network tab set to filter `rpc` or `skalenodes`
 3. Open MetaMask/browser wallet on **SKALE Europa Testnet**
 4. Have your wallet funded with sFUEL (faucet pre-loaded)
@@ -21,7 +21,7 @@
 **Show:** The landing page (wake-time screen)
 
 **Say:**
-> *"Body Debt is a health intelligence app that measures your physiological state using AI — but unlike every other health app, it proves it ran the computation correctly without ever revealing your biometric data. This is programmable privacy in production."*
+> *"Orbura is a health intelligence app that measures your physiological state using AI — but unlike every other health app, it proves it ran the computation correctly without ever revealing your biometric data. This is programmable privacy in production."*
 
 **Click:** Log a stressor quickly → Continue through intake
 
@@ -118,7 +118,7 @@
 **Show:** The "Accept & Continue" button
 
 **Say:**
-> *"Body Debt demonstrates that programmable privacy isn't theoretical — it's shipping. Real ZK proofs, real on-chain verification, real self-hosted AI, all protecting user biometric data. This is what privacy-first health intelligence looks like."*
+> *"Orbura demonstrates that programmable privacy isn't theoretical — it's shipping. Real ZK proofs, real on-chain verification, real self-hosted AI, all protecting user biometric data. This is what privacy-first health intelligence looks like."*
 
 ---
 

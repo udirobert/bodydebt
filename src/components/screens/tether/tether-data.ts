@@ -45,7 +45,7 @@ export const HERO = {
   headlineTop: "The match is over.",
   headlineAccent: "Your body isn't.",
   subheadline:
-    "A football match is a physiological event — for the players who run 11km and the billions who watch a shootout with their heart in their mouth. Body Debt estimates the recovery either one needs with deterministic scoring and a self-hosted QVAC runtime.",
+    "A football match is a physiological event — for the players who run 11km and the billions who watch a shootout with their heart in their mouth. Orbura estimates the recovery either one needs with deterministic scoring and a self-hosted QVAC runtime.",
 };
 
 export const EXPERIENCES = [
@@ -359,7 +359,7 @@ export const TETHER_LINKS = {
   live: "/",
   squad: "/squad",
   evidence: "/evidence",
-  github: "https://github.com/udirobert/bodydebt",
+  github: "https://github.com/udirobert/orbura",
   qvac: "https://qvac.tether.io",
   wdk: "https://wdk.tether.io",
   dorahacks: "https://dorahacks.io/hackathon/tether-developers-cup",

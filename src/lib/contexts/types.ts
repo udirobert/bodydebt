@@ -19,7 +19,7 @@ export interface AgentPromptFragments {
 // ─── UI vocabulary ───────────────────────────────────────────────────────────
 
 export interface UIVocabulary {
-  appName: string;             // "Body Debt" | "Match Fit"
+  appName: string;             // "Orbura" | "Match Fit"
   scoreLabel: string;          // "Debt Score" | "Match-Readiness Score"
   recoveryLabel: string;       // "Recovery" | "Return-to-Play"
   prescriptionLabel: string;   // "Prescription" | "Match-Day Protocol"
@@ -28,7 +28,7 @@ export interface UIVocabulary {
   systemLabel: string;         // "Recovery by system" | "Squad medical by system"
   counterfactualLabel: string; // "What would change this" | "What would change this"
   edgeAiBadge: string;         // "Self-hosted AI"
-  personaLabel: string;        // "Body Debt" | "Match Fit"
+  personaLabel: string;        // "Orbura" | "Match Fit"
   tagline: string;             // shown on opening screen
 }
 

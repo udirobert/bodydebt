@@ -14,7 +14,7 @@
 # Prerequisites:
 #   - ssh snel-bot alias in ~/.ssh/config (or pass SERVER= alias@host)
 #   - bun installed locally
-#   - DNS A record for bodydebt.thisyearnofear.com pointing at the server
+#   - DNS A record for orbura.famile.xyz pointing at the server
 #
 # Usage:
 #   ./scripts/deploy.sh                 # default: snel-bot, linux-x64 target
@@ -162,7 +162,7 @@ RSYNC_EXCLUDES=(
 )
 
 # Stop the running app first so file locks don't cause rsync noise
-ssh "$SERVER" "pm2 stop bodydebt 2>/dev/null || true"
+ssh "$SERVER" "pm2 stop orbura 2>/dev/null || true"
 
 # Rsync from local to server, excluding the dev artifacts
 rsync -avz --delete \
@@ -179,6 +179,6 @@ ssh "$SERVER" "cd $DEPLOY_PATH && node scripts/migrate-prod.mjs"
 
 # 5. Reload on the server
 echo ">>> Reloading pm2 on $SERVER..."
-ssh "$SERVER" "cd $DEPLOY_PATH && export PATH=$BUN_PATH_REMOTE:\$PATH && pm2 delete bodydebt 2>/dev/null; pm2 start ecosystem.config.cjs && pm2 save"
+ssh "$SERVER" "cd $DEPLOY_PATH && export PATH=$BUN_PATH_REMOTE:\$PATH && pm2 delete orbura 2>/dev/null; pm2 start ecosystem.config.cjs && pm2 save"
 
-echo ">>> Deploy complete. Live at https://bodydebt.thisyearnofear.com"
+echo ">>> Deploy complete. Live at https://orbura.famile.xyz"

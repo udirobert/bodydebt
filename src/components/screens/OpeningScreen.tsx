@@ -181,7 +181,7 @@ export function OpeningScreen() {
                   letterSpacing: "0.18em",
                 }}
               >
-                Body Debt
+                Orbura
               </h1>
               <p
                 className="leading-snug"

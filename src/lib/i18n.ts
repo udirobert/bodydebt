@@ -1,5 +1,5 @@
 /**
- * Localization strings for Body Debt.
+ * Localization strings for Orbura.
  *
  * Three languages supported out of the box: English (default), Spanish, French.
  * The user's language preference is stored in the Zustand store and

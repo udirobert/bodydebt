@@ -1,7 +1,7 @@
 import type { DebtAnalysis, Prescription, Stressor } from "@/lib/types";
 
 /** Shared container tag with pre-seeded Supermemory data on the live site. */
-export const DEMO_MEMORY_CONTAINER = "demo-bodydebt-seed";
+export const DEMO_MEMORY_CONTAINER = "demo-orbura-seed";
 
 export const DEMO_STRESSORS: Stressor[] = [
   { type: "sleep", sleepHours: "under_4" },
@@ -17,7 +17,7 @@ export const AMNESIA_PRESCRIPTION: Prescription = {
   avoid: "Intense training until you feel more recovered.",
 };
 
-/** Memory-backed prescription — session 2 with history (demo-bodydebt-seed). */
+/** Memory-backed prescription — session 2 with history (demo-orbura-seed). */
 export const MEMORY_PRESCRIPTION: Prescription = {
   rightNow: "Drink 500ml water with electrolytes — alcohol dehydrated you overnight.",
   thisMorning:

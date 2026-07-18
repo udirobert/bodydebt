@@ -9,17 +9,17 @@ export function buildMagicLinkEmail(
   url: string,
   expiresInHours = 24,
 ): MagicLinkEmail {
-  const subject = "Your secure sign-in link for Body Debt";
+  const subject = "Your secure sign-in link for Orbura";
   const expires = `${expiresInHours} hour${expiresInHours === 1 ? "" : "s"}`;
 
   const text =
     `Hi,\n\n` +
-    `You requested a secure sign-in link for Body Debt.\n\n` +
+    `You requested a secure sign-in link for Orbura.\n\n` +
     `Sign in:\n${url}\n\n` +
     `This link is single-use and expires in ${expires}. ` +
     `If you did not request this email, you can safely ignore it.\n\n` +
-    `Body Debt\n` +
-    `https://bodydebt.thisyearnofear.com`;
+    `Orbura\n` +
+    `https://orbura.famile.xyz`;
 
   const html = `
 <!DOCTYPE html>
@@ -36,7 +36,7 @@ export function buildMagicLinkEmail(
         <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:12px; overflow:hidden; max-width:640px; width:100%;">
           <tr>
             <td style="background:#0f172a; padding:24px 32px; text-align:left;">
-              <h1 style="margin:0; color:#ffffff; font-size:20px; font-weight:600; letter-spacing:-0.2px;">Body Debt</h1>
+              <h1 style="margin:0; color:#ffffff; font-size:20px; font-weight:600; letter-spacing:-0.2px;">Orbura</h1>
               <p style="margin:4px 0 0; color:#94a3b8; font-size:13px;">Secure sign-in</p>
             </td>
           </tr>
@@ -44,13 +44,13 @@ export function buildMagicLinkEmail(
             <td style="padding:32px;">
               <p style="margin:0 0 16px; font-size:16px; line-height:1.5;">Hi,</p>
               <p style="margin:0 0 24px; font-size:16px; line-height:1.5;">
-                You requested a secure, passwordless sign-in link for <strong>Body Debt</strong>. Click the button below to continue.
+                You requested a secure, passwordless sign-in link for <strong>Orbura</strong>. Click the button below to continue.
               </p>
 
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
                 <tr>
                   <td align="left">
-                    <a href="${url}" style="display:inline-block; background:#ea580c; color:#ffffff; text-decoration:none; padding:14px 28px; border-radius:10px; font-size:16px; font-weight:600;">Sign in to Body Debt</a>
+                    <a href="${url}" style="display:inline-block; background:#ea580c; color:#ffffff; text-decoration:none; padding:14px 28px; border-radius:10px; font-size:16px; font-weight:600;">Sign in to Orbura</a>
                   </td>
                 </tr>
               </table>
@@ -73,14 +73,14 @@ export function buildMagicLinkEmail(
               </table>
 
               <p style="margin:24px 0 0; padding-top:24px; border-top:1px solid #e2e8f0; font-size:13px; line-height:1.5; color:#64748b;">
-                Body Debt puts your recovery data under your control. No password needed — just your email.
+                Orbura puts your recovery data under your control. No password needed — just your email.
               </p>
             </td>
           </tr>
           <tr>
             <td style="background:#f8fafc; padding:20px 32px; text-align:center;">
               <p style="margin:0; font-size:12px; color:#94a3b8;">
-                &copy; Body Debt · <a href="https://bodydebt.thisyearnofear.com" style="color:#64748b; text-decoration:none;">bodydebt.thisyearnofear.com</a>
+                &copy; Orbura · <a href="https://orbura.famile.xyz" style="color:#64748b; text-decoration:none;">orbura.famile.xyz</a>
               </p>
             </td>
           </tr>

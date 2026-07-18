@@ -11,15 +11,15 @@ config({ path: ".env" });
 config({ path: ".env.local", override: true });
 
 const DATABASE_URL = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/myapp";
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://bodydebt.thisyearnofear.com";
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://orbura.famile.xyz";
 
 async function main() {
   const sql = postgres(DATABASE_URL, { max: 1 });
   const db = drizzle(sql);
 
-  const [user] = await db.select().from(users).where(eq(users.email, "test-patient@bodydebt.local")).limit(1);
+  const [user] = await db.select().from(users).where(eq(users.email, "test-patient@orbura.local")).limit(1);
   if (!user) {
-    console.error("test-patient@bodydebt.local not found. Run scripts/test-escalation-email.ts first.");
+    console.error("test-patient@orbura.local not found. Run scripts/test-escalation-email.ts first.");
     process.exit(1);
   }
 

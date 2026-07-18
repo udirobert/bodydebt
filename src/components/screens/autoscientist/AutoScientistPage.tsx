@@ -44,7 +44,7 @@ export function AutoScientistPage() {
               className="text-sm font-bold tracking-widest uppercase"
               style={{ color: "var(--color-text-primary)" }}
             >
-              BODY DEBT
+              Orbura
             </span>
             <span
               className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"

@@ -130,7 +130,7 @@ export const useBodyDebtStore = create<BodyDebtState>()(
       },
     }),
     {
-      name: "body-debt-session",
+      name: "orbura-session",
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? localStorage : ({} as Storage)
       ),

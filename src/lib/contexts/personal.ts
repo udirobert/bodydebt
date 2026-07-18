@@ -19,7 +19,7 @@ export const personalContext: RecoveryContextConfig = {
     recoveryNoun: "recovery",
   },
   vocabulary: {
-    appName: "Body Debt",
+    appName: "Orbura",
     scoreLabel: "Debt Score",
     recoveryLabel: "Recovery",
     prescriptionLabel: "Prescription",
@@ -28,7 +28,7 @@ export const personalContext: RecoveryContextConfig = {
     systemLabel: "Recovery by system",
     counterfactualLabel: "What would change this",
     edgeAiBadge: "Self-hosted AI",
-    personaLabel: "Body Debt",
+    personaLabel: "Orbura",
     tagline: "Your body is talking. Are you listening?",
   },
   supportsSquad: false,

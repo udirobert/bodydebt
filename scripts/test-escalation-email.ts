@@ -28,7 +28,7 @@ async function main() {
   const now = new Date();
 
   // Reuse or create a test patient user and care record
-  const patientEmail = "test-patient@bodydebt.local";
+  const patientEmail = "test-patient@orbura.local";
   let [user] = await db.select().from(users).where(eq(users.email, patientEmail)).limit(1);
   if (!user) {
     user = (
@@ -97,7 +97,7 @@ async function main() {
         return row;
       },
       notifyEscalation: async (escalation, observation) => {
-        const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://bodydebt.thisyearnofear.com";
+        const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://orbura.famile.xyz";
         const { subject, text, html } = buildEscalationEmail(escalation, observation, {
           name: user.name,
           email: user.email,

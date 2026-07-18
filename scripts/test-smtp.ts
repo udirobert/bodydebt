@@ -8,7 +8,7 @@ const host = process.env.EMAIL_SERVER_HOST;
 const port = Number(process.env.EMAIL_SERVER_PORT ?? 587);
 const user = process.env.EMAIL_SERVER_USER;
 const pass = process.env.EMAIL_SERVER_PASSWORD;
-const from = process.env.EMAIL_FROM ?? "Body Debt <noreply@bodydebt.ai>";
+const from = process.env.EMAIL_FROM ?? "Orbura <noreply@orbura.famile.xyz>";
 const testRecipient = process.env.TEST_EMAIL;
 
 async function main() {
@@ -42,8 +42,8 @@ async function main() {
       const info = await transport.sendMail({
         to: testRecipient,
         from,
-        subject: "Body Debt SMTP test",
-        text: "If you received this, Body Debt SMTP is wired correctly.",
+        subject: "Orbura SMTP test",
+        text: "If you received this, Orbura SMTP is wired correctly.",
       });
       console.log("Test email sent:", info.messageId ?? info);
     } catch (err) {

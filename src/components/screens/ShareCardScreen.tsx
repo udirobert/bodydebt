@@ -115,7 +115,7 @@ function ShareCardVisual({
           className="text-[9px] uppercase tracking-[0.22em] font-semibold"
           style={{ color: "var(--color-text-faint)" }}
         >
-          BODY DEBT
+          Orbura
         </span>
       </motion.div>
 
@@ -270,7 +270,7 @@ function ShareCardVisual({
         className="relative z-10 mt-auto pt-5 flex items-center justify-between w-full"
       >
         <span className="text-[8px] uppercase tracking-[0.2em] font-semibold" style={{ color: "var(--color-text-disabled)" }}>
-          bodydebt.app
+          orbura.famile.xyz
         </span>
         <span className="text-[8px] uppercase tracking-[0.2em] font-semibold" style={{ color: "var(--color-text-disabled)" }}>
           What&apos;s yours?
@@ -313,7 +313,7 @@ export function ShareCardScreen() {
     const contextLines = [
       verdict,
       `Cleared: ${recoveryTime}`,
-      "bodydebt.app",
+      "orbura.famile.xyz",
     ].join("\n");
 
     try {
@@ -335,9 +335,9 @@ export function ShareCardScreen() {
       if (navigator.share) {
         try {
           await navigator.share({
-            title: "BODY DEBT",
+            title: "Orbura",
             text: `${shareText}\n\n${verdict}`,
-            url: "https://bodydebt.app",
+            url: "https://orbura.famile.xyz",
           });
           setShareDone(true);
         } catch {
@@ -348,7 +348,7 @@ export function ShareCardScreen() {
       } else {
         // Clipboard fallback
         try {
-          await navigator.clipboard.writeText(`${shareText}\n\n${verdict}\nbodydebt.app`);
+          await navigator.clipboard.writeText(`${shareText}\n\n${verdict}\norbura.famile.xyz`);
           setShareDone(true);
         } catch {
           setShareError("Couldn't open the share sheet. Try copying manually.");

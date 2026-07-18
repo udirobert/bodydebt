@@ -65,7 +65,7 @@ export function EvidencePage() {
           <div className="flex items-center gap-2">
             <span className="text-xl">🫀</span>
             <span className="app-name text-sm font-bold tracking-widest uppercase" style={{ color: "var(--color-text-primary)" }}>
-              BODY DEBT
+              Orbura
             </span>
             <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
               style={{ backgroundColor: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.15)" }}>
@@ -91,7 +91,7 @@ export function EvidencePage() {
               style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-secondary)", border: "1px solid rgba(168,162,158,0.15)" }}>
               View dashboard
             </Link>
-            <a href="https://github.com/udirobert/bodydebt" target="_blank" rel="noreferrer"
+            <a href="https://github.com/udirobert/orbura" target="_blank" rel="noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-wider"
               style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-secondary)", border: "1px solid rgba(168,162,158,0.15)" }}>
               Source code ↗
@@ -322,7 +322,7 @@ export function EvidencePage() {
           <p className="text-xs mb-4 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
             {isFan
               ? "In Fan Recovery mode the same deterministic engine models the physiological load of watching football. The cardiovascular and brain systems below carry the emotional-stress science — a documented, peer-reviewed effect, not a metaphor."
-              : "The Body Debt scoring engine is a deterministic, rule-based system rooted in peer-reviewed physiology research. Each of the five recovery systems accumulates debt independently based on the type, intensity, and timing of user-reported stressors. Below is the scientific basis for each system's scoring logic and the evidence that informs it."}
+              : "The Orbura scoring engine is a deterministic, rule-based system rooted in peer-reviewed physiology research. Each of the five recovery systems accumulates debt independently based on the type, intensity, and timing of user-reported stressors. Below is the scientific basis for each system's scoring logic and the evidence that informs it."}
           </p>
 
           {science.map((s, i) => (

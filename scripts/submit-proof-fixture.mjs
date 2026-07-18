@@ -5,7 +5,7 @@
  *
  * Usage:
  *   bun run zk:fixture
- *   node scripts/submit-proof-fixture.mjs [/tmp/body-debt-proof-fixture.json]
+ *   node scripts/submit-proof-fixture.mjs [/tmp/orbura-proof-fixture.json]
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
-const fixturePath = process.argv[2] ?? "/tmp/body-debt-proof-fixture.json";
+const fixturePath = process.argv[2] ?? "/tmp/orbura-proof-fixture.json";
 const SKALE_RPC = "https://testnet.skalenodes.com/v1/juicy-low-small-testnet";
 
 function loadEnv() {

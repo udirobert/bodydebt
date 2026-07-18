@@ -75,7 +75,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           pass: process.env.EMAIL_SERVER_PASSWORD,
         },
       },
-      from: process.env.EMAIL_FROM ?? "Body Debt <noreply@bodydebt.ai>",
+      from: process.env.EMAIL_FROM ?? "Orbura <noreply@orbura.famile.xyz>",
       // Rate limit magic link requests: max 5 per email per hour,
       // max 10 per IP per hour. Prevents email bombing abuse.
       sendVerificationRequest: async ({ identifier, url }) => {
@@ -111,7 +111,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         await transport.sendMail({
           to: identifier,
-          from: process.env.EMAIL_FROM ?? "Body Debt <noreply@bodydebt.ai>",
+          from: process.env.EMAIL_FROM ?? "Orbura <noreply@orbura.famile.xyz>",
           subject,
           text,
           html,
@@ -147,7 +147,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 // requireAuth checks for a valid NextAuth session. Returns { ok: true, user }
 // when authenticated, or { ok: false, response } when not. Callers are
 // expected to fall through to guest mode when ok: false — this matches
-// the guest-first design of body-debt.
+// the guest-first design of orbura.
 
 export type AuthUser = {
   id: string;

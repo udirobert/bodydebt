@@ -8,7 +8,7 @@ explicit.
 
 ```text
 Product shells
-  Body Debt | Match Fit | Fan Recovery | Care Companion | Showcases
+  Orbura | Match Fit | Fan Recovery | Care Companion | Showcases
         |
 Application use cases
   assessment | daily plan | adherence | escalation | clinician summary
@@ -40,7 +40,7 @@ receives a separate product shell and domain.
 Long-term route ownership:
 
 ```text
-/                 Body Debt or the current primary product
+/                 Orbura or the current primary product
 /match-fit        football readiness
 /fan-recovery     experimental fan experience
 /care             chronic-care companion

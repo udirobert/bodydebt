@@ -29,7 +29,7 @@ describe("sendEmail", () => {
     process.env.EMAIL_SERVER_PORT = "587";
     process.env.EMAIL_SERVER_USER = "user";
     process.env.EMAIL_SERVER_PASSWORD = "pass";
-    process.env.EMAIL_FROM = "Body Debt <noreply@bodydebt.ai>";
+    process.env.EMAIL_FROM = "Orbura <noreply@orbura.famile.xyz>";
 
     await sendEmail({ to: "care@example.com", subject: "Test", text: "Hello" });
 
@@ -41,7 +41,7 @@ describe("sendEmail", () => {
     });
     expect(mockedSendMail).toHaveBeenCalledWith({
       to: "care@example.com",
-      from: "Body Debt <noreply@bodydebt.ai>",
+      from: "Orbura <noreply@orbura.famile.xyz>",
       subject: "Test",
       text: "Hello",
       html: undefined,

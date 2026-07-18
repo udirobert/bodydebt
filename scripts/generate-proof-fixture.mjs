@@ -3,7 +3,7 @@
 /**
  * Generate a known-good EZKL proof fixture for the current public/ezkl artifacts.
  *
- * Default output: /tmp/body-debt-proof-fixture.json
+ * Default output: /tmp/orbura-proof-fixture.json
  * Optional output: node scripts/generate-proof-fixture.mjs path/to/fixture.json
  */
 
@@ -16,8 +16,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const outPath = process.argv[2]
   ? resolve(root, process.argv[2])
-  : "/tmp/body-debt-proof-fixture.json";
-const proofPath = "/tmp/body-debt-proof.json";
+  : "/tmp/orbura-proof-fixture.json";
+const proofPath = "/tmp/orbura-proof.json";
 
 function requireFile(path) {
   if (!existsSync(path)) {

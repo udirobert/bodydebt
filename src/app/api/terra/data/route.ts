@@ -11,7 +11,7 @@ const TERRA_API_BASE = "https://api.tryterra.co/v2";
  * Polls Terra's REST API for today's sleep + HRV data on behalf of a
  * connected user. Called by the HRV screen after successful OAuth.
  *
- * Returns an HRVData object in Body Debt's schema, or an error.
+ * Returns an HRVData object in Orbura's schema, or an error.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
   const remSecs       = (asleepData?.duration_REM_sleep_state_seconds as number | undefined) ?? null;
   const lightSecs     = (asleepData?.duration_light_sleep_state_seconds as number | undefined) ?? null;
 
-  // Convert to Body Debt's HRVData schema
+  // Convert to Orbura's HRVData schema
   // HRV delta: we compute vs population average (65ms RMSSD is roughly healthy adult baseline)
   // A real baseline would come from the user's own 14-day rolling average stored in our DB
   const populationBaselineRmssd = 65;

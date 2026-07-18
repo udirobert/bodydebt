@@ -2,13 +2,13 @@ import { pgTable, varchar, timestamp, bigserial } from "drizzle-orm/pg-core";
 import type { InferSelectModel } from "drizzle-orm";
 
 /**
- * Maps a Body Debt user_id → Terra user_id + provider
+ * Maps an Orbura user_id → Terra user_id + provider
  * One row per connected wearable per user.
  */
 export const terraConnections = pgTable("terra_connections", {
   id: bigserial("id", { mode: "bigint" }).primaryKey(),
 
-  // Body Debt user — may be null for guests (identified by session token)
+  // Orbura user — may be null for guests (identified by session token)
   userId: varchar("user_id", { length: 128 }),
 
   // Terra-assigned user identifier returned after OAuth

@@ -1,7 +1,7 @@
-// Body Debt — branded opengraph image
+// Orbura — branded opengraph image
 import { ImageResponse } from "next/og";
 
-export const alt = "BODY DEBT — Your body keeps the score.";
+export const alt = "Orbura — Your body keeps the score.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -62,7 +62,7 @@ export default function Image() {
             marginBottom: 20,
           }}
         >
-          BODY DEBT
+          Orbura
         </div>
 
         {/* Score placeholder */}
@@ -107,7 +107,7 @@ export default function Image() {
             textTransform: "uppercase",
           }}
         >
-          bodydebt.app
+          orbura.famile.xyz
         </div>
       </div>
     ),

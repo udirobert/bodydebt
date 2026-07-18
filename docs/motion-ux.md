@@ -1,6 +1,6 @@
 # Motion & UX craft
 
-Body Debt’s distinctiveness comes from product metaphors — debt orbs, system
+Orbura’s distinctiveness comes from product metaphors — debt orbs, system
 meters, inverted gauges, clinical dark surfaces — not from decorative chart
 kits or marketing flourishes.
 

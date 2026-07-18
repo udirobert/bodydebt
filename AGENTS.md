@@ -1,6 +1,6 @@
-# Agent Guide: Body Debt
+# Agent Guide: Orbura
 
-Body Debt is evolving into a longitudinal intervention platform: turn health
+Orbura (formerly Body Debt) is evolving into a longitudinal intervention platform: turn health
 signals into one safe action, learn what a person can sustain, and bring a human
 care team in when judgment is needed. The first commercial wedge is adherence
 rescue during the first 12 weeks of UK GLP-1 initiation and dose escalation.
@@ -8,7 +8,7 @@ See `docs/product-strategy.md` and `docs/architecture.md`.
 
 The repository contains separate product shells:
 
-- **Body Debt** — the original personal recovery product.
+- **Orbura** — the original personal recovery product.
 - **Match Fit** — squad-level football readiness.
 - **Fan Recovery** — an experimental post-match experience.
 - **Care Companion** — the new chronic-care product direction.
@@ -225,7 +225,7 @@ EMAIL_SERVER_HOST=
 EMAIL_SERVER_PORT=587
 EMAIL_SERVER_USER=
 EMAIL_SERVER_PASSWORD=
-EMAIL_FROM=Body Debt <noreply@bodydebt.ai>
+EMAIL_FROM=Orbura <noreply@orbura.famile.xyz>
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 ```

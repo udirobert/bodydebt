@@ -8,7 +8,7 @@ import { MEMORY_PRESCRIPTION, MEMORY_DEMO_FACTS } from "@/lib/memory-demo-data";
 describe("parsePriorDebtScoreFromMemory", () => {
   it("extracts score from session log format", () => {
     const score = parsePriorDebtScoreFromMemory(
-      "[2026-07-11] Body debt assessment score is 52.",
+      "[2026-07-11] Orbura assessment score is 52.",
       "Score: 64/100\nVerdict: High debt",
     );
     expect(score).toBe(52);

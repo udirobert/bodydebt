@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const sleepEntry = dataArray[0] as Record<string, unknown> | undefined;
 
     if (sleepEntry) {
-      // Extract the fields Body Debt needs
+      // Extract the fields Orbura needs
       const hrData = sleepEntry.heart_rate_data as Record<string, unknown> | undefined;
       const sleepData = sleepEntry.sleep_durations_data as Record<string, unknown> | undefined;
       const asleepData = sleepData?.asleep as Record<string, unknown> | undefined;
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
       if (avgHrvRmssd !== undefined || avgRestingHr !== undefined) {
         try {
-          // Look up the Body Debt user ID for this Terra connection
+          // Look up the Orbura user ID for this Terra connection
           const [conn] = await db
             .select()
             .from(terraConnections)

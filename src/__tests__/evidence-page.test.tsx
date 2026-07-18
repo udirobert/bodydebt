@@ -44,7 +44,7 @@ describe("EvidencePage — page structure", () => {
 
   it("renders the app name badge", () => {
     render(<EvidencePage />);
-    expect(screen.getByText("BODY DEBT")).toBeDefined();
+    expect(screen.getByText("Orbura")).toBeDefined();
   });
 
   it("renders the Self-hosted AI badge", () => {

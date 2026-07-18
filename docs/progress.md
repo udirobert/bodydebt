@@ -8,7 +8,7 @@ linked docs.
 **Decision:** evolve from a shared mode switcher into separate product shells on
 a modular-monolith platform. Care Companion is the primary commercial direction;
 its first wedge is adherence rescue during the first 12 weeks of UK GLP-1
-initiation and dose escalation. Body Debt remains the recovery laboratory, Match
+initiation and dose escalation. Orbura remains the recovery laboratory, Match
 Fit remains a separate football product, and Fan Recovery plus hackathon pages
 remain experimental/showcase surfaces.
 
@@ -19,7 +19,7 @@ longitudinal record. See [product-strategy.md](./product-strategy.md) and
 
 ## UX craft (motion grammar)
 
-**Decision:** polish Body Debt’s existing metaphors (orbs, gauges, systems). Do
+**Decision:** polish Orbura’s existing metaphors (orbs, gauges, systems). Do
 **not** adopt decorative chart kits (dither-kit) or ambient SFX (cuelume) as
 defaults — they compete with the clinical product personality.
 

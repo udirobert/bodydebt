@@ -14,10 +14,10 @@ shapes behavior across sessions.**
 
 | URL | What it shows |
 |---|---|
-| `https://bodydebt.thisyearnofear.com/coach-memory` | Static day 1 vs day 2 prescription comparison |
-| `https://bodydebt.thisyearnofear.com/preview` | Full labeled example dashboard (day 2 with memory) |
+| `https://orbura.famile.xyz/coach-memory` | Static day 1 vs day 2 prescription comparison |
+| `https://orbura.famile.xyz/preview` | Full labeled example dashboard (day 2 with memory) |
 
-Pre-seeded data lives under the `demo-bodydebt-seed` container tag — two
+Pre-seeded data lives under the `demo-orbura-seed` container tag — two
 analysis sessions showing a recurring sleep-debt pattern.
 
 Locally: `bun dev`, then open `/coach-memory` or `/preview`.
@@ -36,7 +36,7 @@ Legacy `?demo=1` URLs redirect to `/preview`.
 
 ### Act 2 — The memory layer (15-45s)
 
-**Narration:** "Body Debt uses Supermemory as cross-session infrastructure. On session 2, the coach recalls your history before the agents run."
+**Narration:** "Orbura uses Supermemory as cross-session infrastructure. On session 2, the coach recalls your history before the agents run."
 
 **On screen:** Open `/preview` or run a real second session.
 
@@ -60,7 +60,7 @@ Legacy `?demo=1` URLs redirect to `/preview`.
 
 **Action:** Show per-fact forget on prescription (real sessions only — disabled in `/preview`).
 
-**Closing:** "Body Debt — recovery coaching with memory that learns from outcomes. Built on Supermemory."
+**Closing:** "Orbura — recovery coaching with memory that learns from outcomes. Built on Supermemory."
 
 ## Key differentiators
 
@@ -84,7 +84,7 @@ Implementation: `src/lib/supermemory/outcome-signals.ts`, wired in
 
 ## Pre-seeded data
 
-Two sessions seeded to `demo-bodydebt-seed`:
+Two sessions seeded to `demo-orbura-seed`:
 
 | Session | Score | Key stressors | What it shows |
 |---|---|---|---|
@@ -95,18 +95,18 @@ Two sessions seeded to `demo-bodydebt-seed`:
 
 ```bash
 # Memory health
-curl -s "https://bodydebt.thisyearnofear.com/api/memory/status?containerTag=demo-bodydebt-seed" | jq .
+curl -s "https://orbura.famile.xyz/api/memory/status?containerTag=demo-orbura-seed" | jq .
 
 # Recall for demo container
-curl -s "https://bodydebt.thisyearnofear.com/api/memory/context?containerTag=demo-bodydebt-seed&q=body+debt" | jq .
+curl -s "https://orbura.famile.xyz/api/memory/context?containerTag=demo-orbura-seed&q=body+debt" | jq .
 
 # Store a new memory
-curl -s -X POST "https://bodydebt.thisyearnofear.com/api/memory" \
+curl -s -X POST "https://orbura.famile.xyz/api/memory" \
   -H "Content-Type: application/json" \
-  -d '{"containerTag":"demo-bodydebt-seed","content":"User viewed dashboard","event_type":"page_view"}'
+  -d '{"containerTag":"demo-orbura-seed","content":"User viewed dashboard","event_type":"page_view"}'
 
 # Forget all memories (demo container only — do not run on real users)
-curl -s -X DELETE "https://bodydebt.thisyearnofear.com/api/memory" \
+curl -s -X DELETE "https://orbura.famile.xyz/api/memory" \
   -H "Content-Type: application/json" \
-  -d '{"containerTag":"demo-bodydebt-seed","all":true}'
+  -d '{"containerTag":"demo-orbura-seed","all":true}'
 ```

@@ -1,4 +1,4 @@
-// Types shared between client and server for the BODY DEBT app
+// Types shared between client and server for the Orbura app
 
 // ─── Recovery mode ────────────────────────────────────────────────────────────
 

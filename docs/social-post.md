@@ -2,7 +2,7 @@
 
 Most recovery apps give you the same generic advice every time.
 
-Body Debt is different. The AI coach uses @Supermemory to remember your patterns, past scores, and what actually worked — then injects that context into its reasoning prompts.
+Orbura is different. The AI coach uses @Supermemory to remember your patterns, past scores, and what actually worked — then injects that context into its reasoning prompts.
 
 Day 1: "Drink water. Get sleep."
 Day 2: "Delay caffeine 90min — your sleep was shorter than yesterday. Avoid alcohol — your liver is still processing. Walk 20min — natural light is critical after two short nights."
@@ -16,9 +16,9 @@ Three primitives, all used:
 → search() + profile() — recall patterns
 → forget() — per-fact or wipe everything
 
-Explore: bodydebt.thisyearnofear.com/coach-memory
-Full example: bodydebt.thisyearnofear.com/preview
-GitHub: github.com/udirobert/bodydebt
+Explore: orbura.famile.xyz/coach-memory
+Full example: orbura.famile.xyz/preview
+GitHub: github.com/udirobert/orbura
 
 Built with @Supermemory × QVAC self-hosted AI × Next.js
 

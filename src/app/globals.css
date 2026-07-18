@@ -40,7 +40,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
 
-  /* BODY DEBT design tokens */
+  /* Orbura design tokens */
   --font-heading: "DM Serif Display", Georgia, serif;
   --font-body: "Instrument Sans", "Inter", system-ui, sans-serif;
 

@@ -17,7 +17,7 @@ export async function sendEmail({ to, subject, text, html }: SendEmailInput): Pr
   const port = Number(process.env.EMAIL_SERVER_PORT ?? 587);
   const user = process.env.EMAIL_SERVER_USER;
   const pass = process.env.EMAIL_SERVER_PASSWORD;
-  const from = process.env.EMAIL_FROM ?? "Body Debt <noreply@bodydebt.ai>";
+  const from = process.env.EMAIL_FROM ?? "Orbura <noreply@orbura.famile.xyz>";
 
   if (!host) {
     console.log(`[email] SMTP not configured. Would send to ${to}:\n  Subject: ${subject}\n  ${text}`);

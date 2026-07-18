@@ -31,7 +31,7 @@ const SITE_URL = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-const SITE_TITLE = "BODY DEBT";
+const SITE_TITLE = "Orbura";
 const SITE_DESCRIPTION =
   "Your body keeps the score. Quantify recovery debt from alcohol, sleep, training, and stress.";
 
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
   // metadata and overrides `openGraph.images` below at build time.
   openGraph: {
     type: "website",
-    siteName: "BODY DEBT",
+    siteName: "Orbura",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     url: "/",
