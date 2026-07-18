@@ -192,7 +192,7 @@ export function OpeningScreen() {
                   className="mt-3 text-sm leading-relaxed"
                   style={{ color: "var(--color-text-faint)" }}
                 >
-                  Log last night. Get a recovery plan with transparent reasoning.
+                  Tell the orb what happened last night. Get a recovery plan you can read and trust.
                 </p>
               )}
               {!isReturning && (
@@ -202,7 +202,7 @@ export function OpeningScreen() {
                   className="mt-4 text-[10px] font-mono tracking-wide underline-offset-2 hover:underline"
                   style={{ color: "#a855f7" }}
                 >
-                  See how your coach learns over time →
+                  How your coach learns over time →
                 </button>
               )}
               {!isReturning && (
@@ -212,7 +212,7 @@ export function OpeningScreen() {
                   className="mt-2 text-[9px] font-mono"
                   style={{ color: "var(--color-text-faint)" }}
                 >
-                  Or explore a full example session →
+                  See a full example session →
                 </button>
               )}
               {isReturning && sleepHabit && (
@@ -312,8 +312,8 @@ export function OpeningScreen() {
                 style={{ color: "rgba(82,79,76,0.7)" }}
               >
                 {isReturning
-                  ? "Self-hosted QVAC · User-controlled memory"
-                  : "No account · Deterministic score first"}
+                  ? "Self-hosted QVAC · Your memory, your control"
+                  : "No account required · Your score is computed locally first"}
               </p>
             </motion.div>
           )}

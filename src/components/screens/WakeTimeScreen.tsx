@@ -139,7 +139,7 @@ export function WakeTimeScreen() {
         >
           {remembered
             ? "Starting from your usual times — swipe to adjust"
-            : "Swipe each drum · recovery timing starts here"}
+            : "Swipe each drum. Your recovery clock starts here"}
         </motion.p>
       </div>
 
@@ -199,7 +199,7 @@ export function WakeTimeScreen() {
         className="relative z-10 w-full px-6 pb-8 pt-3"
       >
         <PrimaryButton size="lg" shimmer onClick={handleConfirm}>
-          Continue
+          Continue to stressors
         </PrimaryButton>
       </motion.div>
     </div>
