@@ -157,7 +157,7 @@ export function ClinicAdminPage() {
         </div>
 
         {error && (
-          <div className="rounded-2xl p-4 text-sm" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+          <div className="rounded-2xl p-4 text-sm" style={{ backgroundColor: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "var(--color-text-secondary)" }}>
             {error}
           </div>
         )}

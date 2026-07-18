@@ -57,10 +57,14 @@ function symptomLabel(s: string) {
   return s.replace(/_/g, " ");
 }
 
-function severityColor(severity: string): string {
-  if (severity === "severe") return "#dc2626";
-  if (severity === "moderate") return "#ea580c";
-  return "#16a34a";
+function severityStyle(severity: string) {
+  if (severity === "severe") {
+    return { color: "var(--color-states-error)", bg: "rgba(220,38,38,0.12)", border: "rgba(220,38,38,0.25)" };
+  }
+  if (severity === "moderate") {
+    return { color: "var(--color-brand-primary)", bg: "rgba(234,88,12,0.12)", border: "rgba(234,88,12,0.25)" };
+  }
+  return { color: "var(--color-states-success)", bg: "rgba(74,222,128,0.12)", border: "rgba(74,222,128,0.25)" };
 }
 
 function EmptyState({ message, action }: { message: string; action?: React.ReactNode }) {
@@ -163,7 +167,7 @@ export function CareSummaryPage() {
 
         {loading && <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>Loading…</p>}
         {error && (
-          <div className="rounded-2xl p-4 text-sm" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+          <div className="rounded-2xl p-4 text-sm" style={{ backgroundColor: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "var(--color-text-secondary)" }}>
             {error}
           </div>
         )}
@@ -193,10 +197,10 @@ export function CareSummaryPage() {
                 <div
                   key={i.id}
                   className="rounded-2xl p-4"
-                  style={{ backgroundColor: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)" }}
+                  style={{ backgroundColor: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)" }}
                 >
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 mt-0.5" style={{ color: "#16a34a" }} />
+                    <CheckCircle2 className="h-5 w-5 mt-0.5" style={{ color: "var(--color-states-success)" }} />
                     <div className="flex-1">
                       <p className="text-sm">{i.action}</p>
                       <p className="text-[10px] mt-1 font-mono uppercase tracking-wider flex items-center gap-1" style={{ color: "var(--color-text-faint)" }}>
@@ -209,7 +213,7 @@ export function CareSummaryPage() {
                           disabled={updating === i.id}
                           onClick={() => handleInterventionStatus(i.id, "completed")}
                           className="text-[11px] px-3 py-1.5 rounded-full font-medium disabled:opacity-50"
-                          style={{ backgroundColor: "#16a34a", color: "white" }}
+                          style={{ backgroundColor: "var(--color-states-success)", color: "var(--color-text-primary)" }}
                         >
                           Mark done
                         </button>
@@ -244,10 +248,10 @@ export function CareSummaryPage() {
                 <div
                   key={e.id}
                   className="rounded-2xl p-4"
-                  style={{ backgroundColor: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}
+                  style={{ backgroundColor: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.15)" }}
                 >
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 mt-0.5" style={{ color: "#dc2626" }} />
+                    <AlertTriangle className="h-5 w-5 mt-0.5" style={{ color: "var(--color-states-error)" }} />
                     <div>
                       <p className="text-sm">{e.reason}</p>
                       <p className="text-[10px] mt-1 font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
@@ -276,7 +280,7 @@ export function CareSummaryPage() {
                 <Link
                   href="/care"
                   className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold"
-                  style={{ backgroundColor: "var(--color-brand-primary)", color: "white" }}
+                  style={{ backgroundColor: "var(--color-brand-primary)", color: "var(--color-text-primary)" }}
                 >
                   Start your first check-in
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -295,15 +299,17 @@ export function CareSummaryPage() {
                     <p className="text-sm capitalize">
                       {o.symptoms.map(symptomLabel).join(", ")}
                     </p>
-                    <span
-                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase"
-                      style={{
-                        backgroundColor: `${severityColor(o.symptomSeverity)}20`,
-                        color: severityColor(o.symptomSeverity),
-                      }}
-                    >
-                      {o.symptomSeverity}
-                    </span>
+                    {(() => {
+                      const s = severityStyle(o.symptomSeverity);
+                      return (
+                        <span
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase"
+                          style={{ backgroundColor: s.bg, color: s.color, border: `1px solid ${s.border}` }}
+                        >
+                          {o.symptomSeverity}
+                        </span>
+                      );
+                    })()}
                   </div>
                   <p className="text-[10px] mt-1 font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
                     {formatDate(o.checkInAt)} at {formatTime(o.checkInAt)} · {o.adherence.replace(/_/g, " ")}

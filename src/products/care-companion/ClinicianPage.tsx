@@ -197,7 +197,7 @@ export function ClinicianPage() {
           <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-text-faint)" }}>
             Care Companion
           </p>
-          <h1 className="text-2xl font-normal" style={{ fontFamily: "var(--color-heading)" }}>
+          <h1 className="text-2xl font-normal" style={{ fontFamily: "var(--font-heading)" }}>
             Clinic dashboard
           </h1>
           <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
@@ -207,7 +207,7 @@ export function ClinicianPage() {
 
         {loading && <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>Loading…</p>}
         {error && (
-          <div className="rounded-2xl p-4 text-sm" style={{ backgroundColor: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+          <div className="rounded-2xl p-4 text-sm" style={{ backgroundColor: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "var(--color-text-secondary)" }}>
             {error}
           </div>
         )}
@@ -240,13 +240,13 @@ export function ClinicianPage() {
                   key={e.id}
                   className="rounded-2xl p-4"
                   style={{
-                    backgroundColor: "rgba(239,68,68,0.06)",
-                    border: "1px solid rgba(239,68,68,0.15)",
+                    backgroundColor: "rgba(220,38,38,0.06)",
+                    border: "1px solid rgba(220,38,38,0.15)",
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 p-1.5 rounded-full" style={{ backgroundColor: "rgba(239,68,68,0.12)" }}>
-                      <AlertTriangle className="h-5 w-5" style={{ color: "#dc2626" }} />
+                    <div className="mt-0.5 p-1.5 rounded-full" style={{ backgroundColor: "rgba(220,38,38,0.12)" }}>
+                      <AlertTriangle className="h-5 w-5" style={{ color: "var(--color-states-error)" }} />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold">{e.reason}</p>
@@ -263,7 +263,7 @@ export function ClinicianPage() {
                           disabled={updating === e.id}
                           onClick={() => handleResolveEscalation(e.id, "clinic_reviewed")}
                           className="text-[11px] px-3 py-1.5 rounded-full font-medium disabled:opacity-50"
-                          style={{ backgroundColor: "#dc2626", color: "white" }}
+                          style={{ backgroundColor: "var(--color-states-error)", color: "var(--color-text-primary)" }}
                         >
                           Mark reviewed
                         </button>
@@ -318,8 +318,8 @@ export function ClinicianPage() {
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 p-1.5 rounded-full" style={{ backgroundColor: "rgba(34,197,94,0.12)" }}>
-                      <CheckCircle2 className="h-5 w-5" style={{ color: "#16a34a" }} />
+                    <div className="mt-0.5 p-1.5 rounded-full" style={{ backgroundColor: "rgba(74,222,128,0.12)" }}>
+                      <CheckCircle2 className="h-5 w-5" style={{ color: "var(--color-states-success)" }} />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm">{i.action}</p>

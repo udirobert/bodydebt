@@ -200,8 +200,8 @@ export function SquadScreen() {
       ctx.mode === "football" ? "personal" : "football";
     const targetCtx = getContextConfig(targetMode);
     return (
-      <div className="min-h-svh flex flex-col items-center justify-center px-6 bg-slate-950">
-        <p className="text-sm text-slate-400 mb-4 text-center">
+      <div className="min-h-svh flex flex-col items-center justify-center px-6 bg-(--color-bg-base)">
+        <p className="text-sm text-(--color-text-secondary) mb-4 text-center">
           Squad view is part of the {targetCtx.vocabulary.personaLabel} mode.
         </p>
         <PrimaryButton onClick={() => setMode(targetMode)}>
@@ -224,19 +224,19 @@ export function SquadScreen() {
   const outCount   = squad.filter((p) => p.analysis && p.analysis.debtScore >= 61).length;
 
   return (
-    <div className="min-h-svh px-5 py-8 bg-gradient-to-b from-slate-950 via-slate-900 to-emerald-950">
+    <div className="min-h-svh px-5 py-8 bg-(--color-bg-base)">
       <div className="max-w-xl mx-auto">
         <button
           onClick={() => router.push("/dashboard")}
-          className="text-xs font-mono uppercase tracking-widest text-slate-500 mb-6"
+          className="text-xs font-mono uppercase tracking-widest text-(--color-text-faint) mb-6"
         >
           ← Back to dashboard
         </button>
 
-        <h1 className="text-2xl font-semibold text-slate-100 mb-1">
+        <h1 className="text-2xl font-semibold text-(--color-states-success) mb-1">
           Squad Readiness
         </h1>
-        <p className="text-sm text-slate-400 mb-6">
+        <p className="text-sm text-(--color-text-secondary) mb-6">
           Log each player&apos;s last night to see who&apos;s ready, impact, or out.
         </p>
 
@@ -258,33 +258,33 @@ export function SquadScreen() {
                 key={p.id}
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800"
+                className="p-4 rounded-2xl bg-(--color-bg-surface)/70 border border-(--color-border-subtle)"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="text-base font-medium text-slate-100">{p.name}</p>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                    <p className="text-base font-medium text-(--color-text-primary)">{p.name}</p>
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-(--color-text-faint)">
                       {p.position}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => scanPlayer(p)}
-                      className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded bg-emerald-600/20 border border-emerald-600/40 text-emerald-300 hover:bg-emerald-600/30"
+                      className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded bg-[rgba(74,222,128,0.1)] border border-[rgba(74,222,128,0.25)] text-(--color-states-success) hover:bg-[rgba(74,222,128,0.15)]"
                     >
                       {p.analysis ? "Re-scan" : "Scan"}
                     </button>
                     {walletConnected && (
                       <button
                         onClick={() => setPayingPlayer(p.id)}
-                        className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded bg-amber-600/20 border border-amber-600/40 text-amber-300 hover:bg-amber-600/30"
+                        className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.25)] text-(--color-states-warning) hover:bg-[rgba(245,158,11,0.15)]"
                       >
                         💰 Send
                       </button>
                     )}
                     <button
                       onClick={() => removePlayer(p.id)}
-                      className="text-[10px] font-mono uppercase tracking-widest text-slate-600 hover:text-red-400"
+                      className="text-[10px] font-mono uppercase tracking-widest text-(--color-text-disabled) hover:text-(--color-states-error)"
                     >
                       Remove
                     </button>
@@ -295,7 +295,7 @@ export function SquadScreen() {
                     {status.emoji} {status.label}
                   </p>
                   {p.analysis && (
-                    <p className="text-xs font-mono font-bold text-slate-300 tabular-nums">
+                    <p className="text-xs font-mono font-bold text-(--color-text-secondary) tabular-nums">
                       {p.analysis.debtScore}/100
                     </p>
                   )}
@@ -313,13 +313,13 @@ export function SquadScreen() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="p-4 rounded-2xl bg-slate-900 border border-emerald-800 mb-4"
+              className="p-4 rounded-2xl bg-(--color-bg-surface) border border-[rgba(74,222,128,0.25)] mb-4"
             >
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Player name"
-                className="w-full px-3 py-2 mb-3 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full px-3 py-2 mb-3 bg-(--color-bg-base) border border-(--color-border-subtle) rounded-lg text-(--color-text-primary) text-sm focus:outline-none focus:border-(--color-states-success)"
                 autoFocus
               />
               <div className="grid grid-cols-4 gap-2 mb-3">
@@ -329,8 +329,8 @@ export function SquadScreen() {
                     onClick={() => setPosition(pos)}
                     className={`py-2 rounded-lg text-xs font-mono uppercase ${
                       position === pos
-                        ? "bg-emerald-600 text-white"
-                        : "bg-slate-950 border border-slate-800 text-slate-400"
+                        ? "bg-(--color-states-success) text-(--color-text-primary)"
+                        : "bg-(--color-bg-base) border border-(--color-border-subtle) text-(--color-text-secondary)"
                     }`}
                   >
                     {pos}
@@ -343,7 +343,7 @@ export function SquadScreen() {
                 </PrimaryButton>
                 <button
                   onClick={() => setAdding(false)}
-                  className="px-4 py-2 text-xs font-mono uppercase text-slate-500"
+                  className="px-4 py-2 text-xs font-mono uppercase text-(--color-text-faint)"
                 >
                   Cancel
                 </button>
@@ -356,7 +356,7 @@ export function SquadScreen() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setAdding(true)}
-              className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-700 text-slate-400 text-sm font-mono uppercase tracking-widest hover:border-emerald-600 hover:text-emerald-400 transition-colors"
+              className="w-full py-3 rounded-2xl border-2 border-dashed border-[rgba(168,162,158,0.12)] text-(--color-text-secondary) text-sm font-mono uppercase tracking-widest hover:border-(--color-states-success) hover:text-(--color-states-success) transition-colors"
             >
               + Add Player
             </motion.button>
@@ -394,14 +394,14 @@ export function SquadScreen() {
                       border: "1px solid rgba(74,222,128,0.15)",
                     }}
                   >
-                    <p className="text-[10px] font-mono text-emerald-400 mb-1">
+                    <p className="text-[10px] font-mono text-(--color-states-success) mb-1">
                       Share link copied!
                     </p>
                     <input
                       readOnly
                       value={shareLink ?? ""}
                       onClick={(e) => (e.target as HTMLInputElement).select()}
-                      className="w-full px-2 py-1.5 rounded text-[10px] font-mono bg-slate-950 border border-slate-800 text-slate-300"
+                      className="w-full px-2 py-1.5 rounded text-[10px] font-mono bg-(--color-bg-base) border border-(--color-border-subtle) text-(--color-text-secondary)"
                     />
                   </div>
             </Collapse>
@@ -437,8 +437,8 @@ export function SquadScreen() {
         </AnimatePresence>
 
         {/* ─── WDK Squad Treasury ─── */}
-        <div className="mt-6 pt-6 border-t border-slate-800">
-          <h2 className="text-xs font-mono uppercase tracking-widest text-emerald-400 mb-3">
+        <div className="mt-6 pt-6 border-t border-(--color-border-subtle)">
+          <h2 className="text-xs font-mono uppercase tracking-widest text-(--color-states-success) mb-3">
             💰 Squad Treasury
           </h2>
 
@@ -446,33 +446,33 @@ export function SquadScreen() {
             <button
               onClick={() => void connectWallet()}
               disabled={connecting}
-              className="w-full py-3 rounded-2xl border-2 border-dashed border-emerald-700/40 text-emerald-400 text-sm font-mono uppercase tracking-widest hover:border-emerald-600 hover:bg-emerald-950/30 transition-colors disabled:opacity-50"
+              className="w-full py-3 rounded-2xl border-2 border-dashed border-[rgba(74,222,128,0.25)] text-(--color-states-success) text-sm font-mono uppercase tracking-widest hover:border-(--color-states-success) hover:bg-[rgba(74,222,128,0.06)] transition-colors disabled:opacity-50"
             >
               {connecting ? "Connecting…" : "Connect USDt Treasury"}
             </button>
           ) : (
             <div className="space-y-3">
               {/* Treasury balance */}
-              <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
+              <div className="p-3 rounded-xl bg-(--color-bg-surface)/70 border border-(--color-border-subtle)">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-(--color-text-faint)">
                       Treasury Balance
                     </p>
-                    <p className="text-lg font-bold tabular-nums text-emerald-400">
+                    <p className="text-lg font-bold tabular-nums text-(--color-states-success)">
                       {refreshingBalance ? "…" : `${treasuryBalance ?? "0.00"} USDt`}
                     </p>
                   </div>
                   <button
                     onClick={() => void refreshBalance()}
                     disabled={refreshingBalance}
-                    className="text-[10px] font-mono uppercase text-slate-500 hover:text-emerald-400 disabled:opacity-50"
+                    className="text-[10px] font-mono uppercase text-(--color-text-faint) hover:text-(--color-states-success) disabled:opacity-50"
                   >
                     ↻ Refresh
                   </button>
                 </div>
                 {managerAddress && (
-                  <p className="text-[9px] font-mono text-slate-600 mt-1 truncate">
+                  <p className="text-[9px] font-mono text-(--color-text-disabled) mt-1 truncate">
                     {managerAddress}
                   </p>
                 )}
@@ -482,7 +482,7 @@ export function SquadScreen() {
               {payments.length > 0 && (
                 <button
                   onClick={() => setShowPayments((v) => !v)}
-                  className="w-full text-[10px] font-mono uppercase tracking-widest text-slate-500 hover:text-slate-300 py-1"
+                  className="w-full text-[10px] font-mono uppercase tracking-widest text-(--color-text-faint) hover:text-(--color-text-secondary) py-1"
                 >
                   {showPayments ? "Hide" : "Show"} payment history ({payments.length})
                 </button>
@@ -512,7 +512,7 @@ function PaymentRow({ payment }: { payment: SquadPayment }) {
     payment.type === "fine"  ? "var(--color-states-warning)" :
                                "var(--color-system-brain)";
   return (
-    <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/50 border border-slate-800/50">
+    <div className="flex items-center justify-between p-2 rounded-lg bg-(--color-bg-base)/50 border border-[rgba(168,162,158,0.05)]">
       <div className="flex items-center gap-2">
         <span className="text-sm">{icon}</span>
         <div>
@@ -521,12 +521,12 @@ function PaymentRow({ payment }: { payment: SquadPayment }) {
             {payment.playerName ? ` → ${payment.playerName}` : ""}
           </p>
           {payment.note && (
-            <p className="text-[9px] font-mono text-slate-600">{payment.note}</p>
+            <p className="text-[9px] font-mono text-(--color-text-disabled)">{payment.note}</p>
           )}
         </div>
       </div>
       <div className="text-right">
-        <p className="text-[9px] font-mono text-slate-500">
+        <p className="text-[9px] font-mono text-(--color-text-faint)">
           {new Date(payment.createdAt).toLocaleDateString()}
         </p>
         {payment.txHash && (
@@ -534,7 +534,7 @@ function PaymentRow({ payment }: { payment: SquadPayment }) {
             href={`https://sepolia.etherscan.io/tx/${payment.txHash}`}
             target="_blank"
             rel="noreferrer"
-            className="text-[8px] font-mono text-slate-600 hover:text-emerald-400"
+            className="text-[8px] font-mono text-(--color-text-disabled) hover:text-(--color-states-success)"
           >
             {payment.txHash.slice(0, 8)}…
           </a>
@@ -589,13 +589,13 @@ function PlayerPaymentModal({
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 10 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm p-5 rounded-2xl bg-slate-900 border border-emerald-800"
+        className="w-full max-w-sm p-5 rounded-2xl bg-(--color-bg-surface) border border-[rgba(74,222,128,0.25)]"
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-slate-100">
+          <h3 className="text-sm font-semibold text-(--color-text-primary)">
             Send to {player.name}
           </h3>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-300">
+          <button onClick={onClose} className="text-(--color-text-faint) hover:text-(--color-text-secondary)">
             ✕
           </button>
         </div>
@@ -603,19 +603,19 @@ function PlayerPaymentModal({
         {/* Player address */}
         {!player.walletAddress && (
           <div className="mb-4">
-            <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">
+            <label className="text-[10px] font-mono uppercase tracking-widest text-(--color-text-faint) block mb-1">
               Player EVM Address
             </label>
             <input
               value={addrInput}
               onChange={(e) => setAddrInput(e.target.value)}
               placeholder="0x..."
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 text-xs font-mono focus:outline-none focus:border-emerald-500"
+              className="w-full px-3 py-2 bg-(--color-bg-base) border border-(--color-border-subtle) rounded-lg text-(--color-text-primary) text-xs font-mono focus:outline-none focus:border-(--color-states-success)"
             />
             <button
               onClick={handleSaveAddress}
               disabled={!/^0x[a-fA-F0-9]{40}$/.test(addrInput)}
-              className="mt-2 w-full py-2 rounded-lg text-[10px] font-mono uppercase tracking-widest bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40"
+              className="mt-2 w-full py-2 rounded-lg text-[10px] font-mono uppercase tracking-widest bg-(--color-bg-surface) text-(--color-text-secondary) hover:bg-[rgba(168,162,158,0.08)] disabled:opacity-40"
             >
               Save Address
             </button>
@@ -630,8 +630,8 @@ function PlayerPaymentModal({
               onClick={() => setType(t)}
               className={`py-2 rounded-lg text-[10px] font-mono uppercase ${
                 type === t
-                  ? "bg-emerald-600 text-white"
-                  : "bg-slate-950 border border-slate-800 text-slate-400"
+                  ? "bg-(--color-states-success) text-(--color-text-primary)"
+                  : "bg-(--color-bg-base) border border-(--color-border-subtle) text-(--color-text-secondary)"
               }`}
             >
               {t === "bonus" ? "🏆 Bonus" : t === "fine" ? "🟨 Fine" : "💚 Tip"}
@@ -641,7 +641,7 @@ function PlayerPaymentModal({
 
         {/* Amount */}
         <div className="mb-3">
-          <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">
+          <label className="text-[10px] font-mono uppercase tracking-widest text-(--color-text-faint) block mb-1">
             Amount (USDt)
           </label>
           <input
@@ -650,20 +650,20 @@ function PlayerPaymentModal({
             type="number"
             min="1"
             max="10000"
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 text-sm font-mono focus:outline-none focus:border-emerald-500"
+            className="w-full px-3 py-2 bg-(--color-bg-base) border border-(--color-border-subtle) rounded-lg text-(--color-text-primary) text-sm font-mono focus:outline-none focus:border-(--color-states-success)"
           />
         </div>
 
         {/* Note */}
         <div className="mb-4">
-          <label className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">
+          <label className="text-[10px] font-mono uppercase tracking-widest text-(--color-text-faint) block mb-1">
             Note (optional)
           </label>
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Player of the match"
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+            className="w-full px-3 py-2 bg-(--color-bg-base) border border-(--color-border-subtle) rounded-lg text-(--color-text-primary) text-xs focus:outline-none focus:border-(--color-states-success)"
           />
         </div>
 
@@ -676,7 +676,7 @@ function PlayerPaymentModal({
         </PrimaryButton>
 
         {!player.walletAddress && (
-          <p className="text-[9px] font-mono text-slate-600 mt-2 text-center">
+          <p className="text-[9px] font-mono text-(--color-text-disabled) mt-2 text-center">
             Add player&apos;s EVM address first
           </p>
         )}
@@ -687,9 +687,9 @@ function PlayerPaymentModal({
 
 function SummaryStat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800 text-center">
+    <div className="p-3 rounded-xl bg-(--color-bg-surface)/70 border border-(--color-border-subtle) text-center">
       <p className="text-2xl font-bold tabular-nums" style={{ color }}>{value}</p>
-      <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mt-1">{label}</p>
+      <p className="text-[10px] font-mono uppercase tracking-widest text-(--color-text-faint) mt-1">{label}</p>
     </div>
   );
 }
