@@ -123,6 +123,9 @@ echo ">>> Rsyncing lean bundle to $SERVER..."
 # Build a list of files to exclude
 RSYNC_EXCLUDES=(
   --exclude='.git/'
+  --exclude='.env'
+  --exclude='.env.local'
+  --exclude='.env.*.local'
   --exclude='.next/cache/'
   --exclude='.next/dev/'          # turbopack dev cache — not needed in prod
   --exclude='.next/standalone/'  # not used (Turbopack build)
