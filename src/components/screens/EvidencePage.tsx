@@ -76,11 +76,11 @@ export function EvidencePage() {
             </span>
           </div>
           <h1 className="text-3xl font-normal leading-tight" style={{ fontFamily: "var(--font-heading)" }}>
-            Evidence bundle for QVAC Hackathon judges
+            QVAC Hackathon evidence bundle
           </h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Single-page summary of architecture, agent pipeline, measured performance, and graceful degradation.
-            Everything below is reproducible from the source code and live demo.
+            Architecture, 4-agent pipeline, measured performance, and graceful degradation —
+            all reproducible from the source code and live demo.
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             <Link href="/" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-wider"

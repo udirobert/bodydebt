@@ -139,7 +139,7 @@ export function ContextDeepenerScreen() {
               className="text-[9px] font-mono uppercase tracking-widest"
               style={{ color: "var(--color-text-faint)" }}
             >
-              What we&apos;ve got
+              What the orb sees so far
             </span>
             <span
               className="text-[9px] font-mono"
@@ -305,7 +305,7 @@ export function ContextDeepenerScreen() {
                 color: "var(--color-text-primary)",
               }}
             >
-              Got it
+              Ready for a closer look
             </h2>
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
               Next: a quick face check to estimate stress — in this browser, nothing uploaded.

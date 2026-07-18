@@ -51,19 +51,28 @@ export function SquadPanel({ onSelect }: { onSelect: (id: string) => void }) {
   if (!ctx.supportsSquad) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+    <div
+      className="rounded-2xl p-4"
+      style={{
+        backgroundColor: "var(--color-bg-surface)",
+        border: "1px solid rgba(168,162,158,0.08)",
+      }}
+    >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-widest">
+        <h3
+          className="text-sm font-semibold uppercase tracking-widest"
+          style={{ color: "var(--color-states-success)" }}
+        >
           Squad Readiness
         </h3>
-        <span className="text-xs font-mono text-slate-500">
+        <span className="text-xs font-mono" style={{ color: "var(--color-text-faint)" }}>
           {squad.length} {squad.length === 1 ? "player" : "players"}
         </span>
       </div>
 
       {squad.length === 0 ? (
-        <p className="text-xs text-slate-500">
-          Add players from the manager&apos;s medical room to see team readiness.
+        <p className="text-xs" style={{ color: "var(--color-text-faint)" }}>
+          Add players here to build the match-readiness board.
         </p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -72,7 +81,11 @@ export function SquadPanel({ onSelect }: { onSelect: (id: string) => void }) {
             return (
               <div
                 key={p.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-emerald-700 transition-colors"
+                className="flex items-center justify-between p-3 rounded-xl transition-colors"
+                style={{
+                  backgroundColor: "rgba(168,162,158,0.04)",
+                  border: "1px solid rgba(168,162,158,0.08)",
+                }}
               >
                 <button
                   onClick={() => onSelect(p.id)}
@@ -80,8 +93,8 @@ export function SquadPanel({ onSelect }: { onSelect: (id: string) => void }) {
                 >
                   <span className="text-lg">{status.emoji}</span>
                   <div>
-                    <p className="text-sm font-medium text-slate-100">{p.name}</p>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                    <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>{p.name}</p>
+                    <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-text-faint)" }}>
                       {p.position}
                     </p>
                   </div>
@@ -92,14 +105,19 @@ export function SquadPanel({ onSelect }: { onSelect: (id: string) => void }) {
                       {status.label}
                     </p>
                     {p.analysis && (
-                      <p className="text-[10px] font-mono text-slate-500 tabular-nums">
+                      <p className="text-[10px] font-mono tabular-nums" style={{ color: "var(--color-text-faint)" }}>
                         {p.analysis.debtScore}/100
                       </p>
                     )}
                   </div>
                   <button
                     onClick={() => scanPlayer(p)}
-                    className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded bg-emerald-600/20 border border-emerald-600/40 text-emerald-300 hover:bg-emerald-600/30"
+                    className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded transition-colors"
+                    style={{
+                      backgroundColor: "rgba(74,222,128,0.1)",
+                      border: "1px solid rgba(74,222,128,0.25)",
+                      color: "var(--color-states-success)",
+                    }}
                   >
                     {p.analysis ? "Re-scan" : "Scan"}
                   </button>
@@ -216,10 +234,10 @@ export function SquadScreen() {
         </button>
 
         <h1 className="text-2xl font-semibold text-slate-100 mb-1">
-          Squad Medical Room
+          Squad Readiness
         </h1>
         <p className="text-sm text-slate-400 mb-6">
-          Scan each player to build the match-readiness board.
+          Log each player&apos;s last night to see who&apos;s ready, impact, or out.
         </p>
 
         {/* Team summary */}

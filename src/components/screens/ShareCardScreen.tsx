@@ -468,12 +468,12 @@ export function ShareCardScreen() {
         {/* Auth upgrade */}
         {isGuest && <GuestAuthCard />}
 
-        {/* Recovery reminder CTA — closes the loop */}
+        {/* Recovery plan CTA — closes the loop */}
         <PrimaryButton
           size="md"
           onClick={() => router.push("/prescription")}
         >
-          Set recovery reminder
+          View my prescription
         </PrimaryButton>
 
         {/* Back */}
