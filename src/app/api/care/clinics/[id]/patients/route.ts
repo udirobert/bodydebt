@@ -6,7 +6,7 @@ import {
   createUser,
   getCarePatientByUserId,
   createCarePatient,
-  updateCarePatientClinic,
+  updateCarePatient,
 } from "@/lib/db/queries/care";
 import { randomUUID } from "node:crypto";
 
@@ -27,7 +27,7 @@ export async function POST(
   if (!auth.ok) return auth.response;
 
   const { id: clinicId } = await params;
-  const body = (await request.json()) as { email?: string; name?: string; medication?: string };
+  const body = (await request.json()) as { email?: string; name?: string; medication?: string; currentDose?: string };
   if (!body.email || typeof body.email !== "string") {
     return NextResponse.json({ error: "email is required" }, { status: 400 });
   }
@@ -44,8 +44,16 @@ export async function POST(
 
   let patient = await getCarePatientByUserId(user.id);
   if (patient) {
-    if (patient.clinicId !== clinicId) {
-      patient = await updateCarePatientClinic(patient.id, clinicId);
+    const needsUpdate =
+      patient.clinicId !== clinicId ||
+      (body.medication && patient.medication !== body.medication) ||
+      (body.currentDose && patient.currentDose !== body.currentDose);
+    if (needsUpdate) {
+      patient = await updateCarePatient(patient.id, {
+        clinicId,
+        medication: body.medication ?? patient.medication,
+        currentDose: body.currentDose ?? patient.currentDose,
+      });
     }
     return NextResponse.json({ ok: true, patient });
   }
@@ -56,6 +64,7 @@ export async function POST(
     userId: user.id,
     clinicId,
     medication: body.medication ?? null,
+    currentDose: body.currentDose ?? null,
     enrolledAt: now,
     updatedAt: now,
   });

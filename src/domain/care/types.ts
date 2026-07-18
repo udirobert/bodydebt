@@ -38,6 +38,8 @@ export interface CareObservationInput {
   weightKg?: number | null;
   fastingGlucose?: number | null;
   notes?: string | null;
+  medication?: string | null;
+  currentDose?: string | null;
 }
 
 export interface CareObservation {

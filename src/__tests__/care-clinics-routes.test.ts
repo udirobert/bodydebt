@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextResponse } from "next/server";
-import { POST as createClinic } from "@/app/api/care/clinics/route";
+import { POST as createClinic, GET as listClinics } from "@/app/api/care/clinics/route";
 import { POST as enrollPatient } from "@/app/api/care/clinics/[id]/patients/route";
 
 vi.mock("@/lib/auth", () => ({
@@ -15,7 +15,9 @@ vi.mock("@/lib/db/queries/care", () => ({
   createUser: vi.fn(),
   getCarePatientByUserId: vi.fn(),
   createCarePatient: vi.fn(),
-  updateCarePatientClinic: vi.fn(),
+  updateCarePatient: vi.fn(),
+  getClinicsForUser: vi.fn(),
+  getPatientsForClinic: vi.fn(),
 }));
 
 import { requireAuth } from "@/lib/auth";
@@ -27,7 +29,9 @@ import {
   createUser,
   getCarePatientByUserId,
   createCarePatient,
-  updateCarePatientClinic,
+  updateCarePatient,
+  getClinicsForUser,
+  getPatientsForClinic,
 } from "@/lib/db/queries/care";
 
 function mockAuth(userId = "user-1") {
@@ -94,6 +98,31 @@ describe("POST /api/care/clinics", () => {
   });
 });
 
+describe("GET /api/care/clinics", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns clinics and their patients for the authenticated clinician", async () => {
+    mockAuth("clinician-1");
+    (getClinicsForUser as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: "clinic-1", name: "Demo Clinic", createdAt: new Date() },
+    ]);
+    (getPatientsForClinic as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: "patient-1", userId: "user-2", clinicId: "clinic-1", medication: "Semaglutide", currentDose: "2.4mg weekly" },
+    ]);
+
+    const req = new Request("http://localhost:3000/api/care/clinics");
+    const res = await listClinics(req as never);
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.clinics).toHaveLength(1);
+    expect(data.clinics[0].patients).toHaveLength(1);
+    expect(data.clinics[0].patients[0].medication).toBe("Semaglutide");
+  });
+});
+
 describe("POST /api/care/clinics/[id]/patients", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -135,7 +164,7 @@ describe("POST /api/care/clinics/[id]/patients", () => {
 
     const req = new Request("http://localhost:3000/api/care/clinics/clinic-1/patients", {
       method: "POST",
-      body: JSON.stringify({ email: "patient@example.com", name: "Jane Doe", medication: "Semaglutide" }),
+      body: JSON.stringify({ email: "patient@example.com", name: "Jane Doe", medication: "Semaglutide", currentDose: "2.4mg weekly" }),
     });
     const res = await enrollPatient(req as never, { params: Promise.resolve({ id: "clinic-1" }) });
     const data = await res.json();
@@ -144,26 +173,30 @@ describe("POST /api/care/clinics/[id]/patients", () => {
     expect(data.ok).toBe(true);
     expect(createUser).toHaveBeenCalledWith({ email: "patient@example.com", name: "Jane Doe" });
     expect(createCarePatient).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "user-2", clinicId: "clinic-1", medication: "Semaglutide" }),
+      expect.objectContaining({ userId: "user-2", clinicId: "clinic-1", medication: "Semaglutide", currentDose: "2.4mg weekly" }),
     );
   });
 
-  it("reuses an existing patient and updates their clinic if needed", async () => {
+  it("reuses an existing patient and updates their clinic and dose if needed", async () => {
     mockAuth("clinician-1");
     (getCareClinician as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "clin-1", userId: "clinician-1", clinicId: "clinic-1" });
     (getUserByEmail as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "user-2", email: "patient@example.com" });
-    (getCarePatientByUserId as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "patient-1", userId: "user-2", clinicId: "clinic-2" });
-    (updateCarePatientClinic as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "patient-1", userId: "user-2", clinicId: "clinic-1" });
+    (getCarePatientByUserId as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "patient-1", userId: "user-2", clinicId: "clinic-2", medication: null, currentDose: null });
+    (updateCarePatient as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "patient-1", userId: "user-2", clinicId: "clinic-1", medication: "Semaglutide", currentDose: "2.4mg weekly" });
 
     const req = new Request("http://localhost:3000/api/care/clinics/clinic-1/patients", {
       method: "POST",
-      body: JSON.stringify({ email: "patient@example.com" }),
+      body: JSON.stringify({ email: "patient@example.com", medication: "Semaglutide", currentDose: "2.4mg weekly" }),
     });
     const res = await enrollPatient(req as never, { params: Promise.resolve({ id: "clinic-1" }) });
     const data = await res.json();
 
     expect(res.status).toBe(200);
     expect(data.ok).toBe(true);
-    expect(updateCarePatientClinic).toHaveBeenCalledWith("patient-1", "clinic-1");
+    expect(updateCarePatient).toHaveBeenCalledWith("patient-1", {
+      clinicId: "clinic-1",
+      medication: "Semaglutide",
+      currentDose: "2.4mg weekly",
+    });
   });
 });

@@ -1,6 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { createCareClinic, createCareClinician } from "@/lib/db/queries/care";
+import {
+  createCareClinic,
+  createCareClinician,
+  getClinicsForUser,
+  getPatientsForClinic,
+} from "@/lib/db/queries/care";
 import { randomUUID } from "node:crypto";
 
 export const maxDuration = 30;
@@ -29,4 +34,25 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ ok: true, clinic });
+}
+
+/**
+ * GET /api/care/clinics
+ *
+ * Returns the clinics where the caller is a clinician, including enrolled
+ * patients for each clinic.
+ */
+export async function GET(request: NextRequest) {
+  const auth = await requireAuth(request);
+  if (!auth.ok) return auth.response;
+
+  const clinics = await getClinicsForUser(auth.user.id);
+  const clinicsWithPatients = await Promise.all(
+    clinics.map(async (clinic) => ({
+      ...clinic,
+      patients: await getPatientsForClinic(clinic.id),
+    })),
+  );
+
+  return NextResponse.json({ clinics: clinicsWithPatients });
 }

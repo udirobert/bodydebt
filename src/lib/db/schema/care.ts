@@ -55,6 +55,7 @@ export const carePatients = pgTable("care_patients", {
   clinicId: varchar("clinic_id", { length: 128 }),
   medication: text("medication"),
   currentDoseMg: integer("current_dose_mg"),
+  currentDose: text("current_dose"),
   startedAt: timestamp("started_at"),
   enrolledAt: timestamp("enrolled_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

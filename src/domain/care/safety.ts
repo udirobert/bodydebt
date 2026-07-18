@@ -31,6 +31,7 @@ const SEVERE_ACUTE_SYMPTOMS: TrackableSymptom[] = ["vomiting", "abdominal_pain"]
 export function evaluateObservation(
   input: CareObservationInput,
   previousObservations: Pick<CareObservation, "symptoms" | "symptomSeverity" | "checkInAt">[],
+  context: { medication?: string; currentDose?: string } = {},
 ): CareAction {
   const symptoms = input.symptoms.filter((s): s is TrackableSymptom => s !== "none");
 
@@ -91,7 +92,12 @@ export function evaluateObservation(
 
   // 6. Evidence-based self-care intervention
   for (const symptom of symptoms) {
-    const evidence = getEvidenceBasedIntervention(symptom, input.symptomSeverity);
+    const evidence = getEvidenceBasedIntervention(
+      symptom,
+      input.symptomSeverity,
+      context.medication,
+      context.currentDose,
+    );
     if (evidence) {
       return {
         type: "intervention",

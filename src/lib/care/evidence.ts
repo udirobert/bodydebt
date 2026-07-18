@@ -35,27 +35,49 @@ const entries: Glp1EvidenceEntry[] = (evidenceData.entries as Glp1EvidenceEntry[
   severity: e.severity as Glp1EvidenceEntry["severity"],
 }));
 
-function scoreMatch(entry: Glp1EvidenceEntry, medication?: string): number {
+function normalizeDose(dose?: string): string {
+  if (!dose) return "";
+  return dose.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function scoreMatch(
+  entry: Glp1EvidenceEntry,
+  medication?: string,
+  currentDose?: string,
+): number {
   let score = 0;
+  const normalizedDose = normalizeDose(currentDose);
+
   if (medication) {
     if (entry.medication.toLowerCase() === medication.toLowerCase()) score += 4;
     if (entry.medication.toLowerCase().includes(medication.toLowerCase())) score += 2;
   } else {
-    // Prefer the most common default regimen when no medication is supplied.
-    if (entry.medication === DEFAULT_MEDICATION && entry.dose === DEFAULT_DOSE) score += 3;
+    if (entry.medication === DEFAULT_MEDICATION) score += 2;
   }
+
+  if (normalizedDose) {
+    if (normalizeDose(entry.dose) === normalizedDose) score += 3;
+    if (normalizeDose(entry.dose).includes(normalizedDose)) score += 1;
+  } else if (!medication && entry.medication === DEFAULT_MEDICATION && entry.dose === DEFAULT_DOSE) {
+    // Prefer the most common default regimen when no context is supplied.
+    score += 1;
+  }
+
   return score;
 }
 
 /**
- * Find the best evidence-based management strategy for a symptom and severity.
+ * Find the best evidence-based management strategy for a symptom, severity,
+ * and optional medication/dose.
  *
- * Falls back to a less-severe entry if an exact severity match is not found.
+ * Falls back to the closest available severity classification when an exact
+ * match is not found.
  */
 export function getEvidenceBasedIntervention(
   symptom: string,
   severity: "mild" | "moderate" | "severe",
   medication?: string,
+  currentDose?: string,
 ): EvidenceBasedIntervention | undefined {
   const normalizedSymptom = symptom.toLowerCase();
   const candidates = entries.filter(
@@ -65,7 +87,7 @@ export function getEvidenceBasedIntervention(
   let best: Glp1EvidenceEntry | undefined;
   let bestScore = -Infinity;
   for (const entry of candidates) {
-    const score = scoreMatch(entry, medication);
+    const score = scoreMatch(entry, medication, currentDose);
     if (score > bestScore) {
       bestScore = score;
       best = entry;
@@ -91,7 +113,7 @@ export function getEvidenceBasedIntervention(
         ? ["mild", "severe"]
         : ["moderate", "severe"];
   for (const fallbackSeverity of severityOrder) {
-    const fallback = getEvidenceBasedIntervention(symptom, fallbackSeverity, medication);
+    const fallback = getEvidenceBasedIntervention(symptom, fallbackSeverity, medication, currentDose);
     if (fallback) return fallback;
   }
 

@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
     weightKg?: number | null;
     fastingGlucose?: number | null;
     notes?: string | null;
+    medication?: string | null;
+    currentDose?: string | null;
   };
 
   if (!Array.isArray(body.symptoms) || body.symptoms.length === 0) {
@@ -42,7 +44,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "adherence is required" }, { status: 400 });
   }
 
-  // Find or create the care patient for this user.
+  // Find or create the care patient for this user and update medication/dose if supplied.
   let [patient] = await db.select().from(carePatients).where(eq(carePatients.userId, auth.user.id)).limit(1);
   if (!patient) {
     const [created] = await db
@@ -50,11 +52,24 @@ export async function POST(request: NextRequest) {
       .values({
         id: randomUUID(),
         userId: auth.user.id,
+        medication: body.medication ?? null,
+        currentDose: body.currentDose ?? null,
         enrolledAt: new Date(),
         updatedAt: new Date(),
       })
       .returning();
     patient = created;
+  } else if (body.medication || body.currentDose) {
+    const [updated] = await db
+      .update(carePatients)
+      .set({
+        medication: body.medication ?? patient.medication,
+        currentDose: body.currentDose ?? patient.currentDose,
+        updatedAt: new Date(),
+      })
+      .where(eq(carePatients.id, patient.id))
+      .returning();
+    patient = updated;
   }
 
   const input: CareObservationInput = {
@@ -65,6 +80,8 @@ export async function POST(request: NextRequest) {
     weightKg: body.weightKg ?? null,
     fastingGlucose: body.fastingGlucose ?? null,
     notes: body.notes ?? null,
+    medication: patient.medication,
+    currentDose: patient.currentDose,
   };
 
   const result = await processCheckIn(input, {

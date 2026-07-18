@@ -191,6 +191,23 @@ export async function getCareClinician(
   return rows[0];
 }
 
+export async function getClinicsForUser(userId: string): Promise<CareClinic[]> {
+  const rows = await db
+    .select({
+      id: careClinics.id,
+      name: careClinics.name,
+      createdAt: careClinics.createdAt,
+    })
+    .from(careClinics)
+    .innerJoin(careClinicians, eq(careClinicians.clinicId, careClinics.id))
+    .where(eq(careClinicians.userId, userId));
+  return rows as CareClinic[];
+}
+
+export async function getPatientsForClinic(clinicId: string): Promise<CarePatient[]> {
+  return db.select().from(carePatients).where(eq(carePatients.clinicId, clinicId));
+}
+
 export async function getCareClinicById(id: string): Promise<CareClinic | undefined> {
   const rows = await db.select().from(careClinics).where(eq(careClinics.id, id)).limit(1);
   return rows[0];
@@ -241,6 +258,18 @@ export async function updateCarePatientClinic(
   const [row] = await db
     .update(carePatients)
     .set({ clinicId, updatedAt: new Date() })
+    .where(eq(carePatients.id, patientId))
+    .returning();
+  return row;
+}
+
+export async function updateCarePatient(
+  patientId: string,
+  input: Partial<Pick<CarePatient, "clinicId" | "medication" | "currentDose">>,
+): Promise<CarePatient> {
+  const [row] = await db
+    .update(carePatients)
+    .set({ ...input, updatedAt: new Date() })
     .where(eq(carePatients.id, patientId))
     .returning();
   return row;

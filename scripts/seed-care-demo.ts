@@ -94,6 +94,7 @@ async function main() {
       userId: patientUserId,
       clinicId,
       medication: "Semaglutide",
+      currentDose: "2.4mg weekly",
       enrolledAt: now,
       updatedAt: now,
     });

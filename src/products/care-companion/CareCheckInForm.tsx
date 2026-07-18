@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PrimaryButton } from "@/components/PrimaryButton";
 
 const SYMPTOMS = [
@@ -22,6 +22,16 @@ const SYMPTOMS = [
 ];
 
 const SEVERITY = ["mild", "moderate", "severe"] as const;
+
+const MEDICATIONS = ["Semaglutide", "Tirzepatide", "Liraglutide", "Oral Semaglutide", "Orforglipron"] as const;
+const DOSE_OPTIONS: Record<string, string[]> = {
+  Semaglutide: ["2.4mg weekly"],
+  Tirzepatide: ["15mg weekly"],
+  Liraglutide: ["3mg daily"],
+  "Oral Semaglutide": ["50mg daily"],
+  Orforglipron: ["45mg daily"],
+};
+
 const ADHERENCE = [
   { value: "taken_as_prescribed", label: "Taken as prescribed" },
   { value: "missed_one_dose", label: "Missed one dose" },
@@ -37,6 +47,8 @@ export function CareCheckInForm() {
   const [weightKg, setWeightKg] = useState("");
   const [fastingGlucose, setFastingGlucose] = useState("");
   const [notes, setNotes] = useState("");
+  const [medication, setMedication] = useState("Semaglutide");
+  const [currentDose, setCurrentDose] = useState("2.4mg weekly");
   const [result, setResult] = useState<{
     action: { type: string; reason?: string; action?: string; explanation?: string };
     intervention?: { action: string };
@@ -61,6 +73,8 @@ export function CareCheckInForm() {
         weightKg: weightKg ? Number(weightKg) : null,
         fastingGlucose: fastingGlucose ? Number(fastingGlucose) : null,
         notes,
+        medication,
+        currentDose,
       }),
     });
     const json = await res.json();
@@ -141,6 +155,46 @@ export function CareCheckInForm() {
           {ADHERENCE.map((a) => (
             <option key={a.value} value={a.value}>
               {a.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold mb-2" style={{ color: "var(--color-text-primary)" }}>
+          Medication
+        </p>
+        <select
+          value={medication}
+          onChange={(e) => {
+            const next = e.target.value;
+            setMedication(next);
+            setCurrentDose(DOSE_OPTIONS[next]?.[0] ?? "");
+          }}
+          className="w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
+          style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
+        >
+          {MEDICATIONS.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold mb-2" style={{ color: "var(--color-text-primary)" }}>
+          Dose
+        </p>
+        <select
+          value={currentDose}
+          onChange={(e) => setCurrentDose(e.target.value)}
+          className="w-full text-sm rounded-xl px-3 py-2.5 border bg-transparent"
+          style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
+        >
+          {(DOSE_OPTIONS[medication] ?? []).map((d) => (
+            <option key={d} value={d}>
+              {d}
             </option>
           ))}
         </select>

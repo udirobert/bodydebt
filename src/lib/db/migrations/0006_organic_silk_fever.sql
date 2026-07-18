@@ -1,0 +1,1 @@
+ALTER TABLE "care_patients" ADD COLUMN "current_dose" text;

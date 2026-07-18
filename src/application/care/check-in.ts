@@ -55,7 +55,10 @@ export async function processCheckIn(
 ): Promise<CheckInResult> {
   const previous = await deps.getPreviousObservations(input.patientId);
   const observation = await deps.saveObservation(inputToObservation(input));
-  let action = evaluateObservation(input, previous);
+  let action = evaluateObservation(input, previous, {
+    medication: input.medication ?? undefined,
+    currentDose: input.currentDose ?? undefined,
+  });
 
   if (action.type === "intervention" && deps.explainIntervention) {
     try {
