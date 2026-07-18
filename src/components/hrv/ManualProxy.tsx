@@ -114,8 +114,8 @@ function ManualProxyInner({
             style={{
               minHeight: "64px",
               padding: "14px 16px",
-              backgroundColor: chosen === opt.id ? "rgba(234,88,12,0.09)" : "var(--color-bg-surface)",
-              border: `1.5px solid ${chosen === opt.id ? "rgba(234,88,12,0.5)" : "rgba(168,162,158,0.12)"}`,
+              backgroundColor: chosen === opt.id ? "color-mix(in srgb, var(--color-brand-primary) 9%, transparent)" : "var(--color-bg-surface)",
+              border: `1.5px solid ${chosen === opt.id ? "color-mix(in srgb, var(--color-brand-primary) 50%, transparent)" : "rgba(168,162,158,0.12)"}`,
               transition: "border-color 0.17s, background-color 0.17s",
             }}
           >
@@ -177,8 +177,7 @@ function ManualProxyInner({
                 max={100}
                 value={bpm}
                 onChange={(e) => setBpm(Number(e.target.value))}
-                className="w-full accent-orange-500"
-                style={{ accentColor: "var(--color-brand-primary)" }}
+                className="w-full accent-(--color-brand-primary)"
               />
             </div>
           )}

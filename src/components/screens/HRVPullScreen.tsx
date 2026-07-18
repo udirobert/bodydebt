@@ -233,10 +233,10 @@ export function HRVPullScreen() {
             className="relative z-10 flex-1 flex flex-col pb-10">
             {analysisError && (
               <div className="rounded-2xl p-4 mb-4 flex items-start gap-3"
-                style={{ backgroundColor: "rgba(127,29,29,0.18)", border: "1.5px solid rgba(220,38,38,0.3)" }}>
+                style={{ backgroundColor: "rgba(220,38,38,0.08)", border: "1.5px solid rgba(220,38,38,0.2)" }}>
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "var(--color-states-error)" }} />
                 <div>
-                  <p className="text-xs" style={{ color: "#fca5a5" }}>{analysisError}</p>
+                  <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>{analysisError}</p>
                   <button onClick={() => setAnalysisError(null)} className="text-[10px] mt-1 font-semibold" style={{ color: "var(--color-states-error)" }}>Dismiss</button>
                 </div>
               </div>
@@ -274,18 +274,18 @@ export function HRVPullScreen() {
                 className="absolute inset-0 rounded-full"
                 animate={{ scale: [1, 1.12, 1] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                style={{ border: "1.5px solid rgba(234,88,12,0.3)" }}
+                style={{ border: "1.5px solid color-mix(in srgb, var(--color-brand-primary) 30%, transparent)" }}
               />
               <motion.div
                 className="absolute inset-2 rounded-full"
                 animate={{
                   background: [
-                    "radial-gradient(circle at 35% 30%, #F59E0B, #EA580C 60%, #1a0800 100%)",
-                    "radial-gradient(circle at 40% 35%, #EA580C, #DC2626 60%, #0A0A0B 100%)",
+                    "radial-gradient(circle at 35% 30%, var(--color-states-warning), var(--color-brand-primary) 60%, var(--color-bg-base) 100%)",
+                    "radial-gradient(circle at 40% 35%, var(--color-brand-primary), var(--color-states-error) 60%, var(--color-bg-base) 100%)",
                   ],
                 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                style={{ boxShadow: "0 0 30px 6px rgba(234,88,12,0.25)" }}
+                style={{ boxShadow: "0 0 30px 6px color-mix(in srgb, var(--color-brand-primary) 25%, transparent)" }}
               />
             </motion.div>
 
@@ -331,12 +331,12 @@ export function HRVPullScreen() {
                   className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
                   style={{
                     backgroundColor: s.done
-                      ? "rgba(74,222,128,0.08)"
-                      : "rgba(234,88,12,0.08)",
+                      ? "color-mix(in srgb, var(--color-states-success) 8%, transparent)"
+                      : "color-mix(in srgb, var(--color-brand-primary) 8%, transparent)",
                     border: `1px solid ${
                       s.done
-                        ? "rgba(74,222,128,0.2)"
-                        : "rgba(234,88,12,0.2)"
+                        ? "color-mix(in srgb, var(--color-states-success) 20%, transparent)"
+                        : "color-mix(in srgb, var(--color-brand-primary) 20%, transparent)"
                     }`,
                   }}
                 >

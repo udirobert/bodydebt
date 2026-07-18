@@ -103,7 +103,7 @@ export function AutoScientistPage() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-wider"
               style={{
                 backgroundColor: "var(--color-brand-primary)",
-                color: "#fff",
+                color: "var(--color-bg-base)",
               }}
             >
               Open live app →
@@ -472,9 +472,9 @@ export function AutoScientistPage() {
                 <div
                   className="w-8 h-8 rounded-full mx-auto flex items-center justify-center text-[10px] font-bold"
                   style={{
-                    backgroundColor: `${s.accent}18`,
+                    backgroundColor: `color-mix(in srgb, ${s.accent} 10%, transparent)`,
                     color: s.accent,
-                    border: `1px solid ${s.accent}40`,
+                    border: `1px solid color-mix(in srgb, ${s.accent} 25%, transparent)`,
                   }}
                 >
                   {s.score}
@@ -586,7 +586,7 @@ export function AutoScientistPage() {
               className="rounded-2xl mb-3 overflow-hidden"
               style={{
                 backgroundColor: "var(--color-bg-surface)",
-                border: `1px solid ${s.accent}22`,
+                border: `1px solid color-mix(in srgb, ${s.accent} 13%, transparent)`,
               }}
             >
               <div
@@ -609,8 +609,8 @@ export function AutoScientistPage() {
                 <div
                   className="rounded-xl px-3 py-2.5"
                   style={{
-                    backgroundColor: `${s.accent}0A`,
-                    border: `1px solid ${s.accent}18`,
+                    backgroundColor: `color-mix(in srgb, ${s.accent} 4%, transparent)`,
+                    border: `1px solid color-mix(in srgb, ${s.accent} 10%, transparent)`,
                   }}
                 >
                   <p
@@ -680,7 +680,7 @@ export function AutoScientistPage() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-wider"
                 style={{
                   backgroundColor: "var(--color-brand-primary)",
-                  color: "#fff",
+                  color: "var(--color-bg-base)",
                 }}
               >
                 Try the demo →
@@ -840,7 +840,7 @@ function ComparisonBlock({
         <OutputCard
           label="Ground Truth (Deterministic)"
           content={groundTruth}
-          color="#7C3AED"
+          color="var(--color-brand-primary)"
         />
       </div>
     </div>
@@ -863,7 +863,7 @@ function OutputCard({
       className="rounded-xl p-3"
       style={{
         backgroundColor: "var(--color-bg-elevated)",
-        border: `1px solid ${color}22`,
+        border: `1px solid color-mix(in srgb, ${color} 13%, transparent)`,
         borderLeft: `3px solid ${color}`,
       }}
     >

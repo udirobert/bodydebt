@@ -103,7 +103,7 @@ export function TetherPage() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-wider"
               style={{
                 backgroundColor: "var(--color-states-success)",
-                color: "#0A0A0B",
+                color: "var(--color-bg-base)",
               }}
             >
               Open Match Fit →
@@ -179,7 +179,7 @@ export function TetherPage() {
                 className="rounded-2xl p-4 flex items-start gap-3"
                 style={{
                   backgroundColor: "var(--color-bg-surface)",
-                  border: `1px solid ${e.color}22`,
+                  border: `1px solid color-mix(in srgb, ${e.color} 13%, transparent)`,
                   borderLeft: `3px solid ${e.color}`,
                 }}
               >
@@ -272,12 +272,12 @@ export function TetherPage() {
             style={{
               backgroundColor: "var(--color-bg-surface)",
               border: "1px solid rgba(34,211,238,0.15)",
-              borderLeft: "3px solid #22D3EE",
+              borderLeft: "3px solid var(--color-system-brain)",
             }}
           >
             <span
               className="text-[9px] font-mono font-bold uppercase tracking-widest block mb-2"
-              style={{ color: "#22D3EE" }}
+              style={{ color: "var(--color-system-brain)" }}
             >
               Why QVAC makes this possible
             </span>
@@ -315,7 +315,7 @@ export function TetherPage() {
               label="Cloud calls"
               value="0"
               sub="All inference via @qvac/sdk"
-              color="#22D3EE"
+              color="var(--color-system-brain)"
             />
             <MetricCard
               label="Outputs per scan"
@@ -646,7 +646,7 @@ export function TetherPage() {
                 className="rounded-xl p-3 flex items-start gap-3"
                 style={{
                   backgroundColor: "var(--color-bg-surface)",
-                  border: `1px solid ${p.color}22`,
+                  border: `1px solid color-mix(in srgb, ${p.color} 13%, transparent)`,
                   borderLeft: `3px solid ${p.color}`,
                 }}
               >

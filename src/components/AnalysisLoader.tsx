@@ -141,24 +141,24 @@ export function AnalysisLoader({ hasFaceScan, hasHRV, hrvContext, faceContext, a
         >
           {/* Outer breathing ring */}
           <motion.div className="absolute inset-0 rounded-full"
-            style={{ border: `1.5px solid ${orbColor}40` }}
+            style={{ border: `1.5px solid color-mix(in srgb, ${orbColor} 25%, transparent)` }}
             animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.8, 0.4] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
           {/* Secondary ring */}
           <motion.div className="absolute rounded-full"
-            style={{ inset: "-8px", border: `1px solid ${orbColor}20` }}
+            style={{ inset: "-8px", border: `1px solid color-mix(in srgb, ${orbColor} 12%, transparent)` }}
             animate={{ scale: [1, 1.08, 1], opacity: [0.2, 0.5, 0.2] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }} />
           {/* Orb body */}
           <motion.div className="absolute inset-2 rounded-full"
             animate={{
               background: [
-                `radial-gradient(circle at 35% 30%, #F59E0B, #EA580C 60%, #1a0800 100%)`,
-                `radial-gradient(circle at 40% 35%, ${orbColor}, #DC2626 60%, #0A0A0B 100%)`,
+                "radial-gradient(circle at 35% 30%, var(--color-states-warning), var(--color-brand-primary) 60%, var(--color-bg-base) 100%)",
+                `radial-gradient(circle at 40% 35%, ${orbColor}, var(--color-states-error) 60%, var(--color-bg-base) 100%)`,
               ],
             }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            style={{ boxShadow: `0 0 40px 8px ${orbColor}30` }}
+            style={{ boxShadow: `0 0 40px 8px color-mix(in srgb, ${orbColor} 20%, transparent)` }}
           />
           {/* Shimmer */}
           <motion.div className="absolute rounded-full pointer-events-none"

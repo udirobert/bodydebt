@@ -53,16 +53,16 @@ export function GarminUpload({ onData, onSkip }: { onData: (d: HRVData) => void;
       ].map((s) => (
         <div key={s.n} className="flex items-start gap-3 rounded-2xl p-4" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}>
           <span className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5"
-            style={{ backgroundColor: "rgba(234,88,12,0.15)", color: "var(--color-brand-primary)" }}>{s.n}</span>
+            style={{ backgroundColor: "color-mix(in srgb, var(--color-brand-primary) 15%, transparent)", color: "var(--color-brand-primary)" }}>{s.n}</span>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>{s.text}</p>
         </div>
       ))}
 
       {/* Error */}
       {state === "error" && (
-        <div className="rounded-2xl p-4 flex items-start gap-3" style={{ backgroundColor: "rgba(127,29,29,0.18)", border: "1.5px solid rgba(220,38,38,0.3)" }}>
+        <div className="rounded-2xl p-4 flex items-start gap-3" style={{ backgroundColor: "rgba(220,38,38,0.08)", border: "1.5px solid rgba(220,38,38,0.2)" }}>
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "var(--color-states-error)" }} />
-          <p className="text-xs" style={{ color: "#fca5a5" }}>{errMsg}</p>
+          <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>{errMsg}</p>
         </div>
       )}
 

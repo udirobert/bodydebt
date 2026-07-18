@@ -148,11 +148,11 @@ export const BEFORE_AFTER = {
   scenario: "Bad night: 3-4 red wine, 4-6h sleep, high stress",
   debtScore: 70,
   systems: [
-    { label: "Brain / Cognition", score: 73, accent: "#22D3EE" },
-    { label: "Gut", score: 33, accent: "#2DD4BF" },
-    { label: "Cardiovascular", score: 25, accent: "#F43F5E" },
-    { label: "Liver", score: 24, accent: "#EAB308" },
-    { label: "Muscular / CNS", score: 0, accent: "#A78BFA" },
+    { label: "Brain / Cognition", score: 73, accent: "var(--color-system-brain)" },
+    { label: "Gut", score: 33, accent: "var(--color-system-gut)" },
+    { label: "Cardiovascular", score: 25, accent: "var(--color-system-cardiovascular)" },
+    { label: "Liver", score: 24, accent: "var(--color-system-liver)" },
+    { label: "Muscular / CNS", score: 0, accent: "var(--color-system-muscular)" },
   ],
   baseline: {
     triage: "Based on the information provided, your body seems to be under significant stress. I would recommend focusing on rest and recovery.\n\nPriority: Brain (73/100) — you had very little sleep\nSecondary: Gut (33/100) — alcohol affects digestion\nAvoid: Try to avoid caffeine and stressful activities today.",
