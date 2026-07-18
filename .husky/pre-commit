@@ -1,28 +1,60 @@
 #!/bin/sh
 
 # Pre-commit hook for Body Debt
-# 1. Scan for accidental secret commits
-# 2. Run lint-staged for code quality
+# 1. Refuse to commit .env / .env.local
+# 2. Scan for accidental secret commits
+# 3. Run lint-staged for code quality
 
 echo "🔒 Running secret scan..."
 
-# Define patterns to check for common secrets in staged files
-# This catches AWS keys, private keys, GitHub tokens, etc.
+# Define patterns to check for common secrets in staged files.
+# These catch private keys, API keys, tokens, passwords, seed phrases,
+# and database URLs with embedded credentials.
 SECRET_PATTERNS=(
+  # PEM/OpenSSH keys
   "-----BEGIN (RSA |OPENSSH |PRIVATE )?KEY-----"
+
+  # Generic API keys / tokens / secrets with values
+  "[A-Za-z0-9_]+_API_KEY=[A-Za-z0-9_\\-\\.]{16,}"
+  "[A-Za-z0-9_]+_TOKEN=[A-Za-z0-9_\\-\\.]{16,}"
+  "[A-Za-z0-9_]+_SECRET=[A-Za-z0-9_\\-\\.]{16,}"
+  "EMAIL_SERVER_PASSWORD=[A-Za-z0-9_\\-\\.]{8,}"
+
+  # Private keys and seed phrases
+  "[A-Za-z0-9_]+_PRIVATE_KEY=(0x)?[a-fA-F0-9]{64,}"
+  "[A-Za-z0-9_]+_SEED_PHRASE=[A-Za-z]+( [A-Za-z]+){11,}"
+
+  # Common provider-specific credentials
   "AIza[0-9A-Za-z\\-_]{35}"
   "sk-[a-zA-Z0-9]{20,}"
+  "sk_[a-zA-Z0-9]{20,}"
   "ghp_[a-zA-Z0-9]{36}"
+  "hf_[a-zA-Z0-9]{20,}"
+  "KGAT_[a-zA-Z0-9]{20,}"
+  "re_[a-zA-Z0-9]{20,}"
+
+  # Eazo / database credentials
   "EAZO_PRIVATE_KEY=[a-fA-F0-9]{64}"
   "DATABASE_URL=.*:.*@"
 )
 
-# Get list of staged files (excluding deleted files, .husky dir, and common binary/lock files)
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -vE '^\.husky/|\.env\.|\.png$|\.jpg$|\.jpeg$|\.gif$|\.svg$|\.webp$|\.ico$|\.lock$' || true)
+# All staged files (excluding deletions)
+ALL_STAGED=$(git diff --cached --name-only --diff-filter=ACM || true)
 
-if [ -n "$STAGED_FILES" ]; then
+# Explicitly block committing .env and .env.local even if they somehow become staged.
+for file in $ALL_STAGED; do
+  if [ "$file" = ".env" ] || [ "$file" = ".env.local" ]; then
+    echo "🛑 Commit aborted: refusing to commit $file. Move secrets to .env.local and keep it gitignored."
+    exit 1
+  fi
+done
+
+# Files to scan (exclude .husky dir, other .env.* files, and common binary/lock files)
+SCAN_FILES=$(echo "$ALL_STAGED" | grep -vE '^\.husky/|\.env\.|\.png$|\.jpg$|\.jpeg$|\.gif$|\.svg$|\.webp$|\.ico$|\.lock$' || true)
+
+if [ -n "$SCAN_FILES" ]; then
   FOUND_SECRETS=0
-  for file in $STAGED_FILES; do
+  for file in $SCAN_FILES; do
     if [ -f "$file" ]; then
       for pattern in "${SECRET_PATTERNS[@]}"; do
         if grep -qE "$pattern" "$file" 2>/dev/null; then
