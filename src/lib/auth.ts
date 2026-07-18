@@ -95,6 +95,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           resetAt: Date.now() + 60 * 60 * 1000, // 1 hour
         });
 
+        const { buildMagicLinkEmail } = await import("@/lib/auth/magic-link-email");
+        const { subject, text, html } = buildMagicLinkEmail(identifier, url);
+
         const { createTransport } = await import("nodemailer");
         const port = Number(process.env.EMAIL_SERVER_PORT ?? 587);
         const transport = createTransport({
@@ -109,8 +112,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         await transport.sendMail({
           to: identifier,
           from: process.env.EMAIL_FROM ?? "Body Debt <noreply@bodydebt.ai>",
-          subject: "Your Body Debt sign-in link",
-          html: `<p>Click <a href="${url}">here</a> to sign in to Body Debt.</p><p>This link expires in 24 hours.</p>`,
+          subject,
+          text,
+          html,
         });
       },
     }),
