@@ -1,6 +1,6 @@
 """
 Generate the stress classifier ONNX model (7→16→8→1 MLP with ReLU).
-Same architecture as the original Body Debt ZK circuit.
+Same architecture as the original Orbura ZK circuit.
 Run: python generate_model.py
 """
 

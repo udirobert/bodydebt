@@ -17,9 +17,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-SPACE_ID = os.environ.get("BODY_DEBT_SPACE_REPO", "Papajams/body-debt")
+SPACE_ID = os.environ.get("ORBURA_SPACE_REPO", "Papajams/orbura")
 # Also push to the hackathon org space if the user is a member.
-ORG_SPACE_ID = "build-small-hackathon/body-debt"
+ORG_SPACE_ID = "build-small-hackathon/orbura"
 HERE = Path(__file__).parent
 SPACE_DIR = HERE
 

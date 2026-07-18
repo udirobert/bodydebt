@@ -1,5 +1,5 @@
 """
-Body Debt — Gradio App (dark "off-brand" edition)
+Orbura — Gradio App (dark "off-brand" edition)
 Quantifies physiological debt from lifestyle stressors and provides
 AI-backed recovery prescriptions using a local small model.
 """
@@ -1151,13 +1151,13 @@ def render_hero(score: int, verdict: str, is_sample: bool = False) -> str:
         badge = (
             '<div class="sample-badge">'
             '<span class="dot"></span>'
-            "SAMPLE RESULT · choose a scenario or click <strong>Calculate Body Debt</strong> for your own"
+            "SAMPLE RESULT · choose a scenario or click <strong>Calculate Orbura</strong> for your own"
             "</div>"
         )
     return f"""
     {badge}
     <div class="orb-wrap" style="color: {color};">
-        <div class="debt-hero-label">Body Debt Score</div>
+        <div class="debt-hero-label">Orbura Score</div>
         <div class="debt-hero" style="color: {color};">{score}</div>
         <div class="debt-verdict" style="color: var(--text-primary);">{html.escape(verdict)}</div>
     </div>
@@ -1746,7 +1746,7 @@ def _sample_coach() -> str:
         </div>
         <div class="coach-body" style="color: var(--text-faint);">
             <span class="ready-pulse"></span>
-            Sample advice shown. Tap <strong style="color: var(--text-secondary);">Calculate Body Debt</strong> for your own.
+            Sample advice shown. Tap <strong style="color: var(--text-secondary);">Calculate Orbura</strong> for your own.
         </div>
     </div>
     """
@@ -1942,7 +1942,7 @@ def _empty_coach() -> str:
             <span class="coach-pill">SmolLM2-360M · local</span>
         </div>
         <div class="coach-body" style="color: var(--text-faint);">
-            <span class="ready-pulse"></span>Ready. Tap <strong style="color: var(--text-secondary);">Calculate Body Debt</strong> to stream advice.
+            <span class="ready-pulse"></span>Ready. Tap <strong style="color: var(--text-secondary);">Calculate Orbura</strong> to stream advice.
         </div>
     </div>
     """
@@ -2063,15 +2063,15 @@ SAMPLE_HERO, SAMPLE_PLAN, SAMPLE_METERS, SAMPLE_FACE, SAMPLE_TIMELINE, SAMPLE_RX
 
 # ─── Layout ──────────────────────────────────────────────────────────────────
 
-with gr.Blocks(title="Body Debt", theme=APP_THEME, css=CUSTOM_CSS) as demo:
+with gr.Blocks(title="Orbura", theme=APP_THEME, css=CUSTOM_CSS) as demo:
     gr.HTML(f"""
     <div class="app-header">
-        <h1 class="app-title">🫀 Body Debt</h1>
+        <h1 class="app-title">🫀 Orbura</h1>
         <p class="app-subtitle">Pick a scenario or log your day to calculate physiological debt, see the body systems affected, and get a focused recovery plan from local AI.</p>
         <div class="attr-row">
             <span class="attr-pill"><span class="dot"></span>SmolLM2-360M · local</span>
             <a class="attr-pill" href="https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct">360M params · 250MB RAM</a>
-            <a class="attr-pill" href="https://github.com/udirobert/bodydebt">Built with OpenAI Codex</a>
+            <a class="attr-pill" href="https://github.com/udirobert/orbura">Built with OpenAI Codex</a>
         </div>
     </div>
     <div class="value-grid">
@@ -2092,7 +2092,7 @@ with gr.Blocks(title="Body Debt", theme=APP_THEME, css=CUSTOM_CSS) as demo:
 
     with gr.Group(elem_classes="scenario-panel"):
         gr.HTML('<div class="section-label">Start with a scenario</div>')
-        gr.HTML('<p class="start-hint">Fastest path: choose a preset to see Body Debt calculate a realistic recovery plan, or customize your own day below.</p>')
+        gr.HTML('<p class="start-hint">Fastest path: choose a preset to see Orbura calculate a realistic recovery plan, or customize your own day below.</p>')
         with gr.Row(elem_classes="scenario-actions"):
             preset_bad_night = gr.Button("🌙 Bad night", elem_classes="preset-chip", size="sm")
             preset_recovery = gr.Button("♻️ Recovery day", elem_classes="preset-chip", size="sm")
@@ -2177,7 +2177,7 @@ with gr.Blocks(title="Body Debt", theme=APP_THEME, css=CUSTOM_CSS) as demo:
 
                 with gr.Row():
                     clear_btn = gr.Button("Clear all", elem_classes="clear-all", size="sm")
-                    analyze_btn = gr.Button("Calculate Body Debt →", variant="primary", size="lg")
+                    analyze_btn = gr.Button("Calculate Orbura →", variant="primary", size="lg")
                 with gr.Row():
                     save_compare_btn = gr.Button("📋 Save to compare", elem_classes="save-compare", size="sm")
                     clear_compare_btn = gr.Button("✕ Clear saved", elem_classes="save-compare", size="sm")
@@ -2307,10 +2307,10 @@ with gr.Blocks(title="Body Debt", theme=APP_THEME, css=CUSTOM_CSS) as demo:
 
     gr.HTML(f"""
     <div class="app-footer">
-        Body Debt uses <a href="https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct">SmolLM2-360M-Instruct</a> (360M parameters) running locally via HuggingFace Transformers.<br>
+        Orbura uses <a href="https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct">SmolLM2-360M-Instruct</a> (360M parameters) running locally via HuggingFace Transformers.<br>
         Face analysis uses <a href="https://google.github.io/mediapipe/solutions/face_mesh">MediaPipe FaceMesh</a>. No biometric data leaves your device.<br>
-        Built with <a href="https://openai.com/index/openai-codex/">OpenAI Codex</a>. Source: <a href="https://github.com/udirobert/bodydebt">github.com/udirobert/bodydebt</a>.<br>
-        Submitted to the <a href="https://huggingface.co/spaces/build-small-hackathon/body-debt">Build Small Hackathon</a>.
+        Built with <a href="https://openai.com/index/openai-codex/">OpenAI Codex</a>. Source: <a href="https://github.com/udirobert/orbura">github.com/udirobert/orbura</a>.<br>
+        Submitted to the <a href="https://huggingface.co/spaces/build-small-hackathon/orbura">Build Small Hackathon</a>.
     </div>
     """)
 

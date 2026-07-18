@@ -1,7 +1,7 @@
 ---
 license: mit
 tags:
-  - body-debt
+  - orbura
   - onnx
   - tiny
   - stress-classifier
@@ -17,10 +17,10 @@ datasets:
 metrics:
   - size
   - mae
-model_name: body-debt-stress-mlp
+model_name: orbura-stress-mlp
 ---
 
-# body-debt-stress-mlp
+# orbura-stress-mlp
 
 A 7→16→8→1 multi-layer perceptron (MLP) that maps **7 facial geometry features** (extracted by MediaPipe FaceMesh) into a single **fatigue/stress score between 0 and 1**.
 
@@ -47,18 +47,18 @@ Each sample gets small Gaussian noise on the inputs (σ = 0.005) and the target 
 
 For context, a plain linear regression on the same 7 inputs gets MAE 0.061. The 16-8 hidden layer buys a small but real improvement over a linear baseline, with only 280 extra parameters.
 
-Training took ~2.2 seconds in pure NumPy on a single CPU. No GPU, no torch, no sklearn. The training script `train_stress_model.py` is in the [Body Debt repository](https://github.com/udirobert/bodydebt/tree/main/hf-space) and re-exports `stress_model.onnx` directly.
+Training took ~2.2 seconds in pure NumPy on a single CPU. No GPU, no torch, no sklearn. The training script `train_stress_model.py` is in the [Orbura repository](https://github.com/udirobert/orbura/tree/main/hf-space) and re-exports `stress_model.onnx` directly.
 
 ## What it does
 
-The stress MLP is the second stage of the [Body Debt](https://huggingface.co/spaces/build-small-hackathon/body-debt) face-scan pipeline:
+The stress MLP is the second stage of the [Orbura](https://huggingface.co/spaces/build-small-hackathon/orbura) face-scan pipeline:
 
 ```
 Webcam frame
   → MediaPipe FaceMesh (478 landmarks)
   → 7 stress features (eye aspect L/R, brow tension, mouth tension,
      eye symmetry, mouth opening, time-of-day)
-  → body-debt-stress-mlp (this model)
+  → orbura-stress-mlp (this model)
   → stress score 0–1 → /100 in the UI
 ```
 
@@ -74,7 +74,7 @@ Linear(8, 1)    → Sigmoid →   8 weights  +  1 bias  =   9
                             (input + intermediate buffers)  = 553
 ```
 
-The exact layer shapes mirror the input contract used by the [Body Debt ZK circuit](https://github.com/udirobert/bodydebt), so the same on-device inference and the EZKL-proven on-chain path use identical weights.
+The exact layer shapes mirror the input contract used by the [Orbura ZK circuit](https://github.com/udirobert/orbura), so the same on-device inference and the EZKL-proven on-chain path use identical weights.
 
 ## Input
 
@@ -92,7 +92,7 @@ A 1-D float32 array of length 7, in this order:
 
 ## Output
 
-A single float in `[0, 1]`. Multiply by 100 for a 0–100 stress score. The Body Debt UI treats `< 0.5` as "healthy" and `≥ 0.5` as "stressed."
+A single float in `[0, 1]`. Multiply by 100 for a 0–100 stress score. The Orbura UI treats `< 0.5` as "healthy" and `≥ 0.5` as "stressed."
 
 ## Sanity-checked face profiles
 
@@ -139,5 +139,5 @@ A larger CNN or transformer here would be wasted parameters. The input is 7 hand
 
 ## License
 
-MIT. See [Body Debt repository](https://github.com/udirobert/bodydebt).
+MIT. See [Orbura repository](https://github.com/udirobert/orbura).
 
