@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
+import { notifications } from "@/lib/sdk/eazo-server";
+import { ai } from "@/lib/sdk/eazo-client";
 import { processCheckIn } from "@/application/care/check-in";
 import { careObservations, careInterventions, careEscalations, carePatients } from "@/lib/db/schema/care";
 import { db } from "@/lib/db/client";
@@ -100,6 +102,35 @@ export async function POST(request: NextRequest) {
     saveEscalation: async (escalation) => {
       const [row] = await db.insert(careEscalations).values(escalation).returning();
       return row as CareEscalation;
+    },
+    notifyEscalation: async (escalation) => {
+      if (!notifications.available) {
+        console.log("[care/escalation] notification suppressed (notifications unavailable)", escalation.id);
+        return;
+      }
+      try {
+        await notifications.publish({
+          title: "Care escalation",
+          body: escalation.reason,
+          data: { escalationId: escalation.id, patientId: escalation.patientId },
+          audience: "care-team",
+        });
+      } catch {
+        // Never block check-in on notification failure.
+      }
+    },
+    explainIntervention: async (_input, action) => {
+      const prompt = `Rephrase the following care instruction in a warm, patient-friendly way. Do not add new medical advice, do not change the meaning, and keep it under 30 words.\n\nInstruction: ${action.action}`;
+      try {
+        const response = await ai.chat({
+          model: "anthropic.claude-3-5-haiku",
+          messages: [{ role: "user", content: prompt }],
+        });
+        const content = response.choices[0]?.message?.content?.trim();
+        return content || action.action;
+      } catch {
+        return action.action;
+      }
     },
   });
 

@@ -74,7 +74,7 @@ export interface CareEscalation {
 
 export type CareAction =
   | { type: "escalate"; reason: string }
-  | { type: "intervention"; action: string };
+  | { type: "intervention"; action: string; explanation?: string };
 
 export interface CheckInResult {
   observation: CareObservation;

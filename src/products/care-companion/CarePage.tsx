@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CareCheckInForm } from "./CareCheckInForm";
 
 export function CarePage() {
@@ -30,6 +31,12 @@ export function CarePage() {
         >
           <CareCheckInForm />
         </div>
+
+        <p className="text-center text-xs" style={{ color: "var(--color-text-secondary)" }}>
+          <Link href="/care/summary" className="underline" style={{ color: "var(--color-brand-primary)" }}>
+            View your care summary
+          </Link>
+        </p>
       </div>
     </main>
   );

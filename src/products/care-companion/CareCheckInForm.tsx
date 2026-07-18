@@ -38,7 +38,7 @@ export function CareCheckInForm() {
   const [fastingGlucose, setFastingGlucose] = useState("");
   const [notes, setNotes] = useState("");
   const [result, setResult] = useState<{
-    action: { type: string; reason?: string; action?: string };
+    action: { type: string; reason?: string; action?: string; explanation?: string };
     intervention?: { action: string };
     escalation?: { reason: string };
   } | null>(null);
@@ -212,7 +212,7 @@ export function CareCheckInForm() {
             <>
               <p className="font-semibold">Next step</p>
               <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
-                {result.intervention?.action}
+                {result.action.explanation || result.intervention?.action}
               </p>
             </>
           )}

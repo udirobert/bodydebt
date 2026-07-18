@@ -81,6 +81,16 @@ export async function getPendingInterventionsForPatient(
     .orderBy(desc(careInterventions.dueAt));
 }
 
+export async function getOpenEscalationsForPatient(
+  patientId: string,
+): Promise<CareEscalationRow[]> {
+  return db
+    .select()
+    .from(careEscalations)
+    .where(and(eq(careEscalations.patientId, patientId), eq(careEscalations.status, "open")))
+    .orderBy(desc(careEscalations.createdAt));
+}
+
 export async function getPendingInterventionsForClinic(
   clinicId: string,
   limit = 50,
@@ -101,4 +111,62 @@ export async function getPendingInterventionsForClinic(
     .where(and(eq(carePatients.clinicId, clinicId), eq(careInterventions.status, "pending")))
     .orderBy(desc(careInterventions.dueAt))
     .limit(limit) as unknown as (CareInterventionRow & { patient: CarePatient })[];
+}
+
+export async function getCareInterventionById(id: string): Promise<CareInterventionRow | undefined> {
+  const rows = await db.select().from(careInterventions).where(eq(careInterventions.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function updateCareInterventionStatus(
+  id: string,
+  status: "completed" | "skipped",
+): Promise<CareInterventionRow> {
+  const rows = await db
+    .update(careInterventions)
+    .set({
+      status,
+      completedAt: status === "completed" || status === "skipped" ? new Date() : null,
+    })
+    .where(eq(careInterventions.id, id))
+    .returning();
+  return rows[0];
+}
+
+export async function getCareEscalationById(id: string): Promise<CareEscalationRow | undefined> {
+  const rows = await db.select().from(careEscalations).where(eq(careEscalations.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function getCareEscalationWithPatientById(
+  id: string,
+): Promise<(CareEscalationRow & { patient: CarePatient }) | undefined> {
+  const rows = await db
+    .select({
+      id: careEscalations.id,
+      patientId: careEscalations.patientId,
+      observationId: careEscalations.observationId,
+      reason: careEscalations.reason,
+      status: careEscalations.status,
+      createdAt: careEscalations.createdAt,
+      resolvedAt: careEscalations.resolvedAt,
+      patient: carePatients,
+    })
+    .from(careEscalations)
+    .innerJoin(carePatients, eq(carePatients.id, careEscalations.patientId))
+    .where(eq(careEscalations.id, id))
+    .limit(1);
+  return rows[0] as (CareEscalationRow & { patient: CarePatient }) | undefined;
+}
+
+export async function updateCareEscalationStatus(
+  id: string,
+  status: "resolved" | "clinic_reviewed",
+): Promise<CareEscalationRow> {
+  const rows = await db
+    .update(careEscalations)
+    .set({ status, resolvedAt: new Date() })
+    .where(eq(careEscalations.id, id))
+    .returning();
+  return rows[0];
 }

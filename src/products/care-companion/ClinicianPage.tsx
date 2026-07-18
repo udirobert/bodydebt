@@ -6,6 +6,14 @@ import { useEazo } from "@/lib/sdk/eazo-react";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
 
+function resolveEscalation(id: string, clinicId: string, status: "resolved" | "clinic_reviewed") {
+  return fetch(`/api/care/escalations/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, clinicId }),
+  });
+}
+
 type Escalation = {
   id: string;
   patientId: string;
@@ -74,6 +82,7 @@ export function ClinicianPage() {
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
     if (!clinicId || !user) return;
@@ -100,6 +109,20 @@ export function ClinicianPage() {
     const id = setTimeout(load, 0);
     return () => { cancelled = true; clearTimeout(id); };
   }, [clinicId, user]);
+
+  async function handleResolveEscalation(id: string, status: "resolved" | "clinic_reviewed") {
+    if (!clinicId) return;
+    setUpdating(id);
+    try {
+      const res = await resolveEscalation(id, clinicId, status);
+      if (!res.ok) throw new Error("Failed to update escalation");
+      setEscalations((prev) => prev.filter((e) => e.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update escalation");
+    } finally {
+      setUpdating(null);
+    }
+  }
 
   if (!user) {
     return (
@@ -178,6 +201,26 @@ export function ClinicianPage() {
                   <p className="text-[10px] mt-1 font-mono uppercase tracking-wider" style={{ color: "var(--color-text-faint)" }}>
                     Patient {e.patientId} {e.patient?.medication ? `· ${e.patient.medication}` : ""} · {formatRelative(e.createdAt)}
                   </p>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      disabled={updating === e.id}
+                      onClick={() => handleResolveEscalation(e.id, "resolved")}
+                      className="text-[11px] px-2.5 py-1.5 rounded-full border bg-transparent disabled:opacity-50"
+                      style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-primary)" }}
+                    >
+                      Resolve
+                    </button>
+                    <button
+                      type="button"
+                      disabled={updating === e.id}
+                      onClick={() => handleResolveEscalation(e.id, "clinic_reviewed")}
+                      className="text-[11px] px-2.5 py-1.5 rounded-full border bg-transparent disabled:opacity-50"
+                      style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-secondary)" }}
+                    >
+                      Mark reviewed
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

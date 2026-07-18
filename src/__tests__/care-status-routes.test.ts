@@ -1,0 +1,165 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { NextResponse } from "next/server";
+import { PATCH as patchIntervention } from "@/app/api/care/interventions/[id]/route";
+import { PATCH as patchEscalation } from "@/app/api/care/escalations/[id]/route";
+
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn(),
+}));
+
+vi.mock("@/lib/db/queries/care", () => ({
+  getCarePatientByUserId: vi.fn(),
+  getCareInterventionById: vi.fn(),
+  updateCareInterventionStatus: vi.fn(),
+  getCareEscalationWithPatientById: vi.fn(),
+  updateCareEscalationStatus: vi.fn(),
+}));
+
+import { requireAuth } from "@/lib/auth";
+import {
+  getCarePatientByUserId,
+  getCareInterventionById,
+  updateCareInterventionStatus,
+  getCareEscalationWithPatientById,
+  updateCareEscalationStatus,
+} from "@/lib/db/queries/care";
+
+function mockAuth(userId = "user-1") {
+  (requireAuth as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ok: true,
+    user: { id: userId, email: "patient@example.com" },
+  });
+}
+
+function mockGuest() {
+  (requireAuth as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ok: false,
+    response: NextResponse.json({ error: "authentication required" }, { status: 401 }),
+  });
+}
+
+describe("PATCH /api/care/interventions/[id]", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    mockGuest();
+    const req = new Request("http://localhost:3000/api/care/interventions/int-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "completed" }),
+    });
+    const res = await patchIntervention(req as never, { params: Promise.resolve({ id: "int-1" }) });
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 400 for an invalid status", async () => {
+    mockAuth();
+    const req = new Request("http://localhost:3000/api/care/interventions/int-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "done" }),
+    });
+    const res = await patchIntervention(req as never, { params: Promise.resolve({ id: "int-1" }) });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 403 when the intervention belongs to another patient", async () => {
+    mockAuth();
+    (getCarePatientByUserId as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "patient-1" });
+    (getCareInterventionById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "int-1", patientId: "patient-2" });
+
+    const req = new Request("http://localhost:3000/api/care/interventions/int-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "completed" }),
+    });
+    const res = await patchIntervention(req as never, { params: Promise.resolve({ id: "int-1" }) });
+    expect(res.status).toBe(403);
+  });
+
+  it("updates the intervention status", async () => {
+    mockAuth();
+    (getCarePatientByUserId as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "patient-1" });
+    (getCareInterventionById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "int-1", patientId: "patient-1" });
+    (updateCareInterventionStatus as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "int-1", status: "completed" });
+
+    const req = new Request("http://localhost:3000/api/care/interventions/int-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "completed" }),
+    });
+    const res = await patchIntervention(req as never, { params: Promise.resolve({ id: "int-1" }) });
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.ok).toBe(true);
+    expect(updateCareInterventionStatus).toHaveBeenCalledWith("int-1", "completed");
+  });
+});
+
+describe("PATCH /api/care/escalations/[id]", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    mockGuest();
+    const req = new Request("http://localhost:3000/api/care/escalations/esc-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "resolved", clinicId: "clinic-1" }),
+    });
+    const res = await patchEscalation(req as never, { params: Promise.resolve({ id: "esc-1" }) });
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 400 when clinicId is missing", async () => {
+    mockAuth();
+    const req = new Request("http://localhost:3000/api/care/escalations/esc-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "resolved" }),
+    });
+    const res = await patchEscalation(req as never, { params: Promise.resolve({ id: "esc-1" }) });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 403 when the escalation belongs to a different clinic", async () => {
+    mockAuth();
+    (getCareEscalationWithPatientById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "esc-1",
+      patient: { clinicId: "clinic-2" },
+    });
+
+    const req = new Request("http://localhost:3000/api/care/escalations/esc-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "resolved", clinicId: "clinic-1" }),
+    });
+    const res = await patchEscalation(req as never, { params: Promise.resolve({ id: "esc-1" }) });
+    expect(res.status).toBe(403);
+  });
+
+  it("updates the escalation status", async () => {
+    mockAuth();
+    (getCareEscalationWithPatientById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "esc-1",
+      patient: { clinicId: "clinic-1" },
+    });
+    (updateCareEscalationStatus as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "esc-1", status: "resolved" });
+
+    const req = new Request("http://localhost:3000/api/care/escalations/esc-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "resolved", clinicId: "clinic-1" }),
+    });
+    const res = await patchEscalation(req as never, { params: Promise.resolve({ id: "esc-1" }) });
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.ok).toBe(true);
+    expect(updateCareEscalationStatus).toHaveBeenCalledWith("esc-1", "resolved");
+  });
+});

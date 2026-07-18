@@ -46,6 +46,8 @@ function makeDeps() {
       escalations.push(escalation);
       return escalation;
     }),
+    notifyEscalation: vi.fn(async () => undefined),
+    explainIntervention: vi.fn(async (_input, action) => `Explained: ${action.action}`),
   };
 }
 
@@ -70,6 +72,7 @@ describe("processCheckIn", () => {
     expect(deps.saveObservation).toHaveBeenCalledTimes(1);
     expect(deps.saveIntervention).toHaveBeenCalledTimes(1);
     expect(deps.saveEscalation).not.toHaveBeenCalled();
+    expect(deps.notifyEscalation).not.toHaveBeenCalled();
   });
 
   it("escalates when a severe safety signal is reported", async () => {
@@ -81,6 +84,8 @@ describe("processCheckIn", () => {
     expect(result.escalation).toBeDefined();
     expect(result.intervention).toBeUndefined();
     expect(deps.saveEscalation).toHaveBeenCalledTimes(1);
+    expect(deps.notifyEscalation).toHaveBeenCalledTimes(1);
+    expect(deps.notifyEscalation).toHaveBeenCalledWith(result.escalation);
   });
 
   it("escalates when adherence is stopped or multiple doses are missed", async () => {
@@ -129,5 +134,15 @@ describe("processCheckIn", () => {
 
     expect(result.intervention).toBeDefined();
     expect(result.intervention!.dueAt.getTime()).toBe(now.getTime() + 24 * 60 * 60 * 1000);
+  });
+
+  it("explains the intervention but keeps the raw action in the intervention record", async () => {
+    const deps = makeDeps();
+    const result = await processCheckIn(makeInput(), deps);
+
+    expect(result.action.type).toBe("intervention");
+    expect(result.action.explanation).toBe("Explained: Continue your care plan and log tomorrow to track the trend.");
+    expect(result.intervention!.action).toBe("Continue your care plan and log tomorrow to track the trend.");
+    expect(deps.explainIntervention).toHaveBeenCalledTimes(1);
   });
 });

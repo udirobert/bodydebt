@@ -5,6 +5,7 @@ import type {
   CheckInResult,
   CareIntervention,
   CareEscalation,
+  CareAction,
 } from "@/domain/care/types";
 import { randomUUID } from "node:crypto";
 
@@ -33,6 +34,11 @@ export interface CheckInDependencies {
   saveObservation: (obs: CareObservation) => Promise<CareObservation>;
   saveIntervention?: (intervention: CareIntervention) => Promise<CareIntervention>;
   saveEscalation?: (escalation: CareEscalation) => Promise<CareEscalation>;
+  notifyEscalation?: (escalation: CareEscalation) => Promise<void>;
+  explainIntervention?: (
+    input: CareObservationInput,
+    action: Extract<CareAction, { type: "intervention" }>,
+  ) => Promise<string>;
 }
 
 /**
@@ -49,7 +55,16 @@ export async function processCheckIn(
 ): Promise<CheckInResult> {
   const previous = await deps.getPreviousObservations(input.patientId);
   const observation = await deps.saveObservation(inputToObservation(input));
-  const action = evaluateObservation(input, previous);
+  let action = evaluateObservation(input, previous);
+
+  if (action.type === "intervention" && deps.explainIntervention) {
+    try {
+      const explanation = await deps.explainIntervention(input, action);
+      action = { ...action, explanation };
+    } catch {
+      // Fall back to the deterministic action text if explanation fails.
+    }
+  }
 
   const result: CheckInResult = { observation, action };
 
@@ -64,6 +79,9 @@ export async function processCheckIn(
       resolvedAt: null,
     };
     result.escalation = deps.saveEscalation ? await deps.saveEscalation(escalation) : escalation;
+    if (deps.notifyEscalation) {
+      deps.notifyEscalation(result.escalation).catch(() => undefined);
+    }
   } else {
     const intervention: CareIntervention = {
       id: newId(),
