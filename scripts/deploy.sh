@@ -173,7 +173,11 @@ rsync -avz --delete \
 # .env and ecosystem.config.cjs are managed on the server — only push if missing
 ssh "$SERVER" "test -f $DEPLOY_PATH/.env || scp .env $SERVER:$DEPLOY_PATH/.env 2>/dev/null || echo 'no .env to copy'"
 
-# 4. Reload on the server
+# 4. Apply database migrations before restarting the app
+echo ">>> Running database migrations on $SERVER..."
+ssh "$SERVER" "cd $DEPLOY_PATH && node scripts/migrate-prod.mjs"
+
+# 5. Reload on the server
 echo ">>> Reloading pm2 on $SERVER..."
 ssh "$SERVER" "cd $DEPLOY_PATH && export PATH=$BUN_PATH_REMOTE:\$PATH && pm2 delete bodydebt 2>/dev/null; pm2 start ecosystem.config.cjs && pm2 save"
 
