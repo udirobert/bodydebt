@@ -34,7 +34,10 @@ export interface CheckInDependencies {
   saveObservation: (obs: CareObservation) => Promise<CareObservation>;
   saveIntervention?: (intervention: CareIntervention) => Promise<CareIntervention>;
   saveEscalation?: (escalation: CareEscalation) => Promise<CareEscalation>;
-  notifyEscalation?: (escalation: CareEscalation) => Promise<void>;
+  notifyEscalation?: (
+    escalation: CareEscalation,
+    observation: CareObservation,
+  ) => Promise<void>;
   explainIntervention?: (
     input: CareObservationInput,
     action: Extract<CareAction, { type: "intervention" }>,
@@ -83,7 +86,7 @@ export async function processCheckIn(
     };
     result.escalation = deps.saveEscalation ? await deps.saveEscalation(escalation) : escalation;
     if (deps.notifyEscalation) {
-      deps.notifyEscalation(result.escalation).catch(() => undefined);
+      deps.notifyEscalation(result.escalation, observation).catch(() => undefined);
     }
   } else {
     const intervention: CareIntervention = {

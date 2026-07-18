@@ -3,8 +3,10 @@ import { requireAuth } from "@/lib/auth";
 import { notifications } from "@/lib/sdk/eazo-server";
 import { ai } from "@/lib/sdk/eazo-client";
 import { sendEmail } from "@/lib/email";
+import { buildEscalationEmail } from "@/lib/care/escalation-email";
 import { processCheckIn } from "@/application/care/check-in";
 import { careObservations, careInterventions, careEscalations, carePatients } from "@/lib/db/schema/care";
+import { users } from "@/lib/db/schema/users";
 import { db } from "@/lib/db/client";
 import { eq, desc } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
@@ -121,15 +123,36 @@ export async function POST(request: NextRequest) {
       const [row] = await db.insert(careEscalations).values(escalation).returning();
       return row as CareEscalation;
     },
-    notifyEscalation: async (escalation) => {
+    notifyEscalation: async (escalation, observation) => {
       const careTeamEmail = process.env.CARE_TEAM_EMAIL;
       if (careTeamEmail) {
         try {
-          await sendEmail({
-            to: careTeamEmail,
-            subject: "Care Companion escalation",
-            text: `A patient check-in generated an escalation.\n\nReason: ${escalation.reason}\nPatient: ${escalation.patientId}\nEscalation ID: ${escalation.id}`,
-          });
+          const [patientRow] = await db
+            .select({
+              name: users.name,
+              email: users.email,
+              medication: carePatients.medication,
+              currentDose: carePatients.currentDose,
+            })
+            .from(carePatients)
+            .innerJoin(users, eq(carePatients.userId, users.id))
+            .where(eq(carePatients.id, observation.patientId))
+            .limit(1);
+
+          const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://bodydebt.thisyearnofear.com";
+          const { subject, text, html } = buildEscalationEmail(
+            escalation,
+            observation,
+            {
+              name: patientRow?.name,
+              email: patientRow?.email,
+              medication: patientRow?.medication,
+              currentDose: patientRow?.currentDose,
+            },
+            siteUrl,
+          );
+
+          await sendEmail({ to: careTeamEmail, subject, text, html });
         } catch (err) {
           console.error("[care/escalation] email failed", err);
         }

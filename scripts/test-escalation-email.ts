@@ -7,6 +7,7 @@ import { processCheckIn } from "../src/application/care/check-in";
 import { users } from "../src/lib/db/schema/users";
 import { carePatients, careObservations, careEscalations } from "../src/lib/db/schema/care";
 import { sendEmail } from "../src/lib/email";
+import { buildEscalationEmail } from "../src/lib/care/escalation-email";
 
 // Load .env first for DATABASE_URL, then .env.local for local overrides.
 config({ path: ".env" });
@@ -95,12 +96,15 @@ async function main() {
         }).returning();
         return row;
       },
-      notifyEscalation: async (escalation) => {
-        await sendEmail({
-          to: CARE_EMAIL,
-          subject: "Care Companion escalation",
-          text: `A patient check-in generated an escalation.\n\nReason: ${escalation.reason}\nPatient: ${escalation.patientId}\nEscalation ID: ${escalation.id}`,
-        });
+      notifyEscalation: async (escalation, observation) => {
+        const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://bodydebt.thisyearnofear.com";
+        const { subject, text, html } = buildEscalationEmail(escalation, observation, {
+          name: user.name,
+          email: user.email,
+          medication: patient.medication,
+          currentDose: patient.currentDose,
+        }, siteUrl);
+        await sendEmail({ to: CARE_EMAIL, subject, text, html });
       },
     },
   );

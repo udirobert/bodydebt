@@ -107,7 +107,7 @@ describe("processCheckIn", () => {
     expect(result.intervention).toBeUndefined();
     expect(deps.saveEscalation).toHaveBeenCalledTimes(1);
     expect(deps.notifyEscalation).toHaveBeenCalledTimes(1);
-    expect(deps.notifyEscalation).toHaveBeenCalledWith(result.escalation);
+    expect(deps.notifyEscalation).toHaveBeenCalledWith(result.escalation, result.observation);
   });
 
   it("escalates when vomiting is reported as severe", async () => {
