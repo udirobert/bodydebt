@@ -25,20 +25,18 @@ const instrumentSans = Instrument_Sans({
 });
 
 // Public origin used to resolve relative URLs in OG / Twitter Card tags
-// and `canonical`. Picks up Vercel's auto-injected hostname; on other
-// hosts (or when using a custom domain whose OG should not show the
-// `*.vercel.app` URL), point `metadataBase` at the canonical URL
-// directly instead of relying on this.
+// and `canonical`. Picks up Vercel's auto-injected hostname, then
+// NEXT_PUBLIC_APP_URL, then localhost so `metadataBase` is always set.
 const SITE_URL = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
-  : undefined;
+  : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 const SITE_TITLE = "BODY DEBT";
 const SITE_DESCRIPTION =
   "Your body keeps the score. Quantify recovery debt from alcohol, sleep, training, and stress.";
 
 export const metadata: Metadata = {
-  ...(SITE_URL ? { metadataBase: new URL(SITE_URL) } : {}),
+  metadataBase: new URL(SITE_URL),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   // Favicon chain — all file-based metadata so Next.js auto-emits

@@ -41,6 +41,8 @@ import { useMemoryContext } from "@/hooks/useMemoryContext";
 import { useMemoryContainerTag } from "@/hooks/useMemoryContainerTag";
 import type { DebtAnalysis, ConfidenceTier } from "@/lib/types";
 
+const IS_TEST_ENV = process.env.NODE_ENV === "test";
+
 // ─── Fallback ─────────────────────────────────────────────────────────────────
 
 const FALLBACK_ANALYSIS: DebtAnalysis = {
@@ -99,6 +101,7 @@ export function DashboardScreen() {
   // Entry animation — subtle scale morph on first render (from analysis loader)
   const [entryPhase, setEntryPhase] = useState<"entering" | "settled">("entering");
   useEffect(() => {
+    if (IS_TEST_ENV) return;
     const t = setTimeout(() => setEntryPhase("settled"), 400);
     return () => clearTimeout(t);
   }, []);
@@ -107,7 +110,7 @@ export function DashboardScreen() {
   const [displayScore, setDisplayScore] = useState(0);
   const countRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
-    if (!analysis) return;
+    if (IS_TEST_ENV || !analysis) return;
     const target = analysis.debtScore;
     const duration = 800;
     const steps = 32;

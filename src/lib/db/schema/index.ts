@@ -4,3 +4,4 @@ export * from "./debt-sessions";
 export * from "./terra-connections";
 export * from "./user-preferences";
 export * from "./squad-players";
+export * from "./care";

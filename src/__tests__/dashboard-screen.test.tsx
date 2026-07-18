@@ -38,8 +38,12 @@ vi.mock("@/lib/sdk/eazo-client", () => ({
 }));
 
 vi.mock("@/lib/sdk/eazo-react", () => ({
-  useEazo: vi.fn(() => ({ auth: { user: null } })),
+  useEazo: vi.fn((selector: (state: { auth: { user: null; authenticated: boolean } }) => unknown) =>
+    selector({ auth: { user: null, authenticated: false } })
+  ),
 }));
+
+
 
 // Recovery context — mockUseRecoveryContext is a vi.fn() so individual tests
 // can override the return value (e.g. to simulate football/fan mode's
@@ -154,7 +158,7 @@ vi.mock("@/components/ModeToggle", () => ({
   ModeToggle: () => <div data-testid="mode-toggle" />,
 }));
 
-vi.mock("./SquadScreen", () => ({
+vi.mock("@/components/screens/SquadScreen", () => ({
   SquadPanel: () => <div data-testid="squad-panel" />,
 }));
 
@@ -220,6 +224,7 @@ const DEFAULT_STORE = {
   agentEvents: [],
   agentProgress: null,
   locale: "en" as const,
+  squad: [],
 };
 
 beforeEach(() => {
