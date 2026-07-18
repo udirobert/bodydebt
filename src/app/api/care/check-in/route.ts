@@ -8,8 +8,9 @@ import { processCheckIn } from "@/application/care/check-in";
 import { careObservations, careInterventions, careEscalations, carePatients } from "@/lib/db/schema/care";
 import { users } from "@/lib/db/schema/users";
 import { db } from "@/lib/db/client";
-import { getCarePatientByUserId } from "@/lib/db/queries/care";
+import { getActiveCareAcknowledgement, getCarePatientByUserId } from "@/lib/db/queries/care";
 import { eq, desc } from "drizzle-orm";
+import { hasActiveAcknowledgement } from "@/lib/care/invitations";
 import type { CareObservation, CareIntervention, CareEscalation, CareObservationInput } from "@/domain/care/types";
 
 export const maxDuration = 30;
@@ -60,6 +61,9 @@ export async function POST(request: NextRequest) {
   const patient = await getCarePatientByUserId(auth.user.id);
   if (!patient?.clinicId) {
     return NextResponse.json({ error: "Care access has not been set up by your clinic" }, { status: 403 });
+  }
+  if (!hasActiveAcknowledgement(await getActiveCareAcknowledgement(patient.id))) {
+    return NextResponse.json({ error: "Complete your clinic invitation to start care", code: "acknowledgement_required" }, { status: 403 });
   }
 
   const input: CareObservationInput = {

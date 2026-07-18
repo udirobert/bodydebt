@@ -13,6 +13,7 @@ vi.mock("@/lib/db/queries/care", () => ({
   getRecentInterventionOutcomesForPatient: vi.fn(),
   getOpenEscalationsForPatient: vi.fn(),
   getCareClinicById: vi.fn(),
+  getActiveCareAcknowledgement: vi.fn(),
 }));
 
 import { requireAuth } from "@/lib/auth";
@@ -23,6 +24,7 @@ import {
   getRecentInterventionOutcomesForPatient,
   getOpenEscalationsForPatient,
   getCareClinicById,
+  getActiveCareAcknowledgement,
 } from "@/lib/db/queries/care";
 
 function mockAuth(userId = "user-1") {
@@ -58,6 +60,7 @@ describe("GET /api/care/patient/summary", () => {
   it("returns the patient summary", async () => {
     mockAuth();
     (getCarePatientByUserId as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "patient-1", userId: "user-1", clinicId: "clinic-1" });
+    (getActiveCareAcknowledgement as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "ack-1", patientId: "patient-1", revokedAt: null });
     (getCareClinicById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "clinic-1", name: "Demo Clinic" });
     (getCareObservationsForPatient as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: "obs-1", symptoms: ["nausea"], symptomSeverity: "mild", adherence: "taken_as_prescribed" },

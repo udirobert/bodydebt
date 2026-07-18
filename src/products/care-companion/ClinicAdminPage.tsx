@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
-import { Building2, Plus, Pill, ExternalLink, Mail, User, Inbox, CheckCircle2 } from "lucide-react";
+import { Building2, Plus, Pill, ExternalLink, Mail, User, Inbox, CheckCircle2, Copy } from "lucide-react";
 
 type Patient = {
   id: string;
@@ -48,6 +48,7 @@ export function ClinicAdminPage() {
   const [enrolling, setEnrolling] = useState(false);
   const [creating, setCreating] = useState(false);
   const [enrollmentSuccess, setEnrollmentSuccess] = useState<string | null>(null);
+  const [invitationLink, setInvitationLink] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -98,6 +99,7 @@ export function ClinicAdminPage() {
     setEnrolling(true);
     setError(null);
     setEnrollmentSuccess(null);
+    setInvitationLink(null);
     try {
       const res = await fetch(`/api/care/clinics/${encodeURIComponent(selectedClinicId)}/patients`, {
         method: "POST",
@@ -117,7 +119,8 @@ export function ClinicAdminPage() {
       setMedication("");
       setCurrentDose("");
       setStartedAt("");
-      setEnrollmentSuccess(json.patient.userId ? "Patient enrolled. Their next check-in will be routed to this clinic." : "Patient enrolled.");
+      setEnrollmentSuccess(json.invitationToken ? "Patient enrolled. Share this secure link directly — no email has been sent." : "Patient is already acknowledged for this clinic.");
+      if (json.invitationToken) setInvitationLink(`${window.location.origin}/care/accept?token=${encodeURIComponent(json.invitationToken)}`);
       await loadClinics();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to enroll patient");
@@ -253,7 +256,7 @@ export function ClinicAdminPage() {
                 {enrolling ? "Enrolling…" : "Enroll patient"}
               </PrimaryButton>
             </form>
-            {enrollmentSuccess && <p className="flex items-center gap-2 rounded-xl p-3 text-xs" style={{ backgroundColor: "rgba(74,222,128,0.08)", color: "var(--color-states-success)" }}><CheckCircle2 className="h-4 w-4" />{enrollmentSuccess}</p>}
+            {enrollmentSuccess && <div className="rounded-xl p-3 text-xs space-y-3" style={{ backgroundColor: "rgba(74,222,128,0.08)", color: "var(--color-states-success)" }}><p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />{enrollmentSuccess}</p>{invitationLink && <><input readOnly value={invitationLink} aria-label="Secure patient invitation link" className="w-full rounded-lg px-2.5 py-2 text-[11px]" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} /><button type="button" onClick={() => navigator.clipboard.writeText(invitationLink)} className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--color-brand-primary)" }}><Copy className="h-3.5 w-3.5" />Copy secure link</button><p style={{ color: "var(--color-text-secondary)" }}>Valid for 7 days. Email delivery remains disabled until clinic wording and sender identity are approved.</p></>}</div>}
           </div>
         )}
         </div>

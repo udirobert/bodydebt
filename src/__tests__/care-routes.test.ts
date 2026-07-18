@@ -13,6 +13,7 @@ vi.mock("@/application/care/check-in", () => ({
 
 vi.mock("@/lib/db/queries/care", () => ({
   getCarePatientByUserId: vi.fn(),
+  getActiveCareAcknowledgement: vi.fn(),
   getOpenEscalationsForClinic: vi.fn(),
   getPendingInterventionsForClinic: vi.fn(),
   getRecentInterventionOutcomesForClinic: vi.fn(),
@@ -23,6 +24,7 @@ import { requireAuth } from "@/lib/auth";
 import { processCheckIn } from "@/application/care/check-in";
 import {
   getCarePatientByUserId,
+  getActiveCareAcknowledgement,
   getOpenEscalationsForClinic,
   getPendingInterventionsForClinic,
   getRecentInterventionOutcomesForClinic,
@@ -91,6 +93,7 @@ describe("POST /api/care/check-in", () => {
   it("processes a valid check-in and returns the action", async () => {
     mockAuth();
     (getCarePatientByUserId as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "patient-1", userId: "user-1", clinicId: "clinic-1" });
+    (getActiveCareAcknowledgement as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "ack-1", patientId: "patient-1", revokedAt: null });
     const now = new Date();
     (processCheckIn as ReturnType<typeof vi.fn>).mockResolvedValue({
       observation: { id: "obs-1", checkInAt: now },

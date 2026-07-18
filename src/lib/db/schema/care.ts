@@ -98,6 +98,27 @@ export const careAuditLogs = pgTable("care_audit_logs", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const careInvitations = pgTable("care_invitations", {
+  id: varchar("id", { length: 128 }).primaryKey(),
+  clinicId: varchar("clinic_id", { length: 128 }).notNull(),
+  patientId: varchar("patient_id", { length: 128 }).notNull(),
+  tokenHash: varchar("token_hash", { length: 128 }).notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const careAcknowledgements = pgTable("care_acknowledgements", {
+  id: varchar("id", { length: 128 }).primaryKey(),
+  clinicId: varchar("clinic_id", { length: 128 }).notNull(),
+  patientId: varchar("patient_id", { length: 128 }).notNull(),
+  invitationId: varchar("invitation_id", { length: 128 }),
+  policyVersion: varchar("policy_version", { length: 64 }).notNull(),
+  acknowledgedAt: timestamp("acknowledged_at").notNull().defaultNow(),
+  revokedAt: timestamp("revoked_at"),
+});
+
 export const careEscalations = pgTable("care_escalations", {
   id: varchar("id", { length: 128 }).primaryKey(),
   patientId: varchar("patient_id", { length: 128 }).notNull(),
@@ -124,6 +145,8 @@ export type CareInterventionRow = InferSelectModel<typeof careInterventions>;
 export type NewCareIntervention = InferInsertModel<typeof careInterventions>;
 export type CareAuditLog = InferSelectModel<typeof careAuditLogs>;
 export type NewCareAuditLog = InferInsertModel<typeof careAuditLogs>;
+export type CareInvitation = InferSelectModel<typeof careInvitations>;
+export type CareAcknowledgement = InferSelectModel<typeof careAcknowledgements>;
 export type CareEscalationRow = InferSelectModel<typeof careEscalations>;
 export type NewCareEscalation = InferInsertModel<typeof careEscalations>;
 export type CareClinician = InferSelectModel<typeof careClinicians>;

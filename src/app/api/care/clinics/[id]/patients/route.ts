@@ -7,8 +7,12 @@ import {
   getCarePatientByUserId,
   createCarePatient,
   updateCarePatient,
+  createCareInvitation,
+  revokeActiveCareInvitations,
+  getActiveCareAcknowledgement,
 } from "@/lib/db/queries/care";
 import { randomUUID } from "node:crypto";
+import { createInvitationToken, hashInvitationToken, invitationExpiry } from "@/lib/care/invitations";
 
 export const maxDuration = 30;
 
@@ -61,20 +65,29 @@ export async function POST(
         startedAt: startedAt ?? patient.startedAt,
       });
     }
-    return NextResponse.json({ ok: true, patient });
+  } else {
+    const now = new Date();
+    patient = await createCarePatient({
+      id: randomUUID(),
+      userId: user.id,
+      clinicId,
+      medication: body.medication ?? null,
+      currentDose: body.currentDose ?? null,
+      startedAt: startedAt ?? null,
+      enrolledAt: now,
+      updatedAt: now,
+    });
   }
 
-  const now = new Date();
-  patient = await createCarePatient({
-    id: randomUUID(),
-    userId: user.id,
-    clinicId,
-    medication: body.medication ?? null,
-    currentDose: body.currentDose ?? null,
-    startedAt: startedAt ?? null,
-    enrolledAt: now,
-    updatedAt: now,
+  const acknowledgement = await getActiveCareAcknowledgement(patient.id);
+  if (acknowledgement) return NextResponse.json({ ok: true, patient, invitationToken: null });
+
+  const invitationToken = createInvitationToken();
+  await revokeActiveCareInvitations(patient.id);
+  await createCareInvitation({
+    id: randomUUID(), clinicId, patientId: patient.id,
+    tokenHash: hashInvitationToken(invitationToken), expiresAt: invitationExpiry(), createdAt: new Date(),
   });
 
-  return NextResponse.json({ ok: true, patient });
+  return NextResponse.json({ ok: true, patient, invitationToken });
 }

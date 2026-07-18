@@ -1,0 +1,53 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { CheckCircle2, ShieldCheck } from "lucide-react";
+import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
+import { PrimaryButton } from "@/components/PrimaryButton";
+import { useEazo } from "@/lib/sdk/eazo-react";
+
+type Invitation = { clinic: { id: string; name: string }; expiresAt: string };
+
+export function CareInvitationPage() {
+  const user = useEazo((state) => state.auth.user);
+  const params = useSearchParams();
+  const router = useRouter();
+  const token = params.get("token");
+  const [invitation, setInvitation] = useState<Invitation | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [accepting, setAccepting] = useState(false);
+
+  useEffect(() => {
+    if (!user || !token) return;
+    fetch(`/api/care/invitations/validate?token=${encodeURIComponent(token)}`)
+      .then(async (response) => {
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.error || "Unable to verify invitation");
+        setInvitation(json);
+      })
+      .catch((reason) => setError(reason instanceof Error ? reason.message : "Unable to verify invitation"));
+  }, [token, user]);
+
+  async function acceptInvitation() {
+    if (!token) return;
+    setAccepting(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/care/invitations/accept", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || "Unable to accept invitation");
+      router.replace("/care");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to accept invitation");
+    } finally {
+      setAccepting(false);
+    }
+  }
+
+  return <main className="min-h-svh px-5 py-10" style={{ backgroundColor: "var(--color-bg-base)", color: "var(--color-text-primary)" }}><div className="mx-auto max-w-md space-y-5"><p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-text-faint)" }}>Care Companion</p>{!token ? <InvitationMessage title="This invitation link is incomplete" body="Ask your clinic for a new secure invitation link." /> : !user ? <AuthLockedTeaser title="Sign in to accept your care invitation" body="Use the email address your clinic invited. We’ll bring you back here afterwards." /> : error ? <InvitationMessage title="This invitation is unavailable" body={error} /> : invitation ? <section className="rounded-[1.5rem] p-6 space-y-5" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}><div className="flex gap-3"><div className="rounded-full p-2 h-fit" style={{ backgroundColor: "rgba(74,222,128,0.1)" }}><ShieldCheck className="h-5 w-5" style={{ color: "var(--color-states-success)" }} /></div><div><h1 className="text-xl" style={{ fontFamily: "var(--font-heading)" }}>Your clinic care companion</h1><p className="mt-1 text-sm leading-6" style={{ color: "var(--color-text-secondary)" }}>{invitation.clinic.name} has invited you to share simple check-ins with its care team.</p></div></div><div className="rounded-xl p-4 text-sm leading-6" style={{ backgroundColor: "var(--color-bg-elevated)", color: "var(--color-text-secondary)" }}><p>Your check-ins are shared with {invitation.clinic.name} so their team can review concerns that need human judgement.</p><p className="mt-3">This companion does not prescribe, change medication doses, or replace urgent medical care.</p></div><p className="text-xs" style={{ color: "var(--color-text-faint)" }}>Pilot acknowledgement · Link expires {new Date(invitation.expiresAt).toLocaleDateString(undefined, { month: "long", day: "numeric" })}</p><PrimaryButton type="button" onClick={acceptInvitation} disabled={accepting} className="w-full">{accepting ? "Setting up your care…" : "I understand and continue"}</PrimaryButton></section> : <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>Checking your invitation…</p>}</div></main>;
+}
+
+function InvitationMessage({ title, body }: { title: string; body: string }) {
+  return <section className="rounded-[1.5rem] p-6" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)" }}><CheckCircle2 className="h-5 w-5 mb-4" style={{ color: "var(--color-text-secondary)" }} /><h1 className="text-xl" style={{ fontFamily: "var(--font-heading)" }}>{title}</h1><p className="mt-2 text-sm leading-6" style={{ color: "var(--color-text-secondary)" }}>{body}</p></section>;
+}

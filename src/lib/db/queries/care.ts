@@ -1,4 +1,4 @@
-import { eq, ne, desc, and, getTableColumns } from "drizzle-orm";
+import { eq, ne, desc, and, isNull, getTableColumns } from "drizzle-orm";
 import { db } from "../client";
 import {
   careObservations,
@@ -8,6 +8,8 @@ import {
   careClinicians,
   careClinics,
   careAuditLogs,
+  careInvitations,
+  careAcknowledgements,
   type CareObservationRow,
   type CareInterventionRow,
   type CareEscalationRow,
@@ -15,6 +17,8 @@ import {
   type CareClinician,
   type CareClinic,
   type CareAuditLog,
+  type CareInvitation,
+  type CareAcknowledgement,
   type NewCareClinician,
   type NewCarePatient,
 } from "../schema/care";
@@ -28,6 +32,39 @@ export async function getCarePatientByUserId(userId: string): Promise<CarePatien
 export async function getCarePatientById(patientId: string): Promise<CarePatient | undefined> {
   const rows = await db.select().from(carePatients).where(eq(carePatients.id, patientId)).limit(1);
   return rows[0];
+}
+
+export async function createCareInvitation(input: typeof careInvitations.$inferInsert): Promise<CareInvitation> {
+  const [row] = await db.insert(careInvitations).values(input).returning();
+  return row;
+}
+
+export async function revokeActiveCareInvitations(patientId: string): Promise<void> {
+  await db.update(careInvitations).set({ revokedAt: new Date() }).where(and(eq(careInvitations.patientId, patientId), isNull(careInvitations.acceptedAt), isNull(careInvitations.revokedAt)));
+}
+
+export async function getCareInvitationByTokenHash(tokenHash: string): Promise<CareInvitation | undefined> {
+  const rows = await db.select().from(careInvitations).where(eq(careInvitations.tokenHash, tokenHash)).limit(1);
+  return rows[0];
+}
+
+export async function acceptCareInvitation(id: string): Promise<CareInvitation> {
+  const [row] = await db.update(careInvitations).set({ acceptedAt: new Date() }).where(eq(careInvitations.id, id)).returning();
+  return row;
+}
+
+export async function createCareAcknowledgement(input: typeof careAcknowledgements.$inferInsert): Promise<CareAcknowledgement> {
+  const [row] = await db.insert(careAcknowledgements).values(input).returning();
+  return row;
+}
+
+export async function getActiveCareAcknowledgement(patientId: string): Promise<CareAcknowledgement | undefined> {
+  const rows = await db.select().from(careAcknowledgements).where(and(eq(careAcknowledgements.patientId, patientId), isNull(careAcknowledgements.revokedAt))).orderBy(desc(careAcknowledgements.acknowledgedAt)).limit(1);
+  return rows[0];
+}
+
+export async function revokeCareAcknowledgements(patientId: string): Promise<void> {
+  await db.update(careAcknowledgements).set({ revokedAt: new Date() }).where(and(eq(careAcknowledgements.patientId, patientId), isNull(careAcknowledgements.revokedAt)));
 }
 
 export async function getCareObservationsForPatient(

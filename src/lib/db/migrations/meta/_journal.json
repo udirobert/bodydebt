@@ -71,6 +71,13 @@
       "when": 1784384786152,
       "tag": "0009_tearful_silver_surfer",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784386555237,
+      "tag": "0010_steep_amphibian",
+      "breakpoints": true
     }
   ]
 }

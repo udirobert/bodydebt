@@ -18,6 +18,9 @@ vi.mock("@/lib/db/queries/care", () => ({
   updateCarePatient: vi.fn(),
   getClinicsForUser: vi.fn(),
   getPatientsForClinic: vi.fn(),
+  getActiveCareAcknowledgement: vi.fn(),
+  createCareInvitation: vi.fn(),
+  revokeActiveCareInvitations: vi.fn(),
 }));
 
 import { requireAuth } from "@/lib/auth";
