@@ -9,7 +9,7 @@ import { CareCheckInForm } from "./CareCheckInForm";
 
 export function CarePage() {
   const user = useEazo((state) => state.auth.user);
-  const [access, setAccess] = useState<"loading" | "ready" | "not-enrolled" | "error">("loading");
+  const [access, setAccess] = useState<"loading" | "ready" | "not-enrolled" | "acknowledgement-required" | "error">("loading");
 
   useEffect(() => {
     if (!user) {
@@ -17,9 +17,10 @@ export function CarePage() {
     }
     let cancelled = false;
     void fetch("/api/care/patient/summary")
-      .then((response) => {
+      .then(async (response) => {
         if (cancelled) return;
-        setAccess(response.ok ? "ready" : response.status === 403 ? "not-enrolled" : "error");
+        const json = await response.json().catch(() => ({}));
+        setAccess(response.ok ? "ready" : json.code === "acknowledgement_required" ? "acknowledgement-required" : response.status === 403 ? "not-enrolled" : "error");
       })
       .catch(() => { if (!cancelled) setAccess("error"); });
     return () => { cancelled = true; };
@@ -80,10 +81,16 @@ export function CarePage() {
             <CareCheckInForm />
           ) : user && access === "loading" ? (
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>Checking your care access…</p>
+          ) : user && access === "acknowledgement-required" ? (
+            <div className="rounded-2xl p-5" style={{ backgroundColor: "rgba(234,88,12,0.07)", border: "1px solid rgba(234,88,12,0.2)" }}>
+              <p className="text-sm font-semibold">One small step before your first check-in</p>
+              <p className="mt-2 text-xs leading-5" style={{ color: "var(--color-text-secondary)" }}>Open the secure invitation your clinic shared with you, sign in with that email address, and confirm how your check-ins are used.</p>
+              <p className="mt-3 text-[11px]" style={{ color: "var(--color-text-faint)" }}>Can&apos;t find it? Ask your clinic to send a fresh invitation link.</p>
+            </div>
           ) : user && access === "not-enrolled" ? (
             <div className="rounded-2xl p-4" style={{ backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border-subtle)" }}>
-              <p className="text-sm font-semibold">Your clinic sets up access</p>
-              <p className="mt-2 text-xs leading-5" style={{ color: "var(--color-text-secondary)" }}>Once your clinic has enrolled you, your check-ins become part of the care record and can be reviewed when support is needed.</p>
+              <p className="text-sm font-semibold">Your clinic will set this up first</p>
+              <p className="mt-2 text-xs leading-5" style={{ color: "var(--color-text-secondary)" }}>Your clinic will share a secure invitation when your care companion is ready. Until then, nothing you enter here is added to a care record.</p>
             </div>
           ) : user ? (
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>We couldn&apos;t confirm your care access. Please try again.</p>

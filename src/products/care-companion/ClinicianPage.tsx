@@ -281,6 +281,10 @@ export function ClinicianPage() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold">{e.reason}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="rounded-full px-2 py-1 text-[10px] font-mono uppercase tracking-wider" style={{ backgroundColor: "rgba(220,38,38,0.12)", color: "var(--color-states-error)" }}>Awaiting review</span>
+                        {e.observation && <span className="rounded-full px-2 py-1 text-[10px] font-mono uppercase tracking-wider" style={{ backgroundColor: e.observation.symptomSeverity === "severe" ? "rgba(220,38,38,0.12)" : "rgba(234,88,12,0.1)", color: e.observation.symptomSeverity === "severe" ? "var(--color-states-error)" : "var(--color-brand-primary)" }}>{e.observation.symptomSeverity} symptoms</span>}
+                      </div>
                       <div className="mt-2">
                         <PatientMeta item={e} />
                       </div>

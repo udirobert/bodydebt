@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useEazo } from "@/lib/sdk/eazo-react";
 import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
-import { CheckCircle2, AlertTriangle, Clock, ArrowRight, Plus, Activity, HeartHandshake, Building2, Pill } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Clock, ArrowRight, Plus, Activity, HeartHandshake, Building2, Pill, ShieldOff } from "lucide-react";
 
 function updateInterventionStatus(id: string, status: "completed" | "skipped", outcomeCode: string, outcomeNote?: string) {
   return fetch(`/api/care/interventions/${id}`, {
@@ -108,6 +108,8 @@ export function CareSummaryPage() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [outcomePrompt, setOutcomePrompt] = useState<{ id: string; status: "completed" | "skipped" } | null>(null);
   const [outcomeNote, setOutcomeNote] = useState("");
+  const [withdrawPrompt, setWithdrawPrompt] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -152,6 +154,22 @@ export function CareSummaryPage() {
       setUpdating(null);
       setOutcomePrompt(null);
       setOutcomeNote("");
+    }
+  }
+
+  async function withdrawAcknowledgement() {
+    setWithdrawing(true);
+    try {
+      const response = await fetch("/api/care/acknowledgement", { method: "DELETE" });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || "We could not update your sharing preference");
+      setSummary(null);
+      setWithdrawPrompt(false);
+      setError("Sharing with your clinic has stopped. Ask your clinic for a new invitation if you would like to restart.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "We could not update your sharing preference");
+    } finally {
+      setWithdrawing(false);
     }
   }
 
@@ -200,6 +218,9 @@ export function CareSummaryPage() {
             {summary?.patient?.startedAt && <div><span style={{ color: "var(--color-text-faint)" }}>Treatment started </span>{formatDate(summary.patient.startedAt)}</div>}
           </div>
           <p className="mt-3 text-[10px] leading-4" style={{ color: "var(--color-text-faint)" }}>Medication details are shown from your clinic record. Contact your clinic if they do not look right.</p>
+          <div className="mt-4 border-t pt-3" style={{ borderColor: "var(--color-border-subtle)" }}>
+            {withdrawPrompt ? <div className="rounded-xl p-3" style={{ backgroundColor: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}><p className="text-xs font-semibold">Stop sharing future check-ins?</p><p className="mt-1 text-[11px] leading-4" style={{ color: "var(--color-text-secondary)" }}>You won&apos;t be able to check in here until your clinic sends a new invitation. This does not replace contacting your clinic about ongoing care.</p><div className="mt-3 flex items-center gap-3"><button type="button" disabled={withdrawing} onClick={withdrawAcknowledgement} className="rounded-full px-3 py-1.5 text-[11px] font-medium disabled:opacity-50" style={{ backgroundColor: "var(--color-states-error)", color: "var(--color-text-primary)" }}>{withdrawing ? "Stopping…" : "Stop sharing"}</button><button type="button" onClick={() => setWithdrawPrompt(false)} className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>Keep sharing</button></div></div> : <button type="button" onClick={() => setWithdrawPrompt(true)} className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: "var(--color-text-secondary)" }}><ShieldOff className="h-3.5 w-3.5" />Stop sharing future check-ins with this clinic</button>}
+          </div>
         </section>}
 
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
@@ -247,7 +268,7 @@ export function CareSummaryPage() {
                               ? [["helped", "It helped"], ["too_hard", "Too hard"]]
                               : [["too_hard", "Too hard"], ["side_effect", "Side effect"], ["no_time", "Didn’t have time"]]
                             ).map(([code, label]) => (
-                              <button key={code} type="button" disabled={updating === i.id} onClick={() => handleInterventionStatus(i.id, outcomePrompt.status, code)} className="rounded-full px-3 py-1.5 text-[11px]" style={{ backgroundColor: "rgba(234,88,12,0.1)", color: "var(--color-brand-primary)", border: "1px solid rgba(234,88,12,0.25)" }}>{label}</button>
+                              <button key={code} type="button" disabled={updating === i.id} onClick={() => handleInterventionStatus(i.id, outcomePrompt.status, code)} className="min-h-11 rounded-full px-3 py-1.5 text-[11px]" style={{ backgroundColor: "rgba(234,88,12,0.1)", color: "var(--color-brand-primary)", border: "1px solid rgba(234,88,12,0.25)" }}>{label}</button>
                             ))}
                           </div>
                           <input value={outcomeNote} onChange={(event) => setOutcomeNote(event.target.value)} maxLength={500} placeholder="Optional note" className="mt-3 w-full rounded-lg px-2.5 py-2 text-xs" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} />
@@ -257,7 +278,7 @@ export function CareSummaryPage() {
                           type="button"
                           disabled={updating === i.id}
                           onClick={() => setOutcomePrompt({ id: i.id, status: "completed" })}
-                          className="text-[11px] px-3 py-1.5 rounded-full font-medium disabled:opacity-50"
+                          className="min-h-11 text-[11px] px-3 py-1.5 rounded-full font-medium disabled:opacity-50"
                           style={{ backgroundColor: "var(--color-states-success)", color: "var(--color-text-primary)" }}
                         >
                           I did this
@@ -266,7 +287,7 @@ export function CareSummaryPage() {
                           type="button"
                           disabled={updating === i.id}
                           onClick={() => setOutcomePrompt({ id: i.id, status: "skipped" })}
-                          className="text-[11px] px-3 py-1.5 rounded-full border bg-transparent disabled:opacity-50"
+                          className="min-h-11 text-[11px] px-3 py-1.5 rounded-full border bg-transparent disabled:opacity-50"
                           style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-secondary)" }}
                         >
                           I couldn&apos;t do this

@@ -125,7 +125,7 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
           )}
         </div>
         <div>
-          <h2 className="font-semibold text-base">Your next step is ready</h2>
+          <h2 className="font-semibold text-base">You&apos;ve done enough for today</h2>
           <p className="text-xs mt-1" style={{ color: "var(--color-text-secondary)" }}>
             We&apos;ve saved today&apos;s check-in and selected one clinic-approved action.
           </p>
@@ -149,7 +149,7 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
       </div>
 
       <p className="text-xs leading-5" style={{ color: "var(--color-text-secondary)" }}>
-        If this is difficult to do, or anything changes, tell us in your next check-in. This support does not replace urgent medical care.
+        Keep this to one manageable step. If it is difficult, or anything changes, tell us in your next check-in. This support does not replace urgent medical care.
       </p>
 
       <Link

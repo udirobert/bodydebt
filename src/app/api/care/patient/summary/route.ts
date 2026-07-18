@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
   const patient = await getCarePatientByUserId(auth.user.id);
   if (!patient?.clinicId) {
-    return NextResponse.json({ error: "Care access has not been set up by your clinic" }, { status: 403 });
+    return NextResponse.json({ error: "Care access has not been set up by your clinic", code: "not_enrolled" }, { status: 403 });
   }
   const acknowledgement = await getActiveCareAcknowledgement(patient.id);
   if (!hasActiveAcknowledgement(acknowledgement)) {
