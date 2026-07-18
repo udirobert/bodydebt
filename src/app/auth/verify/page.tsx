@@ -35,7 +35,11 @@ export default function VerifyRequestPage() {
 
         <div
           className="mt-6 p-4 rounded-xl text-left text-sm"
-          style={{ backgroundColor: "rgba(255,247,237,0.5)", color: "var(--color-text-secondary)" }}
+          style={{
+            backgroundColor: "var(--color-bg-surface)",
+            border: "1px solid rgba(168,162,158,0.08)",
+            color: "var(--color-text-secondary)",
+          }}
         >
           <p className="mb-2 font-medium" style={{ color: "var(--color-text-primary)" }}>
             Didn&apos;t see it?

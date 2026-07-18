@@ -15,12 +15,12 @@ const errorMessages: Record<string, { title: string; body: string; icon: React.R
   AccessDenied: {
     title: "Access denied",
     body: "That account isn't authorized for this app. Try another email or reach out to the team.",
-    icon: <ShieldAlert className="h-12 w-12 mx-auto mb-4" style={{ color: "rgba(239,68,68,0.8)" }} />,
+    icon: <ShieldAlert className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--color-states-error)" }} />,
   },
   Configuration: {
     title: "Sign-in is misconfigured",
     body: "There's a problem with the authentication setup. Please contact support so we can fix it.",
-    icon: <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: "rgba(239,68,68,0.8)" }} />,
+    icon: <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--color-states-error)" }} />,
   },
 };
 
@@ -30,7 +30,7 @@ function ErrorContent() {
   const { title, body, icon } = errorMessages[error] ?? {
     title: "Something went wrong",
     body: "We couldn't sign you in. Please try again or contact support if the problem persists.",
-    icon: <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: "rgba(239,68,68,0.8)" }} />,
+    icon: <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--color-states-error)" }} />,
   };
 
   return (
@@ -52,8 +52,8 @@ function ErrorContent() {
         href="/auth/signin"
         className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold"
         style={{
-          backgroundColor: "rgba(234,88,12,0.9)",
-          color: "white",
+          backgroundColor: "var(--color-brand-primary)",
+          color: "var(--color-text-primary)",
         }}
       >
         <RefreshCcw className="h-4 w-4" />
@@ -66,7 +66,7 @@ function ErrorContent() {
 function ErrorFallback() {
   return (
     <>
-      <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: "rgba(239,68,68,0.8)" }} />
+      <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: "var(--color-states-error)" }} />
       <h1
         className="text-xl font-bold mb-2"
         style={{ color: "var(--color-text-primary)" }}
@@ -83,8 +83,8 @@ function ErrorFallback() {
         href="/auth/signin"
         className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold"
         style={{
-          backgroundColor: "rgba(234,88,12,0.9)",
-          color: "white",
+          backgroundColor: "var(--color-brand-primary)",
+          color: "var(--color-text-primary)",
         }}
       >
         <RefreshCcw className="h-4 w-4" />

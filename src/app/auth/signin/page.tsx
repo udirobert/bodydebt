@@ -53,7 +53,7 @@ export default function SignInPage() {
       >
         <Link
           href="/"
-          className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-300 transition-colors mb-8"
+          className="flex items-center gap-1.5 text-xs text-(--color-text-faint) hover:text-(--color-text-secondary) transition-colors mb-8"
         >
           <ArrowLeft className="h-3 w-3" />
           Back to Body Debt
@@ -80,7 +80,7 @@ export default function SignInPage() {
             className="rounded-xl p-6 text-center"
             style={{
               backgroundColor: "var(--color-bg-surface)",
-              border: "1px solid rgba(168,85,247,0.2)",
+              border: "1px solid rgba(74,222,128,0.2)",
             }}
           >
             <div className="text-3xl mb-3">📧</div>
@@ -88,7 +88,7 @@ export default function SignInPage() {
               className="text-sm font-medium mb-1"
               style={{ color: "var(--color-text-primary)" }}
             >
-              Check your email
+              Check your inbox
             </p>
             <p
               className="text-xs"
@@ -103,7 +103,7 @@ export default function SignInPage() {
             <form onSubmit={handleEmail} className="space-y-3">
               <div className="relative">
                 <Mail
-                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-(--color-text-faint)"
                 />
                 <input
                   type="email"
@@ -134,11 +134,11 @@ export default function SignInPage() {
             </form>
 
             <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-stone-800" />
-              <span className="text-[10px] uppercase tracking-widest text-stone-600">
+              <div className="flex-1 h-px bg-[rgba(168,162,158,0.08)]" />
+              <span className="text-[10px] uppercase tracking-widest text-(--color-text-faint)">
                 or
               </span>
-              <div className="flex-1 h-px bg-stone-800" />
+              <div className="flex-1 h-px bg-[rgba(168,162,158,0.08)]" />
             </div>
 
             <button

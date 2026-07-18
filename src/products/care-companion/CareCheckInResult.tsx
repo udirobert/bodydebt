@@ -45,14 +45,14 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
       <div
         className="rounded-2xl p-5 space-y-4"
         style={{
-          backgroundColor: "rgba(239,68,68,0.08)",
-          border: "1px solid rgba(239,68,68,0.2)",
+          backgroundColor: "rgba(220,38,38,0.08)",
+          border: "1px solid rgba(220,38,38,0.2)",
           color: "var(--color-text-primary)",
         }}
       >
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 p-2 rounded-full" style={{ backgroundColor: "rgba(239,68,68,0.12)" }}>
-            <AlertTriangle className="h-5 w-5" style={{ color: "#dc2626" }} />
+          <div className="mt-0.5 p-2 rounded-full" style={{ backgroundColor: "rgba(220,38,38,0.12)" }}>
+            <AlertTriangle className="h-5 w-5" style={{ color: "var(--color-states-error)" }} />
           </div>
           <div>
             <h2 className="font-semibold text-base">Your care team has been notified</h2>
@@ -65,15 +65,15 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
         <div className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
           <p>
             You reported <span className="font-medium" style={{ color: "var(--color-text-primary)" }}>{symptoms}</span> with{" "}
-            <span className="font-medium" style={{ color: "#dc2626" }}>{severity}</span> severity. A clinician will review this and reach out if needed.
+            <span className="font-medium" style={{ color: "var(--color-states-error)" }}>{severity}</span> severity. A clinician will review this and reach out if needed.
           </p>
         </div>
 
         <div
           className="rounded-xl p-4 text-sm space-y-2"
-          style={{ backgroundColor: "rgba(239,68,68,0.06)", color: "#7f1d1d" }}
+          style={{ backgroundColor: "rgba(220,38,38,0.06)", color: "var(--color-text-secondary)", border: "1px solid rgba(220,38,38,0.12)" }}
         >
-          <p className="font-medium flex items-center gap-2">
+          <p className="font-medium flex items-center gap-2" style={{ color: "var(--color-text-primary)" }}>
             <Stethoscope className="h-4 w-4" />
             When to seek urgent care now
           </p>
@@ -88,7 +88,7 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
         <Link
           href="/care/summary"
           className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
-          style={{ backgroundColor: "#dc2626", color: "white" }}
+          style={{ backgroundColor: "var(--color-states-error)", color: "var(--color-text-primary)" }}
         >
           View in care summary
           <ArrowRight className="h-4 w-4" />
@@ -105,20 +105,20 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
     <div
       className="rounded-2xl p-5 space-y-4"
       style={{
-        backgroundColor: severity === "severe" ? "rgba(234,88,12,0.08)" : "rgba(34,197,94,0.08)",
-        border: `1px solid ${severity === "severe" ? "rgba(234,88,12,0.2)" : "rgba(34,197,94,0.2)"}`,
+        backgroundColor: severity === "severe" ? "rgba(234,88,12,0.08)" : "rgba(74,222,128,0.08)",
+        border: `1px solid ${severity === "severe" ? "rgba(234,88,12,0.2)" : "rgba(74,222,128,0.2)"}`,
         color: "var(--color-text-primary)",
       }}
     >
       <div className="flex items-start gap-3">
         <div
           className="mt-0.5 p-2 rounded-full"
-          style={{ backgroundColor: severity === "severe" ? "rgba(234,88,12,0.12)" : "rgba(34,197,94,0.12)" }}
+          style={{ backgroundColor: severity === "severe" ? "rgba(234,88,12,0.12)" : "rgba(74,222,128,0.12)" }}
         >
           {severity === "severe" ? (
-            <Info className="h-5 w-5" style={{ color: "#ea580c" }} />
+            <Info className="h-5 w-5" style={{ color: "var(--color-brand-primary)" }} />
           ) : (
-            <CheckCircle2 className="h-5 w-5" style={{ color: "#16a34a" }} />
+            <CheckCircle2 className="h-5 w-5" style={{ color: "var(--color-states-success)" }} />
           )}
         </div>
         <div>
@@ -133,7 +133,7 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
 
       <div
         className="rounded-xl p-4 space-y-2"
-        style={{ backgroundColor: "rgba(255,255,255,0.5)", color: "var(--color-text-primary)" }}
+        style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-primary)", border: "1px solid rgba(168,162,158,0.08)" }}
       >
         <p className="text-sm font-medium">{actionText}</p>
         {explanation && (
@@ -156,7 +156,7 @@ export function CareCheckInResult({ result }: { result: CareCheckInResponse }) {
       <Link
         href="/care/summary"
         className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
-        style={{ backgroundColor: severity === "severe" ? "#ea580c" : "#16a34a", color: "white" }}
+        style={{ backgroundColor: severity === "severe" ? "var(--color-brand-primary)" : "var(--color-states-success)", color: "var(--color-text-primary)" }}
       >
         View care summary
         <ArrowRight className="h-4 w-4" />
