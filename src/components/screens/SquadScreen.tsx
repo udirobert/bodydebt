@@ -279,7 +279,7 @@ export function SquadScreen() {
                         onClick={() => setPayingPlayer(p.id)}
                         className="text-[10px] font-mono uppercase tracking-widest px-2 py-1 rounded bg-amber-600/20 border border-amber-600/40 text-amber-300 hover:bg-amber-600/30"
                       >
-                        💰 Pay
+                        💰 Send
                       </button>
                     )}
                     <button

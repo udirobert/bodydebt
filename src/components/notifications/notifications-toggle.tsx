@@ -47,9 +47,9 @@ export function NotificationsToggle() {
         : await notifications.unsubscribe();
       setSubscribed(result.subscribed);
       if (!isMobileHost) {
-        toast.info("Notifications only deliver inside the Eazo mobile app.");
+        toast.info("Daily nudges only deliver inside the Eazo mobile app.");
       } else if (result.subscribed) {
-        toast.success("Subscribed — you'll receive system notifications.");
+        toast.success("Subscribed — the orb will remind you each morning.");
       } else {
         toast.success("Unsubscribed.");
       }
@@ -73,7 +73,7 @@ export function NotificationsToggle() {
         );
       } else {
         toast.info(
-          "No subscribers yet — turn on notifications above and try again.",
+          "No subscribers yet — turn on nudges above and try again.",
         );
       }
     } catch (err) {
@@ -105,16 +105,16 @@ export function NotificationsToggle() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-semibold" style={{ color: "var(--color-text-primary)" }}>
-            Push notifications
+            Daily check-in nudges
           </p>
           <p className="text-[12px]" style={{ color: "var(--color-text-secondary)" }}>
             {showHint
-              ? "Open this app inside Eazo Mobile to receive system pushes."
+              ? "Open this app inside Eazo Mobile to receive morning debt-check nudges."
               : subscribed === null
                 ? "Loading…"
                 : subscribed
-                  ? "On — you'll receive system pushes from this app."
-                  : "Off — turn on to receive system pushes."}
+                  ? "On — the orb will remind you to check in each morning."
+                  : "Off — turn on for daily check-in nudges."}
           </p>
         </div>
         <button
@@ -170,7 +170,7 @@ export function NotificationsToggle() {
           e.currentTarget.style.backgroundColor = "rgba(168,162,158,0.06)";
         }}
       >
-        {sending ? "Sending…" : "Send test notification"}
+        {sending ? "Sending…" : "Send test nudge"}
       </button>
     </div>
   );

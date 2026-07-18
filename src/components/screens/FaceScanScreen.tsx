@@ -108,7 +108,7 @@ export function FaceScanScreen() {
               style={{ aspectRatio: "4/5", backgroundColor: "var(--color-bg-surface)", border: "1px solid rgba(168,162,158,0.12)" }}>
               <div className="flex flex-col items-center gap-3">
                 <Camera className="w-10 h-10 opacity-20" style={{ color: "var(--color-text-secondary)" }} />
-                <p className="text-xs" style={{ color: "var(--color-text-disabled)" }}>Camera opens on this screen</p>
+                <p className="text-xs" style={{ color: "var(--color-text-disabled)" }}>Camera preview will appear here</p>
               </div>
             </div>
             <div className="mt-auto flex flex-col gap-3 pb-10">
@@ -221,7 +221,7 @@ export function FaceScanScreen() {
               if (blurStatus === "blurry") {
                 return (
                   <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "var(--color-states-warning)" }}>
-                    Hold camera stiller
+                    Hold the camera steady
                   </span>
                 );
               }
@@ -418,7 +418,7 @@ export function FaceScanScreen() {
                 <motion.button whileTap={{ scale: 0.97 }} onClick={openManualFallback}
                   className="w-full font-semibold text-sm rounded-2xl"
                   style={{ backgroundColor: "var(--color-bg-surface)", color: "var(--color-text-primary)", border: "1px solid rgba(168,162,158,0.2)", minHeight: "52px" }}>
-                  Use manual self-assessment
+                  Use manual check
                 </motion.button>
               )}
               <PrimaryButton onClick={handleSkip}>

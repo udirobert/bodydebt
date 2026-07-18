@@ -179,7 +179,7 @@ export function CoachMemoryScreen() {
           ))}
         </div>
         <p className="text-[8px] font-mono mt-4" style={{ color: "var(--color-text-faint)" }}>
-          Powered by Supermemory · stored locally · you can forget anything
+          Powered by Supermemory · stored locally · you control what the coach remembers
         </p>
       </motion.div>
 
