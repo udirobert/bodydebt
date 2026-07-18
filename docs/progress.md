@@ -82,3 +82,25 @@ cannot promise a care-team response for an unassigned user.
   around one clear next step and exception-oriented review.
 - Updated test suites to match the new enrolment and outcome shapes; all
   care-related tests pass.
+
+## Care Companion — closed-loop pilot workflow
+
+**Decision:** patients and clinicians now close the loop on every recommended
+action and escalation, with a required audit trail for clinical decisions.
+
+**Shipped:**
+
+- Patients can mark an intervention `completed` or `skipped`, choose a
+  structured outcome (`helped`, `too_hard`, `side_effect`, `no_time`), and add
+  an optional short note.
+- Clinicians must add a review note before marking an escalation `resolved` or
+  `clinic_reviewed`; every action writes an immutable row to
+  `care_audit_logs` (actor, clinic, patient, target, action, reason,
+  timestamp).
+- New `/care/clinician/patient/[patientId]` timeline shows observations,
+  interventions, escalations, and clinical review notes for authorised
+  clinicians only.
+- `ClinicianPage` now previews recent patient outcomes and links into the
+  longitudinal record.
+- New migration `0009_tearful_silver_surfer.sql` adds `care_audit_logs` plus
+  `outcome_code` and `outcome_note` to `care_interventions`.
