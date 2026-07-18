@@ -31,6 +31,7 @@ export type AdherenceStatus =
   | "not_started";
 
 export type GlucoseUnit = "mmol/L" | "mg/dL";
+export type InterventionOutcomeCode = "helped" | "too_hard" | "side_effect" | "no_time";
 
 export interface CareObservationInput {
   patientId: string;
@@ -66,6 +67,8 @@ export interface CareIntervention {
   status: "pending" | "completed" | "skipped";
   dueAt: Date;
   completedAt: Date | null;
+  outcomeCode?: InterventionOutcomeCode | null;
+  outcomeNote?: string | null;
 }
 
 export interface CareEscalation {

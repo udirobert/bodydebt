@@ -82,6 +82,20 @@ export const careInterventions = pgTable("care_interventions", {
   status: careInterventionStatusEnum("status").notNull().default("pending"),
   dueAt: timestamp("due_at").notNull().defaultNow(),
   completedAt: timestamp("completed_at"),
+  outcomeCode: varchar("outcome_code", { length: 32 }),
+  outcomeNote: text("outcome_note"),
+});
+
+export const careAuditLogs = pgTable("care_audit_logs", {
+  id: varchar("id", { length: 128 }).primaryKey(),
+  clinicId: varchar("clinic_id", { length: 128 }).notNull(),
+  actorUserId: varchar("actor_user_id", { length: 128 }).notNull(),
+  patientId: varchar("patient_id", { length: 128 }).notNull(),
+  targetType: varchar("target_type", { length: 32 }).notNull(),
+  targetId: varchar("target_id", { length: 128 }).notNull(),
+  actionType: varchar("action_type", { length: 64 }).notNull(),
+  reason: text("reason").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const careEscalations = pgTable("care_escalations", {
@@ -108,6 +122,8 @@ export type CareObservationRow = InferSelectModel<typeof careObservations>;
 export type NewCareObservation = InferInsertModel<typeof careObservations>;
 export type CareInterventionRow = InferSelectModel<typeof careInterventions>;
 export type NewCareIntervention = InferInsertModel<typeof careInterventions>;
+export type CareAuditLog = InferSelectModel<typeof careAuditLogs>;
+export type NewCareAuditLog = InferInsertModel<typeof careAuditLogs>;
 export type CareEscalationRow = InferSelectModel<typeof careEscalations>;
 export type NewCareEscalation = InferInsertModel<typeof careEscalations>;
 export type CareClinician = InferSelectModel<typeof careClinicians>;

@@ -6,11 +6,11 @@ import { useEazo } from "@/lib/sdk/eazo-react";
 import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
 import { AlertTriangle, CheckCircle2, Clock, User, Mail, Pill, Inbox, Building2, ArrowRight } from "lucide-react";
 
-function resolveEscalation(id: string, clinicId: string, status: "resolved" | "clinic_reviewed") {
+function resolveEscalation(id: string, clinicId: string, status: "resolved" | "clinic_reviewed", reason: string) {
   return fetch(`/api/care/escalations/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status, clinicId }),
+    body: JSON.stringify({ status, clinicId, reason }),
   });
 }
 
@@ -104,6 +104,8 @@ export function ClinicianPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [reviewPrompt, setReviewPrompt] = useState<{ id: string; status: "resolved" | "clinic_reviewed" } | null>(null);
+  const [reviewNote, setReviewNote] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -152,17 +154,19 @@ export function ClinicianPage() {
     return () => { cancelled = true; clearTimeout(id); };
   }, [clinicId, user]);
 
-  async function handleResolveEscalation(id: string, status: "resolved" | "clinic_reviewed") {
+  async function handleResolveEscalation(id: string, status: "resolved" | "clinic_reviewed", reason: string) {
     if (!clinicId) return;
     setUpdating(id);
     try {
-      const res = await resolveEscalation(id, clinicId, status);
+      const res = await resolveEscalation(id, clinicId, status, reason);
       if (!res.ok) throw new Error("Failed to update escalation");
       setEscalations((prev) => prev.filter((e) => e.id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update escalation");
     } finally {
       setUpdating(null);
+      setReviewPrompt(null);
+      setReviewNote("");
     }
   }
 
@@ -290,11 +294,12 @@ export function ClinicianPage() {
                         <p className="mt-1 text-[11px]" style={{ color: "var(--color-text-secondary)" }}>Treatment: {humanise(e.observation.adherence)}</p>
                         {e.observation.notes && <p className="mt-2 border-l-2 pl-2 text-[11px] leading-4" style={{ borderColor: "rgba(220,38,38,0.35)", color: "var(--color-text-secondary)" }}>{e.observation.notes}</p>}
                       </div>}
-                      <div className="flex flex-wrap gap-2 mt-3">
+                      {reviewPrompt?.id === e.id ? <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border-subtle)" }}><p className="text-xs font-semibold">Add a review note</p><textarea value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} maxLength={1000} rows={2} placeholder="What did you review or decide?" className="mt-2 w-full resize-none rounded-lg px-2.5 py-2 text-xs" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} /><div className="mt-2 flex gap-2"><button type="button" disabled={!reviewNote.trim() || updating === e.id} onClick={() => handleResolveEscalation(e.id, reviewPrompt.status, reviewNote)} className="rounded-full px-3 py-1.5 text-[11px] font-medium disabled:opacity-50" style={{ backgroundColor: "var(--color-states-error)", color: "var(--color-text-primary)" }}>{reviewPrompt.status === "resolved" ? "Resolve escalation" : "Save review"}</button><button type="button" onClick={() => { setReviewPrompt(null); setReviewNote(""); }} className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>Cancel</button></div></div> : <div className="flex flex-wrap gap-2 mt-3">
+                        <button type="button" onClick={() => router.push(`/care/clinician/patient/${encodeURIComponent(e.patientId)}?clinicId=${encodeURIComponent(clinicId)}`)} className="text-[11px] px-3 py-1.5 rounded-full border" style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-secondary)" }}>Patient timeline</button>
                         <button
                           type="button"
                           disabled={updating === e.id}
-                          onClick={() => handleResolveEscalation(e.id, "clinic_reviewed")}
+                          onClick={() => setReviewPrompt({ id: e.id, status: "clinic_reviewed" })}
                           className="text-[11px] px-3 py-1.5 rounded-full font-medium disabled:opacity-50"
                           style={{ backgroundColor: "var(--color-states-error)", color: "var(--color-text-primary)" }}
                         >
@@ -303,13 +308,13 @@ export function ClinicianPage() {
                         <button
                           type="button"
                           disabled={updating === e.id}
-                          onClick={() => handleResolveEscalation(e.id, "resolved")}
+                          onClick={() => setReviewPrompt({ id: e.id, status: "resolved" })}
                           className="text-[11px] px-3 py-1.5 rounded-full border bg-transparent disabled:opacity-50"
                           style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-secondary)" }}
                         >
                           Resolve
                         </button>
-                      </div>
+                      </div>}
                     </div>
                   </div>
                 </div>
@@ -363,6 +368,7 @@ export function ClinicianPage() {
                         <Clock className="h-3 w-3 inline mr-1" />
                         due {formatRelative(i.dueAt)}
                       </p>
+                      <button type="button" onClick={() => router.push(`/care/clinician/patient/${encodeURIComponent(i.patientId)}?clinicId=${encodeURIComponent(clinicId)}`)} className="mt-3 text-[11px]" style={{ color: "var(--color-brand-primary)" }}>Open patient timeline</button>
                     </div>
                   </div>
                 </div>

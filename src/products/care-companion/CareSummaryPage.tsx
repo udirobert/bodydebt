@@ -6,11 +6,11 @@ import { useEazo } from "@/lib/sdk/eazo-react";
 import { AuthLockedTeaser } from "@/components/AuthLockedTeaser";
 import { CheckCircle2, AlertTriangle, Clock, ArrowRight, Plus, Activity, HeartHandshake, Building2, Pill } from "lucide-react";
 
-function updateInterventionStatus(id: string, status: "completed" | "skipped") {
+function updateInterventionStatus(id: string, status: "completed" | "skipped", outcomeCode: string, outcomeNote?: string) {
   return fetch(`/api/care/interventions/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, outcomeCode, outcomeNote }),
   });
 }
 
@@ -32,6 +32,8 @@ type Intervention = {
   status: string;
   dueAt: string;
   completedAt?: string | null;
+  outcomeCode?: string | null;
+  outcomeNote?: string | null;
 };
 
 type Escalation = {
@@ -104,6 +106,8 @@ export function CareSummaryPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [outcomePrompt, setOutcomePrompt] = useState<{ id: string; status: "completed" | "skipped" } | null>(null);
+  const [outcomeNote, setOutcomeNote] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -128,17 +132,17 @@ export function CareSummaryPage() {
     return () => { cancelled = true; clearTimeout(id); };
   }, [user]);
 
-  async function handleInterventionStatus(id: string, status: "completed" | "skipped") {
+  async function handleInterventionStatus(id: string, status: "completed" | "skipped", outcomeCode: string) {
     setUpdating(id);
     try {
-      const res = await updateInterventionStatus(id, status);
+      const res = await updateInterventionStatus(id, status, outcomeCode, outcomeNote);
       if (!res.ok) throw new Error("Failed to update intervention");
       setSummary((prev) =>
         prev
           ? {
               ...prev,
               pendingInterventions: prev.pendingInterventions.filter((i) => i.id !== id),
-              recentOutcomes: [{ ...prev.pendingInterventions.find((i) => i.id === id)!, status, completedAt: new Date().toISOString() }, ...prev.recentOutcomes],
+              recentOutcomes: [{ ...prev.pendingInterventions.find((i) => i.id === id)!, status, outcomeCode, outcomeNote: outcomeNote || null, completedAt: new Date().toISOString() }, ...prev.recentOutcomes],
             }
           : prev,
       );
@@ -146,6 +150,8 @@ export function CareSummaryPage() {
       setError(err instanceof Error ? err.message : "Failed to update intervention");
     } finally {
       setUpdating(null);
+      setOutcomePrompt(null);
+      setOutcomeNote("");
     }
   }
 
@@ -233,11 +239,24 @@ export function CareSummaryPage() {
                         Due {formatDate(i.dueAt)}
                       </p>
                       <p className="mt-3 text-[11px]" style={{ color: "var(--color-text-secondary)" }}>Let us know whether this felt doable. That helps make future support more useful.</p>
-                      <div className="flex gap-2 mt-3">
+                      {outcomePrompt?.id === i.id ? (
+                        <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border-subtle)" }}>
+                          <p className="text-xs font-semibold">What was the outcome?</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {(outcomePrompt.status === "completed"
+                              ? [["helped", "It helped"], ["too_hard", "Too hard"]]
+                              : [["too_hard", "Too hard"], ["side_effect", "Side effect"], ["no_time", "Didn’t have time"]]
+                            ).map(([code, label]) => (
+                              <button key={code} type="button" disabled={updating === i.id} onClick={() => handleInterventionStatus(i.id, outcomePrompt.status, code)} className="rounded-full px-3 py-1.5 text-[11px]" style={{ backgroundColor: "rgba(234,88,12,0.1)", color: "var(--color-brand-primary)", border: "1px solid rgba(234,88,12,0.25)" }}>{label}</button>
+                            ))}
+                          </div>
+                          <input value={outcomeNote} onChange={(event) => setOutcomeNote(event.target.value)} maxLength={500} placeholder="Optional note" className="mt-3 w-full rounded-lg px-2.5 py-2 text-xs" style={{ backgroundColor: "var(--color-bg-surface)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-primary)" }} />
+                        </div>
+                      ) : <div className="flex gap-2 mt-3">
                         <button
                           type="button"
                           disabled={updating === i.id}
-                          onClick={() => handleInterventionStatus(i.id, "completed")}
+                          onClick={() => setOutcomePrompt({ id: i.id, status: "completed" })}
                           className="text-[11px] px-3 py-1.5 rounded-full font-medium disabled:opacity-50"
                           style={{ backgroundColor: "var(--color-states-success)", color: "var(--color-text-primary)" }}
                         >
@@ -246,13 +265,13 @@ export function CareSummaryPage() {
                         <button
                           type="button"
                           disabled={updating === i.id}
-                          onClick={() => handleInterventionStatus(i.id, "skipped")}
+                          onClick={() => setOutcomePrompt({ id: i.id, status: "skipped" })}
                           className="text-[11px] px-3 py-1.5 rounded-full border bg-transparent disabled:opacity-50"
                           style={{ borderColor: "var(--color-border-subtle)", color: "var(--color-text-secondary)" }}
                         >
                           I couldn&apos;t do this
                         </button>
-                      </div>
+                      </div>}
                     </div>
                   </div>
                 </div>

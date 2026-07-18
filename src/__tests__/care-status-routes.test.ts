@@ -14,6 +14,7 @@ vi.mock("@/lib/db/queries/care", () => ({
   getCareEscalationWithPatientById: vi.fn(),
   updateCareEscalationStatus: vi.fn(),
   getCareClinician: vi.fn(),
+  createCareAuditLog: vi.fn(),
 }));
 
 import { requireAuth } from "@/lib/auth";
@@ -24,6 +25,7 @@ import {
   getCareEscalationWithPatientById,
   updateCareEscalationStatus,
   getCareClinician,
+  createCareAuditLog,
 } from "@/lib/db/queries/care";
 
 function mockAuth(userId = "user-1") {
@@ -76,7 +78,7 @@ describe("PATCH /api/care/interventions/[id]", () => {
 
     const req = new Request("http://localhost:3000/api/care/interventions/int-1", {
       method: "PATCH",
-      body: JSON.stringify({ status: "completed" }),
+      body: JSON.stringify({ status: "completed", outcomeCode: "helped" }),
     });
     const res = await patchIntervention(req as never, { params: Promise.resolve({ id: "int-1" }) });
     expect(res.status).toBe(403);
@@ -90,14 +92,14 @@ describe("PATCH /api/care/interventions/[id]", () => {
 
     const req = new Request("http://localhost:3000/api/care/interventions/int-1", {
       method: "PATCH",
-      body: JSON.stringify({ status: "completed" }),
+      body: JSON.stringify({ status: "completed", outcomeCode: "helped", outcomeNote: "Felt easier today" }),
     });
     const res = await patchIntervention(req as never, { params: Promise.resolve({ id: "int-1" }) });
     const data = await res.json();
 
     expect(res.status).toBe(200);
     expect(data.ok).toBe(true);
-    expect(updateCareInterventionStatus).toHaveBeenCalledWith("int-1", "completed");
+    expect(updateCareInterventionStatus).toHaveBeenCalledWith("int-1", "completed", { code: "helped", note: "Felt easier today" });
   });
 });
 
@@ -134,13 +136,14 @@ describe("PATCH /api/care/escalations/[id]", () => {
     mockAuth();
     (getCareEscalationWithPatientById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "esc-1",
+      patientId: "patient-1",
       patient: { clinicId: "clinic-1" },
     });
     (getCareClinician as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     const req = new Request("http://localhost:3000/api/care/escalations/esc-1", {
       method: "PATCH",
-      body: JSON.stringify({ status: "resolved", clinicId: "clinic-1" }),
+      body: JSON.stringify({ status: "resolved", clinicId: "clinic-1", reason: "Reviewed and safe" }),
     });
     const res = await patchEscalation(req as never, { params: Promise.resolve({ id: "esc-1" }) });
     expect(res.status).toBe(403);
@@ -150,13 +153,14 @@ describe("PATCH /api/care/escalations/[id]", () => {
     mockAuth();
     (getCareEscalationWithPatientById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "esc-1",
+      patientId: "patient-1",
       patient: { clinicId: "clinic-2" },
     });
     (getCareClinician as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "clin-1", userId: "user-1", clinicId: "clinic-1" });
 
     const req = new Request("http://localhost:3000/api/care/escalations/esc-1", {
       method: "PATCH",
-      body: JSON.stringify({ status: "resolved", clinicId: "clinic-1" }),
+      body: JSON.stringify({ status: "resolved", clinicId: "clinic-1", reason: "Reviewed and safe" }),
     });
     const res = await patchEscalation(req as never, { params: Promise.resolve({ id: "esc-1" }) });
     expect(res.status).toBe(403);
@@ -166,6 +170,7 @@ describe("PATCH /api/care/escalations/[id]", () => {
     mockAuth();
     (getCareEscalationWithPatientById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "esc-1",
+      patientId: "patient-1",
       patient: { clinicId: "clinic-1" },
     });
     (getCareClinician as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "clin-1", userId: "user-1", clinicId: "clinic-1" });
@@ -173,7 +178,7 @@ describe("PATCH /api/care/escalations/[id]", () => {
 
     const req = new Request("http://localhost:3000/api/care/escalations/esc-1", {
       method: "PATCH",
-      body: JSON.stringify({ status: "resolved", clinicId: "clinic-1" }),
+      body: JSON.stringify({ status: "resolved", clinicId: "clinic-1", reason: "Reviewed and safe" }),
     });
     const res = await patchEscalation(req as never, { params: Promise.resolve({ id: "esc-1" }) });
     const data = await res.json();
@@ -181,5 +186,14 @@ describe("PATCH /api/care/escalations/[id]", () => {
     expect(res.status).toBe(200);
     expect(data.ok).toBe(true);
     expect(updateCareEscalationStatus).toHaveBeenCalledWith("esc-1", "resolved");
+    expect(createCareAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      clinicId: "clinic-1",
+      actorUserId: "user-1",
+      patientId: "patient-1",
+      targetType: "escalation",
+      targetId: "esc-1",
+      actionType: "resolved",
+      reason: "Reviewed and safe",
+    }));
   });
 });

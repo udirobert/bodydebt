@@ -14,9 +14,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!auth.ok) return auth.response;
 
   const { id } = await params;
-  const body = (await request.json()) as { status?: string };
+  const body = (await request.json()) as { status?: string; outcomeCode?: string; outcomeNote?: string };
   if (body.status !== "completed" && body.status !== "skipped") {
     return NextResponse.json({ error: "status must be completed or skipped" }, { status: 400 });
+  }
+  const allowedOutcomeCodes = ["helped", "too_hard", "side_effect", "no_time"];
+  if (!body.outcomeCode || !allowedOutcomeCodes.includes(body.outcomeCode)) {
+    return NextResponse.json({ error: "choose an outcome" }, { status: 400 });
+  }
+  if (body.outcomeNote && body.outcomeNote.length > 500) {
+    return NextResponse.json({ error: "outcome note must be 500 characters or fewer" }, { status: 400 });
   }
 
   const patient = await getCarePatientByUserId(auth.user.id);
@@ -32,6 +39,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "not authorized" }, { status: 403 });
   }
 
-  const updated = await updateCareInterventionStatus(id, body.status);
+  const updated = await updateCareInterventionStatus(id, body.status, {
+    code: body.outcomeCode,
+    note: body.outcomeNote?.trim() || null,
+  });
   return NextResponse.json({ ok: true, intervention: updated });
 }

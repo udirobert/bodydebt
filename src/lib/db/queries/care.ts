@@ -7,12 +7,14 @@ import {
   carePatients,
   careClinicians,
   careClinics,
+  careAuditLogs,
   type CareObservationRow,
   type CareInterventionRow,
   type CareEscalationRow,
   type CarePatient,
   type CareClinician,
   type CareClinic,
+  type CareAuditLog,
   type NewCareClinician,
   type NewCarePatient,
 } from "../schema/care";
@@ -20,6 +22,11 @@ import { users, type User } from "../schema/users";
 
 export async function getCarePatientByUserId(userId: string): Promise<CarePatient | undefined> {
   const rows = await db.select().from(carePatients).where(eq(carePatients.userId, userId)).limit(1);
+  return rows[0];
+}
+
+export async function getCarePatientById(patientId: string): Promise<CarePatient | undefined> {
+  const rows = await db.select().from(carePatients).where(eq(carePatients.id, patientId)).limit(1);
   return rows[0];
 }
 
@@ -112,6 +119,18 @@ export async function getRecentInterventionOutcomesForPatient(
     .limit(limit);
 }
 
+export async function getCareInterventionsForPatient(
+  patientId: string,
+  limit = 30,
+): Promise<CareInterventionRow[]> {
+  return db
+    .select()
+    .from(careInterventions)
+    .where(eq(careInterventions.patientId, patientId))
+    .orderBy(desc(careInterventions.dueAt))
+    .limit(limit);
+}
+
 export async function getOpenEscalationsForPatient(
   patientId: string,
 ): Promise<CareEscalationRow[]> {
@@ -120,6 +139,18 @@ export async function getOpenEscalationsForPatient(
     .from(careEscalations)
     .where(and(eq(careEscalations.patientId, patientId), eq(careEscalations.status, "open")))
     .orderBy(desc(careEscalations.createdAt));
+}
+
+export async function getCareEscalationsForPatient(
+  patientId: string,
+  limit = 30,
+): Promise<CareEscalationRow[]> {
+  return db
+    .select()
+    .from(careEscalations)
+    .where(eq(careEscalations.patientId, patientId))
+    .orderBy(desc(careEscalations.createdAt))
+    .limit(limit);
 }
 
 export async function getPendingInterventionsForClinic(
@@ -181,16 +212,28 @@ export async function getCareInterventionById(id: string): Promise<CareIntervent
 export async function updateCareInterventionStatus(
   id: string,
   status: "completed" | "skipped",
+  outcome?: { code?: string | null; note?: string | null },
 ): Promise<CareInterventionRow> {
   const rows = await db
     .update(careInterventions)
     .set({
       status,
       completedAt: status === "completed" || status === "skipped" ? new Date() : null,
+      outcomeCode: outcome?.code ?? null,
+      outcomeNote: outcome?.note ?? null,
     })
     .where(eq(careInterventions.id, id))
     .returning();
   return rows[0];
+}
+
+export async function createCareAuditLog(input: typeof careAuditLogs.$inferInsert): Promise<CareAuditLog> {
+  const [row] = await db.insert(careAuditLogs).values(input).returning();
+  return row;
+}
+
+export async function getCareAuditLogsForPatient(patientId: string, limit = 50): Promise<CareAuditLog[]> {
+  return db.select().from(careAuditLogs).where(eq(careAuditLogs.patientId, patientId)).orderBy(desc(careAuditLogs.createdAt)).limit(limit);
 }
 
 export async function getCareEscalationById(id: string): Promise<CareEscalationRow | undefined> {
