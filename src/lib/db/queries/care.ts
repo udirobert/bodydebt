@@ -80,3 +80,25 @@ export async function getPendingInterventionsForPatient(
     .where(and(eq(careInterventions.patientId, patientId), eq(careInterventions.status, "pending")))
     .orderBy(desc(careInterventions.dueAt));
 }
+
+export async function getPendingInterventionsForClinic(
+  clinicId: string,
+  limit = 50,
+): Promise<(CareInterventionRow & { patient: CarePatient })[]> {
+  return db
+    .select({
+      id: careInterventions.id,
+      patientId: careInterventions.patientId,
+      observationId: careInterventions.observationId,
+      action: careInterventions.action,
+      status: careInterventions.status,
+      dueAt: careInterventions.dueAt,
+      completedAt: careInterventions.completedAt,
+      patient: carePatients,
+    })
+    .from(careInterventions)
+    .innerJoin(carePatients, eq(carePatients.id, careInterventions.patientId))
+    .where(and(eq(carePatients.clinicId, clinicId), eq(careInterventions.status, "pending")))
+    .orderBy(desc(careInterventions.dueAt))
+    .limit(limit) as unknown as (CareInterventionRow & { patient: CarePatient })[];
+}
