@@ -15,6 +15,7 @@ import { DonutChart, BarChartView } from "./StressorBreakdownChart";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
 import { orburaPresence } from "@/lib/mira/orbura-mapping";
 import type { MiraPresence } from "@/lib/mira/contract";
+import { MiraChatPanel } from "@/components/mira/MiraChatPanel";
 import { SystemPanels } from "@/components/SystemPanels";
 import { SystemClearanceNotifier } from "@/components/SystemClearanceNotifier";
 import { PersonalityPicker } from "./personality-picker";
@@ -160,6 +161,7 @@ export function DashboardScreen() {
   })();
 
   const [personalityOpen, setPersonalityOpen] = useState(false);
+  const [miraChatOpen, setMiraChatOpen] = useState(false);
   const personalityCfg = getPersonality(orbPersonality);
   const orbCopy = getOrbCopy(orbPersonality);
   const t = getStrings(locale);
@@ -470,7 +472,13 @@ export function DashboardScreen() {
 
       {/* ── Layer 1: Orb + Score (hero) ─────────────────────────────── */}
       <div className="relative z-10 flex flex-col items-center pt-2 pb-6">
-        <DebtOrb score={data.debtScore} presence={miraPresence} />
+        <button
+          onClick={() => setMiraChatOpen(true)}
+          className="cursor-pointer transition-transform hover:scale-[1.03] active:scale-[0.98]"
+          aria-label="Ask Mira"
+        >
+          <DebtOrb score={data.debtScore} presence={miraPresence} />
+        </button>
 
         {/* Mira label — appears when the orb is in Mira mode */}
         <AnimatePresence>
@@ -858,7 +866,22 @@ export function DashboardScreen() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>      </motion.div>
+      </AnimatePresence>
+
+      {/* Mira chat panel — tap orb to open */}
+      <MiraChatPanel
+        open={miraChatOpen}
+        onClose={() => setMiraChatOpen(false)}
+        presence={miraPresence}
+        context={{
+          debtScore: data.debtScore,
+          phase: miraPresence?.posture,
+          prescription: analysis?.prescription
+            ? `RIGHT NOW: ${analysis.prescription.rightNow}`
+            : null,
+        }}
+      />
+      </motion.div>
     );
 }
 

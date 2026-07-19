@@ -1,8 +1,18 @@
 # Mira — Famile shared identity contract
 
-**Status:** Draft. This is the handoff note for Ardum and Sukari.
+**Status:** Superseded. The canonical network contract now lives at
+`famile/web/docs/MIRA.md`. This file is kept as a historical handoff note;
+for current posture vocabulary, voice, safety charter, orb spec, and tier
+transitions, read the canonical doc.
 
-## What's been decided
+The shared contract *code* still lives in this repo at
+`src/lib/mira/contract.ts` until it is extracted to a private
+`@famile/mira-contract` package. Keep it in sync with
+`famile/web/docs/MIRA.md`.
+
+---
+
+## What was decided (historical)
 
 Mira is the persistent personal agent identity across Famile health and
 wellness products. Each product runs its own Mira instance with a common
