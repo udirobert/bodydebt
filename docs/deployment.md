@@ -12,15 +12,17 @@ Browser ──HTTPS:443──▶ Coolify/Traefik (coolify-proxy, Docker)
                           │  Host(orbura.famile.xyz)
                           │  Let's Encrypt cert (HTTP-01, auto-renew)
                           ▼
-                       host nginx 127.0.0.1:8765
-                          ▼
                        next-server 127.0.0.1:3050  (pm2: orbura)
 ```
 
-- DNS: `orbura.famile.xyz` A record → the Vultr box (GoDaddy-managed,
-  nameservers stay on GoDaddy — no Cloudflare involved).
-- The box's shared **Coolify/Traefik** proxy owns ports 80/443. We don't run our
-  own :443 listener; we hook into Traefik instead.
+- DNS: `orbura.famile.xyz` A record → the Vultr box (`nuncio-vultr`,
+  GoDaddy-managed nameservers — no Cloudflare involved).
+- The box's shared **Coolify/Traefik** proxy (`coolify-proxy` container) owns
+  ports 80/443. We don't run our own :443 listener; we hook into Traefik
+  instead.
+- Traefik reaches the Next.js server directly via `host.docker.internal:3050`
+  — no intermediate nginx layer. The old `:8765` nginx vhosts were removed
+  when this was wired up.
 
 ## TLS / Traefik route (server-side, not in repo)
 
@@ -51,27 +53,37 @@ http:
       loadBalancer:
         passHostHeader: true
         servers:
-          - url: "http://10.0.0.1:8765"   # host gateway → host nginx
+          - url: "http://host.docker.internal:3050"   # Docker host → next-server
 ```
 
 Notes:
-- `10.0.0.1` is the Docker host gateway as seen from the `coolify` network. The
-  proxy can reach host nginx on `:8765` but **not** `:3050` (firewalled from the
-  container subnet), so the upstream is nginx, not next-server directly.
+- `host.docker.internal` resolves (inside the `coolify-proxy` container) to the
+  Docker host gateway, so Traefik can reach the pm2-bound `:3050` directly.
+  This mirrors how `director.thisyearnofear.com` and
+  `magiclens.thisyearnofear.com` are wired on the same box.
+- The box's ufw must allow `3050/tcp` from `10.0.0.0/8` (the Docker subnet) or
+  Traefik's connection to the upstream silently times out. The rule is:
+  `ufw allow from 10.0.0.0/8 to any port 3050 proto tcp comment 'orbura from Docker'`.
+  Every other Docker→host app route on this box has an equivalent rule.
 - Traefik watches the dir (`providers.file.watch=true`), so editing the file
   hot-reloads; cert issuance/renewal is automatic.
 - To undo: delete `orbura.yaml`. The change is isolated to this host and does
   not affect other apps the proxy serves.
-- The old `bodydebt.thisyearnofear.com` route (`bodydebt.yaml`) now redirects to
-  `https://orbura.famile.xyz` while preserving path and query.
+- The old `bodydebt.thisyearnofear.com` route (`bodydebt.yaml`) 301-redirects
+  to `https://orbura.famile.xyz` while preserving path and query.
 
 ## Don't
 
-- Don't point anyone at `http://orbura.famile.xyz:8765` — it's plain
-  HTTP (Traefik's upstream) and the camera's secure-context check fails there.
-  The public URL is `https://orbura.famile.xyz`.
-- Don't add an HTTP→HTTPS redirect on the host nginx `:8765` vhost — Traefik
-  proxies to it over plain HTTP, so a redirect there would loop.
+- Don't point anyone at `http://orbura.famile.xyz:3050` — it's plain HTTP and
+  the camera's secure-context check fails there. The public URL is
+  `https://orbura.famile.xyz`.
+- Don't remove the ufw `3050/tcp` rule for `10.0.0.0/8`. Without it, Traefik
+  can't reach the upstream and `https://orbura.famile.xyz/` hangs after the TLS
+  handshake (the HTTP→HTTPS redirect on `:80` still works because Traefik
+  handles it before touching the upstream, which is a misleading symptom).
+- Don't reintroduce an nginx `:8765` middle layer for orbura. Traefik can reach
+  `:3050` directly; the extra hop existed only because the `:3050` ufw rule was
+  missing.
 - No Cloudflare. The old quick-tunnel (`cloudflared`) was removed from
   `ecosystem.config.cjs`; HTTPS now comes from Traefik.
 - Don't run `npm install` or `bun install` on the server. The deploy script
