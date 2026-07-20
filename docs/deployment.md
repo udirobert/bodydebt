@@ -21,8 +21,7 @@ Browser ──HTTPS:443──▶ Coolify/Traefik (coolify-proxy, Docker)
   ports 80/443. We don't run our own :443 listener; we hook into Traefik
   instead.
 - Traefik reaches the Next.js server directly via `host.docker.internal:3050`
-  — no intermediate nginx layer. The old `:8765` nginx vhosts were removed
-  when this was wired up.
+  — no intermediate nginx layer.
 
 ## TLS / Traefik route (server-side, not in repo)
 
@@ -59,12 +58,10 @@ http:
 Notes:
 - `host.docker.internal` resolves (inside the `coolify-proxy` container) to the
   Docker host gateway, so Traefik can reach the pm2-bound `:3050` directly.
-  This mirrors how `director.thisyearnofear.com` and
-  `magiclens.thisyearnofear.com` are wired on the same box.
-- The box's ufw must allow `3050/tcp` from `10.0.0.0/8` (the Docker subnet) or
-  Traefik's connection to the upstream silently times out. The rule is:
-  `ufw allow from 10.0.0.0/8 to any port 3050 proto tcp comment 'orbura from Docker'`.
-  Every other Docker→host app route on this box has an equivalent rule.
+- The box firewall must allow the Traefik container to reach `:3050` on the
+  host. If that rule is missing or removed, HTTPS requests hang (the HTTP→HTTPS
+  redirect on `:80` still works, which is a misleading symptom). See the server
+  notes for the exact rule — not reproduced here.
 - Traefik watches the dir (`providers.file.watch=true`), so editing the file
   hot-reloads; cert issuance/renewal is automatic.
 - To undo: delete `orbura.yaml`. The change is isolated to this host and does
@@ -77,13 +74,10 @@ Notes:
 - Don't point anyone at `http://orbura.famile.xyz:3050` — it's plain HTTP and
   the camera's secure-context check fails there. The public URL is
   `https://orbura.famile.xyz`.
-- Don't remove the ufw `3050/tcp` rule for `10.0.0.0/8`. Without it, Traefik
-  can't reach the upstream and `https://orbura.famile.xyz/` hangs after the TLS
-  handshake (the HTTP→HTTPS redirect on `:80` still works because Traefik
-  handles it before touching the upstream, which is a misleading symptom).
-- Don't reintroduce an nginx `:8765` middle layer for orbura. Traefik can reach
-  `:3050` directly; the extra hop existed only because the `:3050` ufw rule was
-  missing.
+- Don't remove the firewall rule that lets the Traefik container reach `:3050`.
+  Without it, `https://orbura.famile.xyz/` hangs.
+- Don't reintroduce an nginx middle layer for orbura. Traefik can reach
+  `:3050` directly.
 - No Cloudflare. The old quick-tunnel (`cloudflared`) was removed from
   `ecosystem.config.cjs`; HTTPS now comes from Traefik.
 - Don't run `npm install` or `bun install` on the server. The deploy script
